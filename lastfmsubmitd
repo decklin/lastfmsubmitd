@@ -223,15 +223,18 @@ class LastFmSession:
             elif status_line == "BADAUTH":
                 self.log.error("Submission failed, incorrect password")
                 self.uncommitted_subs += subs
+                time.sleep(self.interval + self.sub_backoff)
                 raise SessionError
             elif status_line == "FAILED":
                 self.log.error("Submission failed, perhaps server is busy")
                 self.uncommitted_subs += subs
+                time.sleep(self.interval + self.sub_backoff)
                 raise InvalidSubError
             else:
                 self.log.error("Submission failed, %s" % status_line)
                 self.uncommitted_subs += subs
                 # dunno what it is, so let's assume this session is kaput
+                time.sleep(self.interval + self.sub_backoff)
                 raise SessionError
 
             interval_line = s.readline().strip()
