@@ -1,0 +1,104 @@
+LastMP and lastfmsubmitd
+========================
+
+LastMP is an MPD client that will detect when you play a song that is
+valid to submit to Last.fm. It will poll every 5 seconds by default. To
+change this, use the --sleep option. Upon detecting a valid song, it
+will invoke lastfmsubmit.
+
+lastfmsubmit will take the song specified on the command line with
+--artist, --title, --length, and optionally --album and --mbid, and
+encode it in UTF-8 (pseudo-)YAML. Then, it will write it to
+lastfmsubmitd's FIFO or the file specified by --output. The primary
+purpose of this program is to abstract character encoding and
+(pseudo-)YAML document creation; all your player plugin needs to do is
+detect a song and invoke lastfmsubmit. Of course, you can also run it
+manually should something go wonky.
+
+lastfmsubmitd connects to Last.fm with the user and password specified
+with --user and --password (as this option the exposes password to ps,
+it is recommended you use it for testing only), or in the environment
+variables LASTFM_USER and LASTFM_PASSWORD. It then reads
+(pseudo-)YAML-formatted submissions from its FIFO and submits them, or
+caches them if submission is not possible due to network or server
+errors. Handling of network errors is relatively flakey at the moment,
+so keep an eye on your log file.
+
+Replaying tracks from a CD
+==========================
+
+If you frequently play music on a home or car stereo system that is not
+connected to your computer, you may still wish to submit these songs to
+Last.fm. lastcd will read the CD in your computer's CD-ROM drive, query
+MusicBrainz for its album information, and output it in (pseudo-)YAML.
+This format is like the one lastfmsubmitd uses, but it does not contain
+the time of submission. Instead of reading from the CD-ROM drive, you
+can also specify an album with --discid or --albumid. If a list of track
+numbers is also specified, only those tracks will be printed.
+
+If you are really lazy and don't want to put the CD in, you can use
+mbfindalbum, specify the album name with --album, and chose the album's
+MBID from that. (You can also try specifying --artist, but at the moment
+it does not really work and cannot be used in combination with --album.)
+
+lastcdreplay will take a list of songs encoded in this format, add
+submission times to them as if they had all just been played in order,
+and write them to lastfmsubit's FIFO or the file specified by --output.
+
+Daemon Usage
+============
+
+lastfmsubmitd uses /var/run/lastfmsubmitd/fifo for IPC and
+/var/cache/lastfmsubmitd/subs to save uncommitted submissions between
+runs. I would recommend creating "lastfmsubmitd" and "lastmp" user
+accounts and putting them in a "lastfm" group, with the FIFO
+group-writable. If you plan on using lastcdreplay from your normal user
+account, add that account to the "lastfm" group as well.
+
+Requirements
+============
+
+LastMP requires py-libmpdclient2, available from
+http://incise.org/index.cgi/py-libmpdclient2.
+
+Caveats
+=======
+
+The pseudo-YAML format most of these programs use may deviate from the
+published spec, as I simply whipped up some prototype code myself. I
+plan to switch to the Python bindings for Syck as soon as I get a chance
+to port the documentation into a Python-friendly format. At that point
+any other program can use a YAML implementation to generate input.
+
+Author and License
+==================
+
+LastMP, lastfmsubmitd, and associated programs were written by Decklin
+Foster <decklin@red-bean.com>.
+
+Copyright © 2005 Decklin Foster.
+
+Permission is hereby granted, free of charge, to any person obtaining
+a copy of this software and associated documentation files (the
+"Software"), to deal in the Software without restriction, including
+without limitation the rights to use, copy, modify, merge, publish,
+distribute, sublicense, and/or sell copies of the Software, and to
+permit persons to whom the Software is furnished to do so, subject to
+the following conditions:
+
+The above copyright notice and this permission notice shall be
+included in all copies or substantial portions of the Software.
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND,
+EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF
+MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT.
+IN NO EVENT SHALL THE AUTHOR BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE,
+ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR
+OTHER DEALINGS IN THE SOFTWARE.
+
+Because This Is for Last.fm, After All
+======================================
+
+Thanks for the inspiration: David Holmes, Joy Electric, Minor Threat,
+Autechre, Wes Anderson et al, Boards of Canada, Pixies, Ted Leo, D+.

@@ -1,0 +1,228 @@
+#!/usr/bin/python
+
+# To do:
+# - mpdclient doesn't expose MB ids if we've got 'em. should fix that. as soon
+#   as mpd 12 is out.
+
+import sys
+import os
+import time
+import getopt
+
+import mpdclient2
+import lastfm.logger
+
+"""This program connects to MPD and runs in the background. When a valid
+track is played (valid = must be tagged, played w/o skipping for the
+first 50% or 240s), it invokes lastfmsubmit, which will submit the track
+to Last.fm."""
+
+# Sleep this many seconds at a time, if not otherwise specified.
+DEF_SLEEP = 5
+
+# If the system load is high, we may not wake again until slightly
+# longer than we slept. This should really be like 0.1, but
+# unfortunately MPD only reports times with a resolution of 1 second.
+FUZZ = 1
+
+class Song:
+    def __init__(self, mpdclientsongobj):
+        # cache?
+        self.artist = getattr(mpdclientsongobj, 'artist', None)
+        self.title = getattr(mpdclientsongobj, 'title', None)
+        self.album = getattr(mpdclientsongobj, 'album', None)
+        self.time = getattr(mpdclientsongobj, 'time', None)
+        self.file = getattr(mpdclientsongobj, 'file', None)
+
+    def __eq__(self, other):
+        if other == None:
+            return False
+        else:
+            return self.file == other.file or (
+                self.artist == other.artist and self.title == other.title and
+                self.album == other.album and self.time == other.time)
+
+    # O RLY?
+    def __ne__(self, other):
+        # YA RLY!
+        return not self == other
+
+    # NO WAI!!!
+    def __str__(self):
+        return "%s - %s [%d:%02d]" % ((self.artist, self.title) +
+            divmod(int(self.time), 60))
+
+class MpdObserver:
+    def __init__(self, log, sleep, mpd_args):
+        self.log = log
+        self.sleep = sleep
+        self.children = []
+
+        try:
+            self.mpd = mpdclient2.connect(**mpd_args)
+            log.info("Connected to MPD")
+        except (EOFError, mpdclient2.socket.error):
+            self.mpd = None
+            log.warning("Could not connect to MPD")
+
+        self.prevstatus = None
+        self.prevsong = None
+        self.prevtime = None
+        self.skipped = False
+        self.submitted = False
+        self.played_enough = False
+
+    def wake(self):
+        status = self.mpd.do.status()
+        currentsong = Song(self.mpd.do.currentsong())
+
+        if self.prevstatus is None or status.state != self.prevstatus.state:
+            if status.state == 'stop':
+                self.log.debug("Changed state: stopped")
+            if status.state == 'play':
+                self.log.debug("Changed state: playing")
+            if status.state == 'pause':
+                self.log.debug("Changed state: paused")
+
+        if status.state in ('play', 'pause'):
+            time, len = map(float, status.time.split(':'))
+            if status.state == 'play':
+                if currentsong != self.prevsong or \
+                        self.prevstatus.state == 'stop':
+                    self.log.info("New song: %s", currentsong)
+                    if (self.prevsong and time > self.sleep + FUZZ) or \
+                            (self.prevsong is None and
+                            time/len > lastfm.SUB_PERCENT):
+                        self.log.warning(
+                            "Started at %d, will not submit" % time)
+                        self.skipped = True
+                    else:
+                        self.skipped = False
+                        self.submitted = False
+                        self.played_enough = False
+                else:
+                    if self.prevtime and time < self.sleep + FUZZ and \
+                            (self.prevtime/len >= lastfm.SUB_PERCENT or \
+                            self.prevtime >= lastfm.SUB_SECONDS):
+                        self.log.info("Restarted song")
+                        self.skipped = False
+                        self.submitted = False
+                        self.played_enough = False
+                    if self.prevtime and \
+                            time > self.prevtime + self.sleep + FUZZ:
+                        self.log.warning(
+                            "Skipped from %d to %d" %
+                            (self.prevtime, time))
+                        self.skipped = True
+                    if not self.skipped and not self.played_enough and \
+                            len >= lastfm.MIN_LEN and \
+                            len <= lastfm.MAX_LEN and \
+                            (time/len >= lastfm.SUB_PERCENT or \
+                            time >= lastfm.SUB_SECONDS):
+                        self.log.debug("OK, %d of %d seconds played" %
+                            (time, len))
+                        self.played_enough = True
+                    if not self.submitted and not self.skipped and \
+                            self.played_enough:
+                        self.log.info("Sending song to submit daemon")
+                        pid = self.submit(currentsong, len)
+                        self.children.append(pid)
+                        self.submitted = True
+        else:
+            time = None
+
+        self.prevsong = currentsong
+        self.prevstatus = status
+        self.prevtime = time
+
+    def observe(self):
+        """Loop forever, periodically checking MPD's state and
+        submitting songs when necessary."""
+        while True:
+            if self.mpd is None:
+                try:
+                    self.mpd = mpdclient2.connect()
+                    self.log.warning("(Re)connected to MPD")
+                except (EOFError, mpdclient2.socket.error):
+                    pass
+            # OK, we're connected. Check this first...
+            for pid in self.children:
+                try:
+                    pid, status = os.waitpid(pid, os.WNOHANG)
+                    if pid:
+                        if os.WEXITSTATUS(status) == 0:
+                            log.debug("child %d exited successfully" % pid)
+                        else:
+                            log.warning("child %d failed with status %d" %
+                                (pid, status))
+                except OSError:
+                    pass
+            # But don't do anything else here, because we guarantee that as
+            # long as we are connected, sucessive calls to wake() will happen
+            # no more than sleep + FUZZ seconds apart. (When mpd is latency is
+            # extremely high, e.g. when doing an db update on an already
+            # heavily loaded machine, this unfortunately may not be true.
+            if self.mpd:
+                try:
+                    self.wake()
+                except (EOFError, mpdclient2.socket.error):
+                    self.log.warning("Lost connection to MPD")
+                    self.mpd = None
+                    self.prevsong = None
+                    self.prevstatus = None
+                    self.prevtime = None
+            time.sleep(self.sleep)
+
+    def submit(self, song, len):
+        if song.artist and song.title and len:
+            pid = os.fork()
+            if pid == 0:
+                args = [
+                    "lastfmsubmit",
+                    "--artist", song.artist,
+                    "--title", song.title,
+                    "--length", str(int(len)),
+                    ]
+                if song.album:
+                    args += ["--album", song.album]
+                os.execvp("./lastfmsubmit", args)
+            else:
+                return pid
+        else:
+            self.log.warning("missing artist/title/length, not submitting")
+
+if __name__ == '__main__':
+    log = lastfm.logger.create_log("lastmp")
+    log.info("LastMP starting")
+
+    shortopts = 's:h:p:o:'
+    longopts = ['sleep=', 'host=', 'password=', 'port=']
+
+    opts, args = getopt.getopt(sys.argv[1:], shortopts, longopts)
+    if args:
+        print >>sys.stderr, "extra args %s", args
+        sys.exit(1)
+
+    sleep = DEF_SLEEP
+    mpd_args = {}
+    for opt, arg in opts:
+        if opt in ('--sleep', '-s'):
+            sleep = int(arg)
+            if sleep >= lastfm.MIN_LEN / 2:
+                print >>sys.stderr, "sleep value %d is too large (>%d)" % \
+                    (sleep, lastfm.MIN_LEN / 2)
+                sys.exit(1)
+        if opt in ('--host', '-h'):
+            mpd_args['host'] = arg
+        if opt in ('--password', '-p'):
+            mpd_args['password'] = arg
+        if opt in ('--port', '-o'):
+            mpd_args['port'] = arg
+
+    try:
+        mo = MpdObserver(log, sleep, mpd_args)
+        # Even if we couldn't connect, start the observe loop anyway.
+        # Perhaps MPD failed at boot and the admin will fix it later.
+        mo.observe()
+    except KeyboardInterrupt:
+        log.info("Exiting")

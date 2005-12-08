@@ -1,0 +1,80 @@
+#!/usr/bin/python
+
+# lastfmsubmit 0.1 -- Decklin Foster <decklin@red-bean.com>
+
+import sys
+import time
+import getopt
+import locale
+
+import lastfm
+import lastfm.asyaml
+import lastfm.logger
+
+"""This program accepts information about a played song on the commandline,
+generates a submission in lastfmsubmitd format, and sends it to the running
+lastfmsubmitd."""
+
+if __name__ == '__main__':
+
+    log = lastfm.logger.create_log("lastfmsubmit")
+
+    encoding = locale.getpreferredencoding()
+
+    shortopts = 'a:s:l:d:b:m:o:'
+    longopts = [
+        'artist=',
+        'title=',
+        'length=',
+        'time=',
+        'album=',
+        'mbid=',
+        'output=',
+        ]
+
+    subinfo = { 'time': time.gmtime(), }
+    outfile = lastfm.SUBMITD_FIFO
+
+    opts, args = getopt.getopt(sys.argv[1:], shortopts, longopts)
+    if args:
+        log.error("extra args %s" % args)
+        sys.exit(1)
+
+    for opt, arg in opts:
+        if opt in ('--artist', '-a'):
+            subinfo['artist'] = unicode(arg, encoding)
+        elif opt in ('--title', '-t'):
+            subinfo['title'] = unicode(arg, encoding)
+        elif opt in ('--length', '-l'):
+            try:
+                subinfo['length'] = asyaml.parse_length(arg)
+            except ValueError:
+                log.error("could not parse length %s" % arg)
+                sys.exit(1)
+        elif opt in ('--time', '-i'):
+            try:
+                subinfo['time'] = asyaml.parse_time(arg)
+            except ValueError:
+                log.error("could not parse time %s" % arg)
+                sys.exit(1)
+        elif opt in ('--album', '-b'):
+            subinfo['album'] = unicode(arg, encoding)
+        elif opt in ('--mbid', '-m'):
+            subinfo['mbid'] = arg
+        elif opt in ('--output', '-o'):
+            outfile = arg
+
+    try:
+        sub = asyaml.Submission(**subinfo)
+    except ValueError:
+        log.error("must specify at least artist, title, and length")
+        sys.exit(1)
+
+    try:
+        log.debug("Opening %s for write" % outfile)
+        out = file(outfile, 'w')
+        print >>out, sub
+        log.info("Queued %s for submission", sub.shortname())
+    except IOError:
+        log.error("Could not write to %s" % outfile)
+        sys.exit(1)

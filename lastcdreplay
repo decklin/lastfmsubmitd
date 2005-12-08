@@ -1,0 +1,46 @@
+#!/usr/bin/python
+
+import sys
+import time
+import getopt
+
+import lastfm
+import lastfm.asyaml
+
+if __name__ == "__main__":
+
+    shortopts = 'o:'
+    longopts = ['output=']
+
+    outfile = lastfm.SUBMITD_FIFO
+
+    opts, args = getopt.getopt(sys.argv[1:], shortopts, longopts)
+
+    for opt, arg in opts:
+        if opt in ('--output', '-o'):
+            outfile = arg
+
+    try:
+        out = file(outfile, 'w')
+    except IOError:
+        print >>sys.stderr, "Could not write to %s" % outfile
+
+    tracks = []
+    for f in [file(n) for n in args] or [sys.stdin]:
+        input = asyaml.Parser(f.read())
+        tracks += [t for t in input.parse()]
+
+    total_len = 0
+    for track in tracks:
+        total_len += track.length
+
+    # We will simulate things as if the last track in our input just
+    # finished playing right now.
+    start = time.time() - total_len
+
+    pos = start
+    for track in tracks:
+        if track.length >= lastfm.MIN_LEN and track.length <= lastfm.MAX_LEN:
+            date = pos + track.length / 2
+            print >>out, asyaml.Submission(track=track, time=time.gmtime(date))
+            pos += track.length

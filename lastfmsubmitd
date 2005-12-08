@@ -1,0 +1,319 @@
+#!/usr/bin/python
+
+# lastfmsubmitd 0.1 -- Decklin Foster <decklin@red-bean.com>
+
+import sys
+import os
+import stat
+import time
+import getopt
+import select
+import urllib
+import md5
+
+import lastfm
+import lastfm.logger
+import lastfm.asyaml
+
+CLIENT_ID = "tst"
+CLIENT_VERSION = "1.0"
+PROTOCOL_VERSION = "1.1"
+
+HANDSHAKE_URL_BASE = "http://post.audioscrobbler.com/"
+DEF_INTERVAL = 30
+
+SUB_CHUNK_SIZE = 10
+
+HS_BACKOFF_START = 60
+SUB_BACKOFF_START = 60
+
+FIFO_TIMEOUT = 5
+
+class HandshakeError(Exception): pass
+class SubTimeoutError(Exception): pass
+class SessionError(Exception): pass
+class InvalidSubError(Exception): pass
+
+def handshake_url(user):
+    args = {
+        'hs': 'true',
+        'p': PROTOCOL_VERSION,
+        'c': CLIENT_ID,
+        'v': CLIENT_VERSION,
+        'u': user,
+        }
+    return "?".join([HANDSHAKE_URL_BASE, urllib.urlencode(args)])
+
+class SubCache:
+    def __init__(self, log, filename):
+        self.log = log
+        self.subs = []
+        try:
+            cache = file(filename)
+            stored = lastfm.asyaml.Parser(cache.read())
+            for sub in stored.parse():
+                self.subs.append(sub)
+        except IOError:
+            pass
+
+    def dump(self, filename):
+        try:
+            out = file(filename, 'w')
+            out.write("\n".join(map(str, self.subs)))
+            out.write("\n")
+        except IOError:
+            self.log.error("Cannot write to %s, discarding %d subs" %
+                (filename, len(self.subs)))
+        self.subs = []
+
+    def submit_to(self, session):
+        try:
+            session.submit(self.subs)
+            self.subs = []
+        except SessionError:
+            self.subs = session.flush_subs()
+            self.log.error("Some submissions failed, recovering %d" %
+                len(self.subs))
+            raise
+        except InvalidSubError:
+            self.subs = session.flush_subs()
+            self.log.error("Some submissions failed, recovering %d" %
+                len(self.subs))
+            raise
+        except SubTimeoutError:
+            self.log.warning("Submission timed out, trying again in %s" %
+                session.sub_timeout)
+            raise
+
+class SubFifo:
+    def __init__(self, log, fifoname):
+        self.log = log
+        self.fifoname = fifoname
+        try:
+            if not stat.S_ISFIFO(os.stat(fifoname).st_mode):
+                self.log.error("%s exists but is not a fifo, exiting")
+                sys.exit(1)
+        except OSError:
+            self.log.debug("creating %s" % fifoname)
+            os.mkfifo(self.fifoname)
+
+    def read(self):
+        fifo = file(fifoname)
+        return fifo.read()
+
+    def select(self, timeout=None):
+        fifo_fd = os.open(self.fifoname, os.O_NONBLOCK)
+        readees, writees, errs = select.select([fifo_fd], [], [], timeout)
+        if fifo_fd in readees:
+            fifo = os.fdopen(fifo_fd)
+            data = fifo.read()
+        else:
+            data = None
+        os.close(fifo_fd)
+        return data
+
+class LastFmSession:
+    def __init__(self, log, user, password):
+        self.log = log
+        self.user = user
+        self.password = password
+        self.hs_backoff = HS_BACKOFF_START
+        self.sub_backoff = SUB_BACKOFF_START
+        self.uncommitted_subs = []
+        self.interval = DEF_INTERVAL
+        self.handshake_url = handshake_url(user)
+        self.challenge = None
+        self.submit_url = None
+
+        connected = False
+        while not connected:
+            try:
+                self.handshake()
+                connected = True
+            except HandshakeError:
+                self.log.info("Retrying handshake in %d" % self.interval)
+                time.sleep(self.hs_backoff)
+
+    def handshake(self):
+        self.log.debug("Handshake URL: %s" % self.handshake_url)
+        hs = urllib.urlopen(self.handshake_url)
+        failed = False
+        status_line = hs.readline().strip()
+
+        if status_line == "UPTODATE":
+            self.challenge = hs.readline().strip()
+            self.session_key = self.digest()
+            self.submit_url = hs.readline().strip()
+            self.log.info("Handshake sucessful")
+            self.log.debug("Submit URL: %s (%s)" %
+                (self.submit_url, self.challenge))
+        elif status_line.startswith("UPDATE"):
+            msg, url = status_line.split(" ")
+            self.log.warning("Plugin is out of date, please go to %s" % url)
+            self.challenge = hs.readline().strip()
+            self.session_key = self.digest()
+            self.submit_url = hs.readline().strip()
+            self.log.info("Handshake sucessful, %s -> %s" %
+                (self.challenge, self.submit_url))
+        elif status_line == "BADUSER":
+            self.log.error("Handshake failed, bad username")
+            raise HandshakeError
+        elif status_line == "FAILED":
+            self.log.error("Handshake failed, perhaps server is busy")
+            raise HandshakeError
+        else:
+            self.log.error("Handshake failed, %s" % status_line)
+            raise HandshakeError
+
+        interval_line = hs.readline().strip()
+        if interval_line:
+            if interval_line.startswith("INTERVAL"):
+                msg, secs = interval_line.split(" ")
+                new_interval = int(secs)
+                if new_interval != self.interval:
+                    log.debug("Session interval changed to %d" % new_interval)
+                self.interval = new_interval
+
+    def digest(self):
+        pass_hash = md5.new(self.password)
+        sess_hash = md5.new(pass_hash.hexdigest() + self.challenge)
+        return sess_hash.hexdigest()
+
+    def submit(self, subs):
+        while subs:
+            if len(subs) > SUB_CHUNK_SIZE:
+                subs, rest = subs[:SUB_CHUNK_SIZE], subs[SUB_CHUNK_SIZE:]
+            else:
+                rest = None
+
+            args = { 'u': self.user, 's': self.session_key }
+            post_data = [urllib.urlencode(args)]
+            for i in range(0, len(subs)):
+                args = {}
+                args['a[%d]' % i] =  subs[i].artist.encode('utf-8')
+                args['t[%d]' % i] =  subs[i].title.encode('utf-8')
+                args['l[%d]' % i] =  str(subs[i].length)
+                args['i[%d]' % i] =  asyaml.format_time(subs[i].time)
+                if hasattr(subs[i], 'album'):
+                    args['b[%d]' % i] = subs[i].album.encode('utf-8')
+                else:
+                    args['b[%d]' % i] = ''
+                if hasattr(subs[i], 'mbid'):
+                    args['m[%d]' % i] = (subs[i].mbid)
+                else:
+                    args['m[%d]' % i] = ''
+                self.log.info("Submitting: %s" % subs[i].shortname())
+                post_data.append(urllib.urlencode(args))
+
+            post_str = '&'.join(post_data)
+            self.log.debug("POST data: %s" % post_str)
+            try:
+                s = urllib.urlopen(self.submit_url, post_str)
+            except IOError:
+                self.log.warning("Submission timed out")
+                time.sleep(self.interval + self.sub_backoff)
+                return
+
+            failed = False
+            status_line = s.readline().strip()
+
+            if status_line == "OK":
+                self.log.info("Submission(s) accepted")
+                subs = rest
+            elif status_line == "BADAUTH":
+                self.log.error("Submission failed, incorrect password")
+                self.uncommitted_subs += subs
+                raise SessionError
+            elif status_line == "FAILED":
+                self.log.error("Submission failed, perhaps server is busy")
+                self.uncommitted_subs += subs
+                raise InvalidSubError
+            else:
+                self.log.error("Submission failed, %s" % status_line)
+                self.uncommitted_subs += subs
+                # dunno what it is, so let's assume this session is kaput
+                raise SessionError
+
+            interval_line = s.readline().strip()
+            if interval_line:
+                if interval_line.startswith("INTERVAL"):
+                    msg, secs = interval_line.split(" ")
+                    self.interval = int(secs)
+                    log.debug("Session interval changed to %d" % self.interval)
+
+            time.sleep(self.interval)
+
+    def flush_subs(self):
+        subs = self.uncommitted_subs
+        self.uncommitted_subs = []
+        return subs
+
+if __name__ == '__main__':
+    log = lastfm.logger.create_log("lastfmsubmitd")
+    log.info("Last.fm Submission Daemon starting")
+
+    shortopts = 'u:p:'
+    longopts = ['user=', 'password=']
+
+    opts, args = getopt.getopt(sys.argv[1:], shortopts, longopts)
+    if args:
+        print >>sys.stderr, "extra args %s", args
+        sys.exit(1)
+
+    try:
+        user = os.env['LASTFM_USER']
+    except KeyError:
+        user = None
+    try:
+        password = os.env['LASTFM_USER']
+    except KeyError:
+        password = None
+
+    for opt, arg in opts:
+        if opt in ('--user', '-u'):
+            user = arg
+        elif opt in ('--password', '-p'):
+            password = arg
+        else:
+            print >>sys.stderr, "unknown option %s", opt
+            sys.exit(1)
+
+    if not (user and password):
+        print >>sys.stderr, "user and password are required"
+        sys.exit(1)
+
+    cache = SubCache(log, lastfm.SUBMITD_CACHE)
+    fifo = SubFifo(log, lastfm.SUBMITD_FIFO)
+    session = LastFmSession(log, user, password)
+
+    try:
+        while True:
+            incoming = lastfm.asyaml.Parser(fifo.select(FIFO_TIMEOUT))
+            try:
+                count = 0
+                for sub in incoming.parse():
+                    cache.subs.append(sub)
+                    count += 1
+                if count:
+                    log.debug("Read %d subs from %s" %
+                        (count, lastfm.SUBMITD_FIFO))
+            except ValueError:
+                log.error("Invalid data read, discarding")
+                pass
+            try:
+                if cache.subs:
+                    log.debug("Attempting submit, %d subs" % len(cache.subs))
+                    cache.submit_to(session)
+                    log.debug("Submit done, %d left" % len(cache.subs))
+            except SubTimeoutError:
+                log.warning("Submission timed out")
+                pass
+            except SessionError:
+                log.warning("Session dropped, retrying")
+                session = LastFmSession(log, user, password)
+            except InvalidSubError:
+                log.warning("Invalid submission, discarding")
+                pass
+    except KeyboardInterrupt:
+        cache.dump(lastfm.SUBMITD_CACHE)
+        log.info("Exiting, saved %d songs to cache" % len(cache.subs))
