@@ -1,5 +1,9 @@
-0.2:
-====
+0.2 (2005-12-08):
+=================
+
+* Make lastmp call lastfmsubmitd with a correct path, rather than
+  looking for it in the current directory. This will make submissions
+  work again.
 
 * Output V/A CDs correctly in lastcd.
 
