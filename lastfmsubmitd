@@ -261,11 +261,11 @@ if __name__ == '__main__':
         sys.exit(1)
 
     try:
-        user = os.env['LASTFM_USER']
+        user = os.environ['LASTFM_USER']
     except KeyError:
         user = None
     try:
-        password = os.env['LASTFM_USER']
+        password = os.environ['LASTFM_USER']
     except KeyError:
         password = None
 

@@ -1,6 +1,6 @@
 import logging
 
-LASTFM_LOG = './lastfm.log' # '/var/log/lastfm.log'
+LASTFM_LOG = '/var/log/lastfm.log'
 
 def create_log(name, debug=True):
 
