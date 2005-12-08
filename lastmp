@@ -26,6 +26,9 @@ DEF_SLEEP = 5
 # unfortunately MPD only reports times with a resolution of 1 second.
 FUZZ = 1
 
+# Path to our submission helper program, which we will fork/exec.
+LASTFMSUBMIT = '/usr/local/bin/lastfmsubmit'
+
 class Song:
     def __init__(self, mpdclientsongobj):
         # cache?
@@ -186,7 +189,7 @@ class MpdObserver:
                     ]
                 if song.album:
                     args += ["--album", song.album]
-                os.execvp("./lastfmsubmit", args)
+                os.execvp(LASTFMSUBMIT, args)
             else:
                 return pid
         else:
