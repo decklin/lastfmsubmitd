@@ -63,7 +63,6 @@ if __name__ == "__main__":
         print >>sys.stderr, "warning: multiple matches, using first"
 
     mb.Select1(mq.MBS_SelectAlbum, 1)
-    artist = mb.GetResultData1(mq.MBE_AlbumGetArtistName, 1)
     album = mb.GetResultData(mq.MBE_AlbumGetAlbumName)
     n = mb.GetResultInt(mq.MBE_AlbumGetNumTracks)
 
@@ -73,6 +72,7 @@ if __name__ == "__main__":
         tracks = range(1, n+1)
 
     for i in tracks:
+        artist = mb.GetResultData1(mq.MBE_AlbumGetArtistName, i)
         title = mb.GetResultData1(mq.MBE_AlbumGetTrackName, i)
         length = mb.GetResultInt1(mq.MBE_AlbumGetTrackDuration, i)
         id = mb.GetIDFromURL(mb.GetResultData1(mq.MBE_AlbumGetTrackId, i))
