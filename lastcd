@@ -6,7 +6,7 @@ import getopt
 import musicbrainz
 import musicbrainz.queries as mq
 
-import asyaml
+import lastfm.asyaml
 
 DEF_CD_DEV = '/dev/cdrom'
 
@@ -75,7 +75,7 @@ if __name__ == "__main__":
     for i in tracks:
         title = mb.GetResultData1(mq.MBE_AlbumGetTrackName, i)
         length = mb.GetResultInt1(mq.MBE_AlbumGetTrackDuration, i)
-        id = mb.GetResultData1(mq.MBE_AlbumGetTrackId, i).split("/")[-1]
-        song = asyaml.Song(artist=artist, title=title, length=length/1000,
-            album=album, mbid=id)
+        id = mb.GetIDFromURL(mb.GetResultData1(mq.MBE_AlbumGetTrackId, i))
+        song = lastfm.asyaml.Song(artist=artist, title=title,
+            length=length/1000, album=album, mbid=id)
         print song
