@@ -11,7 +11,7 @@ def print_selected_album(mb):
     tracks = mb.GetResultInt(mq.MBE_AlbumGetNumTracks)
 
     artistid = mb.GetIDFromURL(mb.GetResultData(mq.MBE_AlbumGetAlbumArtistId))
-    if artistid == MBI_VARIOUS_ARTIST_ID:
+    if artistid == mq.MBI_VARIOUS_ARTIST_ID:
         artist = '[Various Artists]'
     else:
         try:
