@@ -11,11 +11,9 @@ import asyaml
 DEF_CD_DEV = '/dev/cdrom'
 
 # TODO:
-# * verify against the official MB doc that this data comes to us in UTF-8.
-#   or rather, unicode? empirically this seems to be true.
-# * figure out how to specify which device to read the TOC from. Right now if
-#   we give --cdrom /dev/cdrom1 it don't do nothing.
-# * make --albumid work.
+#
+# * --cdrom should take an argument, e.g. /dev/cdrom1. musicbrainz.queries
+#   doesn't seem to provide for this.
 
 def lookup_toc(mb):
     mb.SetDepth(2)

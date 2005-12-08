@@ -1,7 +1,5 @@
 #!/usr/bin/python
 
-# lastfmsubmitd 0.1 -- Decklin Foster <decklin@red-bean.com>
-
 import sys
 import os
 import stat

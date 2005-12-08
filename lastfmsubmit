@@ -1,7 +1,5 @@
 #!/usr/bin/python
 
-# lastfmsubmit 0.1 -- Decklin Foster <decklin@red-bean.com>
-
 import sys
 import time
 import getopt

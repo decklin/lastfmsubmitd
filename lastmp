@@ -1,8 +1,9 @@
 #!/usr/bin/python
 
-# To do:
-# - mpdclient doesn't expose MB ids if we've got 'em. should fix that. as soon
-#   as mpd 12 is out.
+# TODO:
+
+# * mpdclient doesn't expose MBIDs if we've got 'em. Should fix that, as soon
+#   as MPD 0.12 is out.
 
 import sys
 import os
