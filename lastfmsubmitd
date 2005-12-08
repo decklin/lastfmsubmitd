@@ -175,6 +175,7 @@ class LastFmSession:
                 self.interval = new_interval
 
     def digest(self):
+        print self.password, self.challenge
         pass_hash = md5.new(self.password)
         sess_hash = md5.new(pass_hash.hexdigest() + self.challenge)
         return sess_hash.hexdigest()
@@ -268,7 +269,7 @@ if __name__ == '__main__':
     except KeyError:
         user = None
     try:
-        password = os.environ['LASTFM_USER']
+        password = os.environ['LASTFM_PASSWORD']
     except KeyError:
         password = None
 
