@@ -14,18 +14,14 @@ DEF_CD_DEV = '/dev/cdrom'
 # * --cdrom should take an argument, e.g. /dev/cdrom1. musicbrainz.queries
 #   doesn't seem to provide for this.
 
-def lookup_toc(mb):
-    mb.SetDepth(2)
+def get_toc_discid(mb):
     mb.Query(mq.MBQ_GetCDTOC)
-    id = mb.GetResultData(mq.MBE_TOCGetCDIndexId)
-    mb.QueryWithArgs(mq.MBQ_GetCDInfoFromCDIndexId, [id])
+    return mb.GetResultData(mq.MBE_TOCGetCDIndexId)
 
 def lookup_dumb(mb):
-    mb.SetDepth(2)
     mb.Query(mq.MBQ_GetCDInfo)
 
 def lookup_discid(mb, id):
-    mb.SetDepth(2)
     mb.QueryWithArgs(mq.MBQ_GetCDInfoFromCDIndexId, [id])
 
 def lookup_albumid(mb, id):
@@ -36,15 +32,16 @@ if __name__ == "__main__":
     shortopts = 'cud:a:'
     longopts = ['cdrom', 'dumb', 'discid=', 'albumid=']
 
-    # remember, we need to SetDepth once we know what kind of query
     mb = musicbrainz.mb()
+    mb.SetDepth(2)
 
     opts, args = getopt.getopt(sys.argv[1:], shortopts, longopts)
 
     if opts:
         for opt, arg in opts:
             if opt in ('--cdrom', '-c'):
-                lookup_toc(mb)
+                id = get_toc_discid(mb)
+                lookup_discid(mb, id)
             if opt in ('--dumb', '-u'):
                 lookup_dumb(mb)
             if opt in ('--discid', '-d'):
@@ -52,7 +49,8 @@ if __name__ == "__main__":
             if opt in ('--albumid', '-a'):
                 lookup_albumid(mb, arg)
     else:
-        lookup_toc(mb)
+        id = get_toc_discid(mb)
+        lookup_discid(mb, id)
 
     matches = mb.GetResultInt(mq.MBE_GetNumAlbums)
     if matches == 0:
