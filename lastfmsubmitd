@@ -15,8 +15,8 @@ import lastfm
 import lastfm.logger
 import lastfm.asyaml
 
-CLIENT_ID = "tst"
-CLIENT_VERSION = "1.0"
+CLIENT_ID = "lsd"
+CLIENT_VERSION = "0.1"
 PROTOCOL_VERSION = "1.1"
 
 HANDSHAKE_URL_BASE = "http://post.audioscrobbler.com/"
