@@ -193,7 +193,7 @@ class LastFmSession:
                 args['a[%d]' % i] =  subs[i].artist.encode('utf-8')
                 args['t[%d]' % i] =  subs[i].title.encode('utf-8')
                 args['l[%d]' % i] =  str(subs[i].length)
-                args['i[%d]' % i] =  asyaml.format_time(subs[i].time)
+                args['i[%d]' % i] =  lastfm.asyaml.format_time(subs[i].time)
                 if hasattr(subs[i], 'album'):
                     args['b[%d]' % i] = subs[i].album.encode('utf-8')
                 else:
