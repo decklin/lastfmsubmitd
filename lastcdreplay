@@ -27,7 +27,7 @@ if __name__ == "__main__":
 
     tracks = []
     for f in [file(n) for n in args] or [sys.stdin]:
-        input = asyaml.Parser(f.read())
+        input = lastfm.asyaml.Parser(f.read())
         tracks += [t for t in input.parse()]
 
     total_len = 0
@@ -42,5 +42,6 @@ if __name__ == "__main__":
     for track in tracks:
         if track.length >= lastfm.MIN_LEN and track.length <= lastfm.MAX_LEN:
             date = pos + track.length / 2
-            print >>out, asyaml.Submission(track=track, time=time.gmtime(date))
+            print >>out, lastfm.asyaml.Submission(track=track,
+                time=time.gmtime(date))
             pos += track.length
