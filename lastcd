@@ -56,7 +56,7 @@ if __name__ == "__main__":
     if matches == 0:
         print >>sys.stderr, "could not find an entry for this CD"
         sys.exit(1)
-    if mb.GetResultInt(mq.MBE_GetNumAlbums) > 1:
+    if matches > 1:
         print >>sys.stderr, "warning: multiple matches, using first"
 
     mb.Select1(mq.MBS_SelectAlbum, 1)
