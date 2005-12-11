@@ -9,17 +9,14 @@ import lastfm.asyaml
 
 DEF_CD_DEV = '/dev/cdrom'
 
-# TODO:
-#
-# * --cdrom should take an argument, e.g. /dev/cdrom1. musicbrainz.queries
-#   doesn't seem to provide for this.
-
-def get_toc_discid(mb):
-    mb.Query(mq.MBQ_GetCDTOC)
-    return mb.GetResultData(mq.MBE_TOCGetCDIndexId)
-
-def lookup_dumb(mb):
-    mb.Query(mq.MBQ_GetCDInfo)
+def get_toc_discid(mb, dev):
+    mb.SetDevice(dev)
+    try:
+        mb.Query(mq.MBQ_GetCDTOC)
+        return mb.GetResultData(mq.MBE_TOCGetCDIndexId)
+    except musicbrainz.MusicBrainzError:
+        print >>sys.stderr, "error: could not read TOC from disc"
+        sys.exit(1)
 
 def lookup_discid(mb, id):
     mb.QueryWithArgs(mq.MBQ_GetCDInfoFromCDIndexId, [id])
@@ -29,8 +26,8 @@ def lookup_albumid(mb, id):
     mb.QueryWithArgs(mq.MBQ_GetAlbumById, [id])
 
 if __name__ == "__main__":
-    shortopts = 'cud:a:'
-    longopts = ['cdrom', 'dumb', 'discid=', 'albumid=']
+    shortopts = 'd:i:a:'
+    longopts = ['device=', 'discid=', 'albumid=']
 
     mb = musicbrainz.mb()
     mb.SetDepth(2)
@@ -39,17 +36,15 @@ if __name__ == "__main__":
 
     if opts:
         for opt, arg in opts:
-            if opt in ('--cdrom', '-c'):
-                id = get_toc_discid(mb)
+            if opt in ('--device', '-d'):
+                id = get_toc_discid(mb, arg)
                 lookup_discid(mb, id)
-            if opt in ('--dumb', '-u'):
-                lookup_dumb(mb)
-            if opt in ('--discid', '-d'):
+            if opt in ('--discid', '-i'):
                 lookup_discid(mb, arg)
             if opt in ('--albumid', '-a'):
                 lookup_albumid(mb, arg)
     else:
-        id = get_toc_discid(mb)
+        id = get_toc_discid(mb, DEF_CD_DEV)
         lookup_discid(mb, id)
 
     matches = mb.GetResultInt(mq.MBE_GetNumAlbums)
