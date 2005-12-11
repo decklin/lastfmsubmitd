@@ -1,3 +1,10 @@
+0.3 (2005-12-10):
+=================
+
+* Fixed an import error in lastcdreplay that prevented it from running.
+
+* You can now specify --device in lastcd.
+
 0.2 (2005-12-08):
 =================
 
