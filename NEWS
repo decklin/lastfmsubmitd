@@ -1,4 +1,4 @@
-0.3 (2005-12-10):
+0.3 (2005-12-11):
 =================
 
 * Fixed an import error in lastcdreplay that prevented it from running.
