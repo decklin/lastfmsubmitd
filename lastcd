@@ -34,6 +34,7 @@ if __name__ == "__main__":
 
     opts, args = getopt.getopt(sys.argv[1:], shortopts, longopts)
 
+    id = None
     if opts:
         for opt, arg in opts:
             if opt in ('--device', '-d'):
