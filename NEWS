@@ -1,3 +1,9 @@
+0.4 (2005-12-xx):
+=================
+
+* Added a --new-hook option to lastmp. This will be run whenever a new
+  song is detected (%s for the song info).
+
 0.3 (2005-12-11):
 =================
 
