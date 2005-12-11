@@ -40,10 +40,12 @@ if __name__ == "__main__":
                 id = get_toc_discid(mb, arg)
                 lookup_discid(mb, id)
             if opt in ('--discid', '-i'):
-                lookup_discid(mb, arg)
+                id = arg
+                lookup_discid(mb, id)
             if opt in ('--albumid', '-a'):
-                lookup_albumid(mb, arg)
-    else:
+                id = arg
+                lookup_albumid(mb, id)
+    if not id:
         id = get_toc_discid(mb, DEF_CD_DEV)
         lookup_discid(mb, id)
 
