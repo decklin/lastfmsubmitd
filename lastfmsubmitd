@@ -120,7 +120,6 @@ class LastFmSession:
         self.uncommitted_subs = []
         self.interval = DEF_INTERVAL
         self.handshake_url = handshake_url(user)
-        self.challenge = None
         self.submit_url = None
 
         connected = False
@@ -134,25 +133,17 @@ class LastFmSession:
 
     def handshake(self):
         self.log.debug("Handshake URL: %s" % self.handshake_url)
-        hs = urllib.urlopen(self.handshake_url)
+        response = urllib.urlopen(self.handshake_url)
         failed = False
-        status_line = hs.readline().strip()
+        status_line = response.readline().strip()
 
         if status_line == "UPTODATE":
-            self.challenge = hs.readline().strip()
-            self.session_key = self.digest()
-            self.submit_url = hs.readline().strip()
-            self.log.info("Handshake sucessful")
-            self.log.debug("Submit URL: %s (%s)" %
-                (self.submit_url, self.challenge))
+            self.read_submit_url(response)
         elif status_line.startswith("UPDATE"):
             msg, url = status_line.split(" ")
-            self.log.warning("Plugin is out of date, please go to %s" % url)
-            self.challenge = hs.readline().strip()
-            self.session_key = self.digest()
-            self.submit_url = hs.readline().strip()
-            self.log.info("Handshake sucessful, %s -> %s" %
-                (self.challenge, self.submit_url))
+            self.log.warning("Plugin is out of date: %s" % msg)
+            self.log.info("Please go to %s to upgrade" % url)
+            self.read_submit_url(response)
         elif status_line == "BADUSER":
             self.log.error("Handshake failed, bad username")
             raise HandshakeError
@@ -163,18 +154,27 @@ class LastFmSession:
             self.log.error("Handshake failed, %s" % status_line)
             raise HandshakeError
 
-        interval_line = hs.readline().strip()
-        if interval_line:
-            if interval_line.startswith("INTERVAL"):
-                msg, secs = interval_line.split(" ")
-                new_interval = int(secs)
-                if new_interval != self.interval:
-                    log.debug("Session interval changed to %d" % new_interval)
-                    self.interval = new_interval
+        self.read_interval(response)
 
-    def digest(self):
+    def read_submit_url(self, response):
+        challenge = response.readline().strip()
+        self.session_key = self.digest(challenge)
+        self.submit_url = response.readline().strip()
+        self.log.info("Handshake sucessful")
+        self.log.debug("Submit URL: %s" % self.submit_url)
+
+    def read_interval(self, response):
+        interval_line = response.readline().strip()
+        if interval_line and interval_line.startswith("INTERVAL"):
+            msg, secs = interval_line.split(" ")
+            new_interval = int(secs)
+            if new_interval != self.interval:
+                log.debug("Session interval changed to %d" % new_interval)
+                self.interval = new_interval
+
+    def digest(self, challenge):
         pass_hash = md5.new(self.password)
-        sess_hash = md5.new(pass_hash.hexdigest() + self.challenge)
+        sess_hash = md5.new(pass_hash.hexdigest() + challenge)
         return sess_hash.hexdigest()
 
     def submit(self, subs):
@@ -206,14 +206,14 @@ class LastFmSession:
             post_str = '&'.join(post_data)
             self.log.debug("POST data: %s" % post_str)
             try:
-                s = urllib.urlopen(self.submit_url, post_str)
+                response = urllib.urlopen(self.submit_url, post_str)
             except IOError:
                 self.log.warning("Submission timed out")
                 time.sleep(self.interval + self.sub_backoff)
                 return
 
             failed = False
-            status_line = s.readline().strip()
+            status_line = response.readline().strip()
 
             if status_line == "OK":
                 self.log.info("Submission(s) accepted")
@@ -234,15 +234,7 @@ class LastFmSession:
                 time.sleep(self.interval + self.sub_backoff)
                 raise InvalidSubError
 
-            interval_line = s.readline().strip()
-            if interval_line:
-                if interval_line.startswith("INTERVAL"):
-                    msg, secs = interval_line.split(" ")
-                    new_interval = int(secs)
-                    if new_interval != self.interval:
-                        log.debug("Session interval changed to %d" % new_interval)
-                        self.interval = new_interval
-
+            self.read_interval(response)
             time.sleep(self.interval)
 
     def flush_subs(self):
