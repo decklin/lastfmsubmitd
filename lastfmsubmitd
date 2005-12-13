@@ -231,9 +231,8 @@ class LastFmSession:
             else:
                 self.log.error("Submission failed, %s" % status_line)
                 self.uncommitted_subs += subs
-                # dunno what it is, so let's assume this session is kaput
                 time.sleep(self.interval + self.sub_backoff)
-                raise SessionError
+                raise InvalidSubError
 
             interval_line = s.readline().strip()
             if interval_line:
