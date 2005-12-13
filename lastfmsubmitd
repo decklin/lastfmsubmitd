@@ -170,7 +170,7 @@ class LastFmSession:
                 new_interval = int(secs)
                 if new_interval != self.interval:
                     log.debug("Session interval changed to %d" % new_interval)
-                self.interval = new_interval
+                    self.interval = new_interval
 
     def digest(self):
         pass_hash = md5.new(self.password)
@@ -238,8 +238,10 @@ class LastFmSession:
             if interval_line:
                 if interval_line.startswith("INTERVAL"):
                     msg, secs = interval_line.split(" ")
-                    self.interval = int(secs)
-                    log.debug("Session interval changed to %d" % self.interval)
+                    new_interval = int(secs)
+                    if new_interval != self.interval:
+                        log.debug("Session interval changed to %d" % new_interval)
+                        self.interval = new_interval
 
             time.sleep(self.interval)
 
