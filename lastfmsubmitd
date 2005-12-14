@@ -159,50 +159,48 @@ class LastFmSession:
 
     def submit(self, cache):
         try:
-            self.do_submit(cache.subs)
-            cache.subs = []
+            self.do_submit(cache)
             self.backoff_reset()
         except SessionError, e:
             self.log.error("Session failed: %s" % e)
-            self.log.debug("Returning %d subs to cache" % len(self.subs))
-            cache.subs = self.uncommitted_subs
-            self.uncommitted_subs = []
+            self.log.debug("%d subs remain in cache" % len(cache.subs))
             self.backoff_sleep()
             raise
         except InvalidSubError, e:
             self.log.error("Submission failed: %s" % e)
-            self.log.debug("Returning %d subs to cache" % len(self.subs))
-            cache.subs = self.uncommitted_subs
-            self.uncommitted_subs = []
+            self.log.debug("%d subs remain in cache" % len(cache.subs))
             self.backoff_sleep()
         except SubTimeoutError:
             self.log.error("Submission timed out")
+            self.log.debug("%d subs remain in cache" % len(cache.subs))
             self.backoff_sleep()
 
-    def do_submit(self, subs):
-        while subs:
-            if len(subs) > SUB_CHUNK_SIZE:
-                subs, rest = subs[:SUB_CHUNK_SIZE], subs[SUB_CHUNK_SIZE:]
+    def do_submit(self, cache):
+        while cache.subs:
+            if len(cache.subs) > SUB_CHUNK_SIZE:
+                chunk = cache.subs[:SUB_CHUNK_SIZE]
+                cache.subs = cache.subs[SUB_CHUNK_SIZE:]
             else:
-                rest = None
+                chunk = cache.subs
+                cache.subs = []
 
             args = { 'u': self.user, 's': self.session_key }
             post_data = [urllib.urlencode(args)]
-            for i in range(0, len(subs)):
+            for i in range(0, len(chunk)):
                 args = {}
-                args['a[%d]' % i] =  subs[i].artist.encode('utf-8')
-                args['t[%d]' % i] =  subs[i].title.encode('utf-8')
-                args['l[%d]' % i] =  str(subs[i].length)
-                args['i[%d]' % i] =  lastfm.asyaml.format_time(subs[i].time)
-                if hasattr(subs[i], 'album'):
-                    args['b[%d]' % i] = subs[i].album.encode('utf-8')
+                args['a[%d]' % i] =  chunk[i].artist.encode('utf-8')
+                args['t[%d]' % i] =  chunk[i].title.encode('utf-8')
+                args['l[%d]' % i] =  str(chunk[i].length)
+                args['i[%d]' % i] =  lastfm.asyaml.format_time(chunk[i].time)
+                if hasattr(chunk[i], 'album'):
+                    args['b[%d]' % i] = chunk[i].album.encode('utf-8')
                 else:
                     args['b[%d]' % i] = ''
-                if hasattr(subs[i], 'mbid'):
-                    args['m[%d]' % i] = (subs[i].mbid)
+                if hasattr(chunk[i], 'mbid'):
+                    args['m[%d]' % i] = (chunk[i].mbid)
                 else:
                     args['m[%d]' % i] = ''
-                self.log.info("Submitting: %s" % subs[i].shortname())
+                self.log.info("Submitting: %s" % chunk[i].shortname())
                 post_data.append(urllib.urlencode(args))
 
             post_str = '&'.join(post_data)
@@ -217,15 +215,15 @@ class LastFmSession:
 
             if status_line == "OK":
                 self.log.info("Submission(s) accepted")
-                subs = rest
             elif status_line == "BADAUTH":
+                cache.subs = chunk + cache.subs
                 raise SessionError("incorrect password")
             elif status_line.startswith("FAILED"):
                 failed, reason = status_line.split(" ")
-                self.uncommitted_subs += subs
+                cache.subs = chunk + cache.subs
                 raise InvalidSubError("failed: %s")
             else:
-                self.uncommitted_subs += subs
+                cache.subs = chunk + cache.subs
                 raise InvalidSubError("could not parse response: %s" %
                     status_line)
 
