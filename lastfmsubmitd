@@ -235,7 +235,7 @@ class LastFmSession:
     def backoff_reset(self):
         self.backoff = BACKOFF_START
 
-    def backoff_sleep(self, msg):
+    def backoff_sleep(self):
         self.log.info("Retrying in %d" % self.backoff)
         time.sleep(self.backoff)
         self.backoff += BACKOFF_INCREMENT
