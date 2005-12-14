@@ -70,7 +70,10 @@ if __name__ == '__main__':
 
     try:
         log.debug("Opening %s for write" % outfile)
-        out = file(outfile, 'w')
+        if outfile == "-":
+            out = sys.stdout
+        else:
+            out = file(outfile, 'w')
         print >>out, sub
         log.info("Queued %s for submission", sub.shortname())
     except IOError:

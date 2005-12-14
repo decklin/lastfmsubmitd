@@ -21,7 +21,10 @@ if __name__ == "__main__":
             outfile = arg
 
     try:
-        out = file(outfile, 'w')
+        if outfile == "-":
+            out = sys.stdout
+        else:
+            out = file(outfile, 'w')
     except IOError:
         print >>sys.stderr, "error: could not write to %s" % outfile
 
