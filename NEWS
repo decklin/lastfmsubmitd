@@ -1,6 +1,11 @@
 0.4 (2005-12-xx):
 =================
 
+* You can now specify standard output as "-" in lastfmsubmit and
+  lastcdreplay.
+
+* Error handling should be improved.
+
 0.3 (2005-12-11):
 =================
 
