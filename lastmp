@@ -57,7 +57,7 @@ class Song:
             divmod(int(self.time), 60))
 
 class MpdObserver:
-    def __init__(self, log, sleep, mpd_args, hooks=None):
+    def __init__(self, log, sleep, mpd_args):
         self.log = log
         self.sleep = sleep
         self.children = []
@@ -75,12 +75,6 @@ class MpdObserver:
         self.skipped = False
         self.submitted = False
         self.played_enough = False
-
-        # only one for now
-        try:
-            self.new_hook = hooks['new']
-        except (TypeError, KeyError):
-            self.new_hook = None
 
     def wake(self):
         status = self.mpd.do.status()
@@ -100,9 +94,6 @@ class MpdObserver:
                 if currentsong != self.prevsong or \
                         self.prevstatus.state == 'stop':
                     self.log.info("New song: %s", currentsong)
-                    if self.new_hook:
-                        pid = self.run_hook(self.new_hook, currentsong)
-                        self.children.append(pid)
                     if (self.prevsong and time > self.sleep + FUZZ) or \
                             (self.prevsong is None and
                             time/len > lastfm.SUB_PERCENT):
@@ -118,9 +109,6 @@ class MpdObserver:
                             (self.prevtime/len >= lastfm.SUB_PERCENT or \
                             self.prevtime >= lastfm.SUB_SECONDS):
                         self.log.info("Restarted song")
-                        if self.new_hook:
-                            pid = self.run_hook(self.new_hook, currentsong)
-                            self.children.append(pid)
                         self.skipped = False
                         self.submitted = False
                         self.played_enough = False
@@ -189,17 +177,6 @@ class MpdObserver:
                     self.prevtime = None
             time.sleep(self.sleep)
 
-    def run_hook(self, hook, song):
-        try:
-            cmd = hook % song
-        except TypeError:
-            cmd = hook
-        pid = os.fork()
-        if pid == 0:
-            os.execlp('sh', '/bin/sh', '-c', cmd)
-        else:
-            return pid
-
     def submit(self, song):
         if song.artist and song.title and song.time:
             pid = os.fork()
@@ -224,8 +201,8 @@ if __name__ == '__main__':
     log = lastfm.logger.create_log("lastmp")
     log.info("LastMP starting")
 
-    shortopts = 's:h:p:o:n:'
-    longopts = ['sleep=', 'host=', 'password=', 'port=', 'new-hook=']
+    shortopts = 's:h:p:o:'
+    longopts = ['sleep=', 'host=', 'password=', 'port=']
 
     opts, args = getopt.getopt(sys.argv[1:], shortopts, longopts)
     if args:
@@ -234,7 +211,6 @@ if __name__ == '__main__':
 
     sleep = DEF_SLEEP
     mpd_args = {}
-    hooks = {}
     for opt, arg in opts:
         if opt in ('--sleep', '-s'):
             sleep = int(arg)
@@ -248,11 +224,9 @@ if __name__ == '__main__':
             mpd_args['password'] = arg
         if opt in ('--port', '-o'):
             mpd_args['port'] = arg
-        if opt in ('--new-hook', '-n'):
-            hooks['new'] = arg
 
     try:
-        mo = MpdObserver(log, sleep, mpd_args, hooks)
+        mo = MpdObserver(log, sleep, mpd_args)
         # Even if we couldn't connect, start the observe loop anyway.
         # Perhaps MPD failed at boot and the admin will fix it later.
         mo.observe()
