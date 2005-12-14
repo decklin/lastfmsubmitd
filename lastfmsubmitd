@@ -208,7 +208,11 @@ class LastFmSession:
             try:
                 response = urllib.urlopen(self.submit_url, post_str)
             except IOError:
+                cache.subs = chunk + cache.subs
                 raise SubTimeoutError
+            except KeyboardInterrupt:
+                cache.subs = chunk + cache.subs
+                raise
 
             failed = False
             status_line = response.readline().strip()
@@ -272,9 +276,12 @@ if __name__ == '__main__':
         print >>sys.stderr, "error: user and password are required"
         sys.exit(1)
 
-    cache = SubCache(log, lastfm.SUBMITD_CACHE)
     fifo = SubFifo(log, lastfm.SUBMITD_FIFO)
     session = LastFmSession(log, user, password)
+    cache = SubCache(log, lastfm.SUBMITD_CACHE)
+
+    if cache.subs:
+        log.info("Read %d subs from cache", len(cache.subs))
 
     try:
         while True:
