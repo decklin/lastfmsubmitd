@@ -122,14 +122,20 @@ class LastFmSession:
         if status_line == "UPTODATE":
             self.read_submit_url(response)
         elif status_line.startswith("UPDATE"):
-            msg, url = status_line.split(" ")
-            self.log.warning("Plugin is out of date: %s" % msg)
-            self.log.info("Please go to %s to upgrade" % url)
+            try:
+                msg, url = status_line.split(" ")
+                self.log.warning("Plugin is out of date: %s" % msg)
+                self.log.info("Please go to %s to upgrade" % url)
+            except ValueError:
+                self.log.warning("Plugin is out of date")
             self.read_submit_url(response)
         elif status_line == "BADUSER":
             raise HandshakeError("bad username")
         elif status_line.startswith("FAILED"):
-            failed, reason = status_line.split(" ")
+            try:
+                failed, reason = status_line.split(" ")
+            except ValueError:
+                reason = "unknown"
             raise HandshakeError("failed: %s" % reason)
         else:
             raise HandshakeError("could not parse response: %s" % status_line)
@@ -223,7 +229,10 @@ class LastFmSession:
                 cache.subs = chunk + cache.subs
                 raise SessionError("incorrect password")
             elif status_line.startswith("FAILED"):
-                failed, reason = status_line.split(" ")
+                try:
+                    failed, reason = status_line.split(" ")
+                except ValueError:
+                    reason = "unknown"
                 cache.subs = chunk + cache.subs
                 raise InvalidSubError("failed: %s")
             else:
