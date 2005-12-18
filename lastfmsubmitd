@@ -234,7 +234,7 @@ class LastFmSession:
                 except ValueError:
                     reason = "unknown"
                 cache.subs = chunk + cache.subs
-                raise InvalidSubError("failed: %s")
+                raise InvalidSubError("failed: %s" % reason)
             else:
                 cache.subs = chunk + cache.subs
                 raise InvalidSubError("could not parse response: %s" %
