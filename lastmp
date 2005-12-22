@@ -128,10 +128,10 @@ class MpdObserver:
                         self.played_enough = True
                     if not self.submitted and not self.skipped and \
                             self.played_enough:
-                        self.log.info("Sending song to submit daemon")
                         pid = self.submit(currentsong)
-                        self.children.append(pid)
-                        self.submitted = True
+                        if pid:
+                            self.children.append(pid)
+                            self.submitted = True
         else:
             time = None
 
@@ -179,23 +179,27 @@ class MpdObserver:
 
     def submit(self, song):
         if song.artist and song.title and song.time:
-            pid = os.fork()
-            if pid == 0:
-                args = [
-                    "lastfmsubmit",
-                    "--artist", song.artist,
-                    "--title", song.title,
-                    "--length", song.time
-                    ]
-                if song.album:
-                    args += ["--album", song.album]
-                #if song.mbid:
-                #    args += ["--mbid", song.album]
-                os.execvp(LASTFMSUBMIT, args)
-            else:
-                return pid
+            self.log.info("Sending song to submit daemon")
+            try:
+                pid = os.fork()
+                if pid == 0:
+                    args = [
+                        "lastfmsubmit",
+                        "--artist", song.artist,
+                        "--title", song.title,
+                        "--length", song.time
+                        ]
+                    if song.album:
+                        args += ["--album", song.album]
+                    #if song.mbid:
+                    #    args += ["--mbid", song.album]
+                    os.execvp(LASTFMSUBMIT, args)
+                else:
+                    return pid
+            except OSError:
+                self.log.warning("Could not fork")
         else:
-            self.log.warning("missing artist/title/length, not submitting")
+            self.log.warning("Missing artist/title/length, not submitting")
 
 if __name__ == '__main__':
     log = lastfm.logger.create_log("lastmp")
