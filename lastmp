@@ -131,7 +131,7 @@ class MpdObserver:
                         pid = self.submit(currentsong)
                         if pid:
                             self.children.append(pid)
-                            self.submitted = True
+                        self.submitted = True
         else:
             time = None
 
