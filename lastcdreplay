@@ -14,7 +14,11 @@ if __name__ == "__main__":
 
     outfile = lastfm.SUBMITD_FIFO
 
-    opts, args = getopt.getopt(sys.argv[1:], shortopts, longopts)
+    try:
+        opts, args = getopt.getopt(sys.argv[1:], shortopts, longopts)
+    except getopt.GetoptError, e:
+        print >>sys.stderr, "error: %s" % e
+        sys.exit(1)
 
     for opt, arg in opts:
         if opt in ('--output', '-o'):

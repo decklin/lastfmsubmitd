@@ -32,7 +32,11 @@ if __name__ == "__main__":
     mb = musicbrainz.mb()
     mb.SetDepth(2)
 
-    opts, args = getopt.getopt(sys.argv[1:], shortopts, longopts)
+    try:
+        opts, args = getopt.getopt(sys.argv[1:], shortopts, longopts)
+    except getopt.GetoptError, e:
+        print >>sys.stderr, "error: %s" % e
+        sys.exit(1)
 
     id = None
     if opts:

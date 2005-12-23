@@ -36,7 +36,7 @@ if __name__ == '__main__':
     try:
         opts, args = getopt.getopt(sys.argv[1:], shortopts, longopts)
     except getopt.GetoptError, e:
-        print >>sys.stderr, "unknown option: %s" % e
+        print >>sys.stderr, "error: %s" % e
         sys.exit(1)
 
     artistspec = None

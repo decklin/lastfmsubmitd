@@ -258,9 +258,13 @@ if __name__ == '__main__':
     shortopts = 'u:p:'
     longopts = ['user=', 'password=']
 
-    opts, args = getopt.getopt(sys.argv[1:], shortopts, longopts)
+    try:
+        opts, args = getopt.getopt(sys.argv[1:], shortopts, longopts)
+    except getopt.GetoptError, e:
+        print >>sys.stderr, "error: %s" % e
+        sys.exit(1)
     if args:
-        print >>sys.stderr, "extra args %s", args
+        print >>sys.stderr, "extra args: %s" % ' '.join(args)
         sys.exit(1)
 
     try:
