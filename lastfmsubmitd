@@ -74,7 +74,7 @@ class SubFifo:
                 self.log.error("%s exists but is not a fifo, exiting")
                 sys.exit(1)
         except OSError:
-            self.log.debug("creating %s" % fifoname)
+            self.log.debug("Creating %s" % fifoname)
             os.mkfifo(self.fifoname)
 
     def read(self):
@@ -303,7 +303,7 @@ if __name__ == '__main__':
                 try:
                     log.debug("Attempting submit, %d subs" % len(cache.subs))
                     session.submit(cache)
-                    log.debug("Submit done, %d left" % len(cache.subs))
+                    log.debug("Done, %d subs left" % len(cache.subs))
                 except SessionError:
                     log.debug("Initializing new session")
                     session = LastFmSession(log, user, password)
