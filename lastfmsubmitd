@@ -109,16 +109,19 @@ class LastFmSession:
                 self.handshake()
                 connected = True
             except HandshakeError, e:
-                self.log.error("Handshake error: %s" % e)
+                self.log.error("Handshake failed: %s" % e)
                 self.backoff_sleep()
 
         self.backoff_reset()
 
     def handshake(self):
         self.log.debug("Handshake URL: %s" % self.handshake_url)
-        response = urllib.urlopen(self.handshake_url)
-        failed = False
-        status_line = response.readline().strip()
+
+        try:
+            response = urllib.urlopen(self.handshake_url)
+            status_line = response.readline().strip()
+        except IOError, e:
+            raise HandshakeError(e)
 
         if status_line == "UPTODATE":
             self.read_submit_url(response)
