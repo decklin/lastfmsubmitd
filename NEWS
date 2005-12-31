@@ -1,7 +1,9 @@
-0.5 (2005-12-xx):
+0.5 (2005-12-31):
 =================
 
 * Improve handling of untagged songs in lastmp.
+
+* Catch handshake errors properly and back off until we can connect.
 
 0.4 (2005-12-14):
 =================
