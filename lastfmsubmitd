@@ -293,14 +293,14 @@ if __name__ == '__main__':
         print >>sys.stderr, "error: user and password are required"
         sys.exit(1)
 
-    fifo = SubFifo(log, lastfm.SUBMITD_FIFO)
-    session = LastFmSession(log, user, password)
-    cache = SubCache(log, lastfm.SUBMITD_CACHE)
-
-    if cache.subs:
-        log.info("Read %d subs from cache", len(cache.subs))
-
     try:
+        fifo = SubFifo(log, lastfm.SUBMITD_FIFO)
+        cache = SubCache(log, lastfm.SUBMITD_CACHE)
+        session = LastFmSession(log, user, password)
+
+        if cache.subs:
+            log.info("Read %d subs from cache", len(cache.subs))
+
         while True:
             if cache.subs:
                 try:
