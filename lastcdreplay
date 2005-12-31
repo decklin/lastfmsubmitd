@@ -3,6 +3,7 @@
 import sys
 import time
 import getopt
+import fcntl
 
 import lastfm
 import lastfm.asyaml
@@ -24,14 +25,6 @@ if __name__ == "__main__":
         if opt in ('--output', '-o'):
             outfile = arg
 
-    try:
-        if outfile == "-":
-            out = sys.stdout
-        else:
-            out = file(outfile, 'w')
-    except IOError:
-        print >>sys.stderr, "error: could not write to %s" % outfile
-
     tracks = []
     for f in [file(n) for n in args] or [sys.stdin]:
         input = lastfm.asyaml.Parser(f.read())
@@ -46,12 +39,27 @@ if __name__ == "__main__":
     start = time.time() - total_len
 
     pos = start
+    subs = []
     for track in tracks:
         if track.length == 0:
             print >>sys.stderr, "bad input: track has zero length"
             sys.exit(1)
         if track.length >= lastfm.MIN_LEN and track.length <= lastfm.MAX_LEN:
             date = pos + track.length / 2
-            print >>out, lastfm.asyaml.Submission(track=track,
-                time=time.gmtime(date))
+            subs.append(lastfm.asyaml.Submission(track=track,
+                time=time.gmtime(date)))
             pos += track.length
+
+    subs_enc = "\n".join([str(s) for s in subs])
+    if outfile == "-":
+        print subs_enc
+    else:
+        try:
+            out = file(outfile, 'w')
+            log.debug("Requesting lock on %s" % outfile)
+            fcntl.flock(out, fcntl.LOCK_EX)
+            print >>out, subs_enc
+            fcntl.flock(out, fcntl.LOCK_UN)
+            log.info("Queued %s subs", len(subs))
+        except IOError:
+            print >>sys.stderr, "error: could not write to %s" % outfile

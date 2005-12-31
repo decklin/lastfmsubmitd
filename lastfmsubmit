@@ -4,6 +4,7 @@ import sys
 import time
 import getopt
 import locale
+import fcntl
 
 import lastfm
 import lastfm.asyaml
@@ -72,14 +73,16 @@ if __name__ == '__main__':
         log.error("must specify at least artist, title, and length")
         sys.exit(1)
 
-    try:
-        log.debug("Opening %s for write" % outfile)
-        if outfile == "-":
-            out = sys.stdout
-        else:
+    if outfile == "-":
+        print sub
+    else:
+        try:
             out = file(outfile, 'w')
-        print >>out, sub
-        log.info("Queued %s for submission", sub.shortname())
-    except IOError:
-        log.error("Could not write to %s" % outfile)
-        sys.exit(1)
+            log.debug("Requesting lock on %s" % outfile)
+            fcntl.flock(out, fcntl.LOCK_EX)
+            print >>out, sub
+            fcntl.flock(out, fcntl.LOCK_UN)
+            log.info("Queued %s for submission", sub.shortname())
+        except IOError:
+            log.error("Could not open %s" % outfile)
+            sys.exit(1)
