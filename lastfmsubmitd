@@ -324,8 +324,8 @@ if __name__ == '__main__':
                 if count:
                     log.debug("Read %d subs from %s" %
                         (count, lastfm.SUBMITD_FIFO))
-            except ValueError:
-                log.error("Invalid data read, discarding")
+            except ValueError, e:
+                log.error("Discarding invalid data: %s" % e)
                 pass
 
     except KeyboardInterrupt:

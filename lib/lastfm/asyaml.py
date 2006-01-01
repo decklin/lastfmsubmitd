@@ -99,7 +99,9 @@ class Song(Metadata, Serializable):
     def __init__(self, **kwargs):
         for meta in ('artist', 'title', 'length'):
             if not kwargs.has_key(meta):
-                raise ValueError
+                raise ValueError("missing metadata: %s" % meta)
+        if kwargs['length'] == 0:
+            raise ValueError("length must be non-zero")
         Metadata.__init__(self, **kwargs)
 
 class Submission(Song):
@@ -119,8 +121,8 @@ class Submission(Song):
             Song.__init__(self, **kwargs)
         try:
             self.time = kwargs['time']
-        except KeyError:
-            raise ValueError
+        except KeyError, e:
+            raise ValueError(e)
 
 class Parser:
     """Reads a list of one or more serialized tracks or submissions. Only

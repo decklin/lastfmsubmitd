@@ -19,10 +19,10 @@ class Writer:
         out = file(self.outfile, 'w')
         for sub in subs:
             print >>out, sub
+            self.log.info("Queued %s for submission", sub.shortname())
         # And then we must flush and get out of the way of the next writer
         # before releasing the lock
         out.close()
-        self.log.info("Queued %s for submission", sub.shortname())
 
         fcntl.flock(lock, fcntl.LOCK_UN)
         lock.close()
