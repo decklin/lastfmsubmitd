@@ -201,50 +201,40 @@ class LastFmSession:
 
     def do_submit(self, cache):
         while cache.subs:
-            if len(cache.subs) > SUB_CHUNK_SIZE:
-                chunk = cache.subs[:SUB_CHUNK_SIZE]
-                cache.subs = cache.subs[SUB_CHUNK_SIZE:]
-            else:
-                chunk = cache.subs
-                cache.subs = []
-
             args = { 'u': self.user, 's': self.session_key }
             post_data = [urllib.urlencode(args)]
-            for i in range(0, len(chunk)):
+            for i, sub in enumerate(cache.subs[-SUB_CHUNK_SIZE:]):
                 args = {}
-                args['a[%d]' % i] =  chunk[i].artist.encode('utf-8')
-                args['t[%d]' % i] =  chunk[i].title.encode('utf-8')
-                args['l[%d]' % i] =  str(chunk[i].length)
-                args['i[%d]' % i] =  lastfm.asyaml.format_time(chunk[i].time)
-                if hasattr(chunk[i], 'album'):
-                    args['b[%d]' % i] = chunk[i].album.encode('utf-8')
+                args['a[%d]' % i] =  sub.artist.encode('utf-8')
+                args['t[%d]' % i] =  sub.title.encode('utf-8')
+                args['l[%d]' % i] =  str(sub.length)
+                args['i[%d]' % i] =  lastfm.asyaml.format_time(sub.time)
+                if hasattr(sub, 'album'):
+                    args['b[%d]' % i] = sub.album.encode('utf-8')
                 else:
                     args['b[%d]' % i] = ''
-                if hasattr(chunk[i], 'mbid'):
-                    args['m[%d]' % i] = (chunk[i].mbid)
+                if hasattr(sub, 'mbid'):
+                    args['m[%d]' % i] = (sub.mbid)
                 else:
                     args['m[%d]' % i] = ''
-                self.log.info("Submitting: %s" % chunk[i].shortname())
+                self.log.info("Submitting: %s" % sub.shortname())
                 post_data.append(urllib.urlencode(args))
 
             post_str = '&'.join(post_data)
             self.log.debug("POST data: %s" % post_str)
             try:
                 response = urllib.urlopen(self.submit_url, post_str)
-            except IOError:
-                cache.subs = chunk + cache.subs
-                raise SubTimeoutError
-            except KeyboardInterrupt:
-                cache.subs = chunk + cache.subs
-                raise
+            except IOError, e:
+                raise SubTimeoutError(e)
 
             failed = False
             status_line = response.readline().strip()
 
             if status_line == "OK":
                 self.log.info("Submission(s) accepted")
+                # now, and only now, we do our side effect.
+                cache.subs = cache.subs[-SUB_CHUNK_SIZE:]
             elif status_line == "BADAUTH":
-                cache.subs = chunk + cache.subs
                 self.connected = False
                 raise SessionError("incorrect password")
             elif status_line.startswith("FAILED"):
@@ -252,10 +242,8 @@ class LastFmSession:
                     failed, reason = status_line.split(" ")
                 except ValueError:
                     reason = "unknown"
-                cache.subs = chunk + cache.subs
                 raise InvalidSubError("failed: %s" % reason)
             else:
-                cache.subs = chunk + cache.subs
                 raise InvalidSubError("could not parse response: %s" %
                     status_line)
 
@@ -265,7 +253,6 @@ class LastFmSession:
 def handle_signal(signum, frame):
     if signum in (signal.SIGTERM, signal.SIGINT):
         log.info("Caught signal %d, exiting" % signum)
-        log.info("code %s" % frame.f_locals)
         cache.dump(lastfm.SUBMITD_CACHE)
         sys.exit(0)
 
