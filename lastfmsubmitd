@@ -82,16 +82,25 @@ class SubFifo:
         fifo = file(fifoname)
         return fifo.read()
 
-    def select(self, timeout=None):
+    def select(self, timeout):
         fifo_fd = os.open(self.fifoname, os.O_NONBLOCK)
-        readees, writees, errs = select.select([fifo_fd], [], [], timeout)
-        if fifo_fd in readees:
-            fifo = os.fdopen(fifo_fd)
-            data = fifo.read()
-        else:
-            data = None
+        fifo = os.fdopen(fifo_fd)
+        data = []
+        while True:
+            readees, writees, errs = select.select([fifo], [], [], timeout)
+            if fifo in readees:
+                stuff = fifo.read()
+                if len(stuff):
+                    self.log.debug("Read %d bytes" % len(stuff))
+                    data.append(stuff)
+                else:
+                    self.log.debug("Done reading I guess")
+                    break
+            else:
+                self.log.debug("Nothing to read")
+                break
         os.close(fifo_fd)
-        return data
+        return ''.join(data)
 
 class LastFmSession:
     def __init__(self, log, backoff, user, password):
