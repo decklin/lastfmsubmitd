@@ -54,7 +54,7 @@ class Serializable(Metadata):
         elif header == "!asyaml/Submission:":
             self.type = Submission
         else:
-            raise ValueError
+            raise ValueError("unknown type '%s'" % header)
 
     def feed_line(self, line):
         if ":" in line:
@@ -68,7 +68,7 @@ class Serializable(Metadata):
             else:
                 self.content[k] = v
         else:
-            raise ValueError
+            raise ValueError("bad line '%s'" % line)
 
     def finish(self):
         return self.type(**self.content)
@@ -122,7 +122,7 @@ class Submission(Song):
         try:
             self.time = kwargs['time']
         except KeyError, e:
-            raise ValueError(e)
+            raise ValueError("no time specified for submission")
 
 class Parser:
     """Reads a list of one or more serialized tracks or submissions. Only
