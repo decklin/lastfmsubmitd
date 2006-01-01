@@ -1,4 +1,4 @@
-__all__ = ['asyaml', 'logger']
+__all__ = ['asyaml', 'logger', 'queue']
 
 # Our IPC mechanisms.
 SUBMITD_CACHE = "/var/cache/lastfmsubmitd/subs"

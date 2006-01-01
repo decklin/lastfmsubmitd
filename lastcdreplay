@@ -3,12 +3,14 @@
 import sys
 import time
 import getopt
-import fcntl
 
 import lastfm
 import lastfm.asyaml
+import lastfm.logger
+import lastfm.queue
 
 if __name__ == "__main__":
+    log = lastfm.logger.create_log("lastcdreplay")
 
     shortopts = 'o:'
     longopts = ['output=']
@@ -50,16 +52,12 @@ if __name__ == "__main__":
                 time=time.gmtime(date)))
             pos += track.length
 
-    subs_enc = "\n".join([str(s) for s in subs])
     if outfile == "-":
-        print subs_enc
+        for sub in subs:
+            print sub
     else:
         try:
-            out = file(outfile, 'w')
-            log.debug("Requesting lock on %s" % outfile)
-            fcntl.flock(out, fcntl.LOCK_EX)
-            print >>out, subs_enc
-            fcntl.flock(out, fcntl.LOCK_UN)
-            log.info("Queued %s subs", len(subs))
+            writer = lastfm.queue.Writer(outfile, log)
+            writer.write(subs)
         except IOError:
             print >>sys.stderr, "error: could not write to %s" % outfile

@@ -4,21 +4,19 @@ import sys
 import time
 import getopt
 import locale
-import fcntl
 
 import lastfm
 import lastfm.asyaml
 import lastfm.logger
+import lastfm.queue
 
 """This program accepts information about a played song on the commandline,
 generates a submission in lastfmsubmitd format, and sends it to the running
 lastfmsubmitd."""
 
 if __name__ == '__main__':
-
-    log = lastfm.logger.create_log("lastfmsubmit")
-
     encoding = locale.getpreferredencoding()
+    log = lastfm.logger.create_log("lastfmsubmit")
 
     shortopts = 'a:s:l:d:b:m:o:'
     longopts = [
@@ -70,19 +68,16 @@ if __name__ == '__main__':
     try:
         sub = lastfm.asyaml.Submission(**subinfo)
     except ValueError:
-        log.error("must specify at least artist, title, and length")
+        self.log.error("Not queueing anything, some info was missing")
+        print >>sys.stderr, "Must specify at least artist, title, and length"
         sys.exit(1)
 
     if outfile == "-":
         print sub
     else:
         try:
-            out = file(outfile, 'w')
-            log.debug("Requesting lock on %s" % outfile)
-            fcntl.flock(out, fcntl.LOCK_EX)
-            print >>out, sub
-            fcntl.flock(out, fcntl.LOCK_UN)
-            log.info("Queued %s for submission", sub.shortname())
+            writer = lastfm.queue.Writer(outfile, log)
+            writer.write([sub])
         except IOError:
-            log.error("Could not open %s" % outfile)
+            log.error("Could not write to %s" % outfile)
             sys.exit(1)
