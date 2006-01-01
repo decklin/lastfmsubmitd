@@ -138,7 +138,7 @@ class Parser:
             for line in map(str.strip, self.data.split("\n")):
                 if line == "":
                     pass
-                if line.startswith("---"):
+                elif line.startswith("---"):
                     if doc: yield doc.finish()
                     try:
                         doc = Serializable(line[3:])
@@ -151,6 +151,7 @@ class Parser:
                         except ValueError:
                             pass
                     else:
-                        raise ValueError("no header")
+                        raise ValueError("found data with no header: '%s'" %
+                            line)
             if doc:
                 yield doc.finish()
