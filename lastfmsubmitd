@@ -301,6 +301,13 @@ if __name__ == '__main__':
 
     try:
         while True:
+            if not session.connected:
+                try:
+                    session.handshake()
+                    backoff.reset()
+                except HandshakeError, e:
+                    self.log.error("Handshake failed: %s" % e)
+                    backoff.sleep()
             if session.connected and cache.subs:
                 try:
                     log.debug("Attempting submit, %d subs" % len(cache.subs))
@@ -320,13 +327,6 @@ if __name__ == '__main__':
             except ValueError:
                 log.error("Invalid data read, discarding")
                 pass
-            if not session.connected:
-                try:
-                    session.handshake()
-                    backoff.reset()
-                except HandshakeError, e:
-                    self.log.error("Handshake failed: %s" % e)
-                    backoff.sleep()
 
     except KeyboardInterrupt:
         cache.dump(lastfm.SUBMITD_CACHE)
