@@ -122,7 +122,8 @@ class Submission(Song):
         try:
             self.time = kwargs['time']
         except KeyError, e:
-            raise ValueError("no time specified for submission")
+            raise ValueError("no time specified for submission: %s" %
+                repr(kwargs))
 
 class Parser:
     """Reads a list of one or more serialized tracks or submissions. Only
