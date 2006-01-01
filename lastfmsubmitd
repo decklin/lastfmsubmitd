@@ -306,7 +306,7 @@ if __name__ == '__main__':
                     session.handshake()
                     backoff.reset()
                 except HandshakeError, e:
-                    self.log.error("Handshake failed: %s" % e)
+                    log.error("Handshake failed: %s" % e)
                     backoff.sleep()
             if session.connected and cache.subs:
                 try:
