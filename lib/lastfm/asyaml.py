@@ -150,5 +150,7 @@ class Parser:
                             doc.feed_line(line)
                         except ValueError:
                             pass
+                    else:
+                        raise ValueError("no header")
             if doc:
                 yield doc.finish()
