@@ -1,9 +1,10 @@
-0.6 (2006-01-xx):
+0.6 (2006-01-01):
 =================
 
-* Lock the fifo.
+* Lock the fifo, with PATH_TO_FIFO.lock. Any program that needs to write
+  to the fifo must use this.
 
-* Catch SIGTERM.
+* Catch SIGTERM and clean up/save the cache properly.
 
 0.5 (2005-12-31):
 =================
