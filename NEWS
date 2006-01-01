@@ -3,6 +3,8 @@
 
 * Lock the fifo.
 
+* Catch SIGTERM.
+
 0.5 (2005-12-31):
 =================
 

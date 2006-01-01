@@ -9,6 +9,7 @@ import sys
 import os
 import time
 import getopt
+import signal
 
 import mpdclient2
 import lastfm.logger
@@ -142,6 +143,7 @@ class MpdObserver:
     def observe(self):
         """Loop forever, periodically checking MPD's state and
         submitting songs when necessary."""
+        SAVEME= 42
         while True:
             if self.mpd is None:
                 try:
@@ -201,9 +203,17 @@ class MpdObserver:
         else:
             self.log.warning("Missing artist/title/length, not submitting")
 
+def handle_signal(signum, frame):
+    if signum in (signal.SIGTERM, signal.SIGINT):
+        log.info("Caught signal %d, exiting" % signum)
+        sys.exit(0)
+
 if __name__ == '__main__':
     log = lastfm.logger.create_log("lastmp")
     log.info("LastMP starting")
+
+    for signum in (signal.SIGTERM, signal.SIGINT):
+        signal.signal(signum, handle_signal)
 
     shortopts = 's:h:p:o:'
     longopts = ['sleep=', 'host=', 'password=', 'port=']
@@ -233,10 +243,7 @@ if __name__ == '__main__':
         if opt in ('--port', '-o'):
             mpd_args['port'] = arg
 
-    try:
-        mo = MpdObserver(log, sleep, mpd_args)
-        # Even if we couldn't connect, start the observe loop anyway.
-        # Perhaps MPD failed at boot and the admin will fix it later.
-        mo.observe()
-    except KeyboardInterrupt:
-        log.info("Exiting")
+    mo = MpdObserver(log, sleep, mpd_args)
+    # Even if we couldn't connect, start the observe loop anyway.
+    # Perhaps MPD failed at boot and the admin will fix it later.
+    mo.observe()
