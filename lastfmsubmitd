@@ -293,15 +293,17 @@ if __name__ == '__main__':
         print >>sys.stderr, "error: user and password are required"
         sys.exit(1)
 
+    fifo = SubFifo(log, lastfm.SUBMITD_FIFO)
+    cache = SubCache(log, lastfm.SUBMITD_CACHE)
+    session = None
+
+    if cache.subs:
+        log.info("Read %d subs from cache", len(cache.subs))
+
     try:
-        fifo = SubFifo(log, lastfm.SUBMITD_FIFO)
-        cache = SubCache(log, lastfm.SUBMITD_CACHE)
-        session = LastFmSession(log, user, password)
-
-        if cache.subs:
-            log.info("Read %d subs from cache", len(cache.subs))
-
         while True:
+            if not session:
+                session = LastFmSession(log, user, password)
             if cache.subs:
                 try:
                     log.debug("Attempting submit, %d subs" % len(cache.subs))
@@ -309,7 +311,7 @@ if __name__ == '__main__':
                     log.debug("Done, %d subs left" % len(cache.subs))
                 except SessionError:
                     log.debug("Initializing new session")
-                    session = LastFmSession(log, user, password)
+                    session = None
             incoming = lastfm.asyaml.Parser(fifo.select(FIFO_TIMEOUT))
             try:
                 count = 0
