@@ -32,15 +32,16 @@ class SubTimeoutError(Exception): pass
 class SessionError(Exception): pass
 class InvalidSubError(Exception): pass
 
-def handshake_url(user):
-    args = {
-        'hs': 'true',
-        'p': PROTOCOL_VERSION,
-        'c': CLIENT_ID,
-        'v': CLIENT_VERSION,
-        'u': user,
-        }
-    return "?".join([HANDSHAKE_URL_BASE, urllib.urlencode(args)])
+class Backoff:
+    def __init__(self, log):
+        self.log = log
+        self.reset()
+    def reset(self):
+        self.backoff = BACKOFF_START
+    def sleep(self):
+        self.log.info("Retrying in %d" % self.backoff)
+        time.sleep(self.backoff)
+        self.backoff += BACKOFF_INCREMENT
 
 class SubCache:
     def __init__(self, log, filename):
@@ -93,26 +94,27 @@ class SubFifo:
         return data
 
 class LastFmSession:
-    def __init__(self, log, user, password):
+    def __init__(self, log, backoff, user, password):
         self.log = log
+        self.backoff = backoff
         self.user = user
         self.password = password
+        self.connected = False
         self.backoff = BACKOFF_START
         self.interval = DEF_INTERVAL
         self.uncommitted_subs = []
-        self.handshake_url = handshake_url(user)
+        self.handshake_url = self.make_handshake_url(user)
         self.submit_url = None
 
-        connected = False
-        while not connected:
-            try:
-                self.handshake()
-                connected = True
-            except HandshakeError, e:
-                self.log.error("Handshake failed: %s" % e)
-                self.backoff_sleep()
-
-        self.backoff_reset()
+    def make_handshake_url(self, user):
+        args = {
+            'hs': 'true',
+            'p': PROTOCOL_VERSION,
+            'c': CLIENT_ID,
+            'v': CLIENT_VERSION,
+            'u': user,
+            }
+        return "?".join([HANDSHAKE_URL_BASE, urllib.urlencode(args)])
 
     def handshake(self):
         self.log.debug("Handshake URL: %s" % self.handshake_url)
@@ -146,6 +148,9 @@ class LastFmSession:
 
         self.read_interval(response)
 
+        self.connected = True
+        self.backoff.reset()
+
     def read_submit_url(self, response):
         challenge = response.readline().strip()
         self.session_key = self.digest(challenge)
@@ -170,20 +175,20 @@ class LastFmSession:
     def submit(self, cache):
         try:
             self.do_submit(cache)
-            self.backoff_reset()
+            self.backoff.reset()
         except SessionError, e:
             self.log.error("Session failed: %s" % e)
             self.log.debug("%d subs remain in cache" % len(cache.subs))
-            self.backoff_sleep()
+            self.backoff.sleep()
             raise
         except InvalidSubError, e:
             self.log.error("Submission failed: %s" % e)
             self.log.debug("%d subs remain in cache" % len(cache.subs))
-            self.backoff_sleep()
+            self.backoff.sleep()
         except SubTimeoutError:
             self.log.error("Submission timed out")
             self.log.debug("%d subs remain in cache" % len(cache.subs))
-            self.backoff_sleep()
+            self.backoff.sleep()
 
     def do_submit(self, cache):
         while cache.subs:
@@ -231,6 +236,7 @@ class LastFmSession:
                 self.log.info("Submission(s) accepted")
             elif status_line == "BADAUTH":
                 cache.subs = chunk + cache.subs
+                self.connected = False
                 raise SessionError("incorrect password")
             elif status_line.startswith("FAILED"):
                 try:
@@ -247,17 +253,11 @@ class LastFmSession:
             self.read_interval(response)
             time.sleep(self.interval)
 
-    def backoff_reset(self):
-        self.backoff = BACKOFF_START
-
-    def backoff_sleep(self):
-        self.log.info("Retrying in %d" % self.backoff)
-        time.sleep(self.backoff)
-        self.backoff += BACKOFF_INCREMENT
-
 if __name__ == '__main__':
     log = lastfm.logger.create_log("lastfmsubmitd")
     log.info("Last.fm Submission Daemon starting")
+
+    backoff = Backoff(log)
 
     shortopts = 'u:p:'
     longopts = ['user=', 'password=']
@@ -294,26 +294,22 @@ if __name__ == '__main__':
         sys.exit(1)
 
     fifo = SubFifo(log, lastfm.SUBMITD_FIFO)
+    session = LastFmSession(log, backoff, user, password)
     cache = SubCache(log, lastfm.SUBMITD_CACHE)
-    session = None
-
     if cache.subs:
         log.info("Read %d subs from cache", len(cache.subs))
 
     try:
         while True:
-            if not session:
-                session = LastFmSession(log, user, password)
-            if cache.subs:
+            if session.connected and cache.subs:
                 try:
                     log.debug("Attempting submit, %d subs" % len(cache.subs))
                     session.submit(cache)
                     log.debug("Done, %d subs left" % len(cache.subs))
                 except SessionError:
-                    log.debug("Initializing new session")
-                    session = None
-            incoming = lastfm.asyaml.Parser(fifo.select(FIFO_TIMEOUT))
+                    log.debug("Lost session")
             try:
+                incoming = lastfm.asyaml.Parser(fifo.select(FIFO_TIMEOUT))
                 count = 0
                 for sub in incoming.parse():
                     cache.subs.append(sub)
@@ -324,6 +320,14 @@ if __name__ == '__main__':
             except ValueError:
                 log.error("Invalid data read, discarding")
                 pass
+            if not session.connected:
+                try:
+                    session.handshake()
+                    backoff.reset()
+                except HandshakeError, e:
+                    self.log.error("Handshake failed: %s" % e)
+                    backoff.sleep()
+
     except KeyboardInterrupt:
         cache.dump(lastfm.SUBMITD_CACHE)
         log.info("Exiting")
