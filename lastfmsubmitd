@@ -165,8 +165,8 @@ class LastFmSession:
             try:
                 failed, reason = status_line.split(" ")
             except ValueError:
-                reason = "unknown"
-            raise HandshakeError("failed: %s" % reason)
+                reason = "unknown: '%s'" % status_line
+            raise HandshakeError(reason)
         else:
             raise HandshakeError("could not parse response: %s" % status_line)
 
