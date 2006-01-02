@@ -319,13 +319,13 @@ if __name__ == '__main__':
                     session.submit(cache)
                     log.debug("Done, %d remain in cache" % len(cache.subs))
                 except SessionError, e:
-                    self.log.error("Session failed: %s" % e)
+                    log.error("Session failed: %s" % e)
                     throttle.backoff()
                 except InvalidSubError, e:
-                    self.log.error("Submission failed: %s" % e)
+                    log.error("Submission failed: %s" % e)
                     throttle.backoff()
                 except SubTimeoutError:
-                    self.log.error("Submission timed out")
+                    log.error("Submission timed out")
                     throttle.backoff()
             else:
                 throttle.sleep(SLEEP_TIME)
