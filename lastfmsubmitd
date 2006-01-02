@@ -335,7 +335,7 @@ if __name__ == '__main__':
                     cache.subs.append(sub)
                     count += 1
                 if count:
-                    log.debug("Read %d subs from %s" %
+                    log.info("Read %d subs from fifo" %
                         (count, lastfm.SUBMITD_FIFO))
             else:
                 throttle.add(FIFO_TIMEOUT)

@@ -181,7 +181,7 @@ class MpdObserver:
 
     def submit(self, song):
         if song.artist and song.title and song.time:
-            self.log.info("Sending song to submit daemon")
+            self.log.info("Ready for submission")
             try:
                 pid = os.fork()
                 if pid == 0:

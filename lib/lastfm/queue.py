@@ -19,7 +19,7 @@ class Writer:
         out = file(self.outfile, 'w')
         for sub in subs:
             print >>out, sub
-            self.log.info("Queued %s for submission", sub.shortname())
+            self.log.info("Sent %s to submit daemon", sub.shortname())
         # And then we must flush and get out of the way of the next writer
         # before releasing the lock
         out.close()
