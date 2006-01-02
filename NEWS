@@ -8,6 +8,9 @@
   up, so we can read it only once per loop without worrying about
   falling behind.
 
+* Don't log debugging information by default. If you want to turn it on,
+  use --debug.
+
 0.6 (2006-01-01):
 =================
 
