@@ -228,7 +228,7 @@ class LastFmSession:
 
             if status_line == "OK":
                 self.log.info("Submission(s) accepted")
-                # now, and only now, we do our side effect.
+                # Now, and only now, we do our side effect.
                 cache.subs = cache.subs[-SUB_CHUNK_SIZE:]
             elif status_line == "BADAUTH":
                 self.connected = False

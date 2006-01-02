@@ -32,7 +32,7 @@ LASTFMSUBMIT = 'lastfmsubmit'
 
 class Song:
     def __init__(self, mpdclientsongobj):
-        # cache?
+        # XXX: Cache these, perhaps?
         self.artist = getattr(mpdclientsongobj, 'artist', None)
         self.title = getattr(mpdclientsongobj, 'title', None)
         self.album = getattr(mpdclientsongobj, 'album', None)
