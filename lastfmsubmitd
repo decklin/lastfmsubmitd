@@ -199,7 +199,7 @@ class LastFmSession:
         while cache.subs:
             args = { 'u': self.user, 's': self.session_key }
             post_data = [urllib.urlencode(args)]
-            for i, sub in enumerate(cache.subs[-SUB_CHUNK_SIZE:]):
+            for i, sub in enumerate(cache.subs[:SUB_CHUNK_SIZE]):
                 args = {}
                 args['a[%d]' % i] =  sub.artist.encode('utf-8')
                 args['t[%d]' % i] =  sub.title.encode('utf-8')
@@ -229,7 +229,7 @@ class LastFmSession:
             if status_line == "OK":
                 self.log.info("Submission(s) accepted")
                 # Now, and only now, we do our side effect.
-                cache.subs = cache.subs[-SUB_CHUNK_SIZE:]
+                cache.subs = cache.subs[SUB_CHUNK_SIZE:]
             elif status_line == "BADAUTH":
                 self.connected = False
                 raise SessionError("incorrect password")
