@@ -101,16 +101,16 @@ class SubFifo:
 
     def select(self, timeout):
         fd = os.open(self.fifoname, os.O_NONBLOCK)
-        data = []
         rx, wx, ex = select.select([fd], [], [], timeout)
-        while fd in rx:
-            chunk = os.read(fd, 4096)
-            if chunk:
-                self.log.debug("Read %d bytes" % len(chunk))
-                data.append(chunk)
-                rx, wx, ex = select.select([fd], [], [], timeout)
-            else:
-                rx, wx, ex = [], [], []
+        data = []
+        if fd in rx:
+            while True:
+                chunk = os.read(fd, 4096)
+                if chunk:
+                    self.log.debug("Read %d bytes" % len(chunk))
+                    data.append(chunk)
+                else:
+                    break
         os.close(fd)
         return ''.join(data)
 
