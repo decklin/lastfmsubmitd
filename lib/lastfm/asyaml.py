@@ -126,16 +126,21 @@ class Submission(Song):
                 repr(kwargs))
 
 class Parser:
-    """Reads a list of one or more serialized tracks or submissions. Only
-    parses the subset of YAML that we emit (see Doc)."""
+    """Reads a list of one or more serialized tracks or submissions, and makes
+    them available in self.items. Only parses the subset of YAML that we emit
+    (see Doc)."""
 
-    def __init__(self, data):
-        self.data = data
+    def __init__(self, data=None):
+        if data:
+            self.feed(data)
 
-    def parse(self):
-        if self.data:
+    def feed(self, data):
+        self.items = [i for i in self._parse(data)]
+
+    def _parse(self, data):
+        if data:
             doc = None
-            for line in map(str.strip, self.data.split("\n")):
+            for line in map(str.strip, data.split("\n")):
                 if line == "":
                     pass
                 elif line.startswith("---"):

@@ -72,8 +72,7 @@ class SubCache:
         try:
             cache = file(filename)
             stored = lastfm.asyaml.Parser(cache.read())
-            for sub in stored.parse():
-                self.subs.append(sub)
+            self.subs += stored.items
         except IOError:
             pass
 
@@ -333,12 +332,9 @@ if __name__ == '__main__':
             data = fifo.select(FIFO_TIMEOUT)
             if data:
                 incoming = lastfm.asyaml.Parser(data)
-                count = 0
-                for sub in incoming.parse():
-                    cache.subs.append(sub)
-                    count += 1
-                if count:
-                    log.info("Read %d subs from fifo" % count)
+                if incoming.items:
+                    cache.subs += incoming.items
+                    log.info("Read %d subs from fifo" % len(incoming.items))
             else:
                 throttle.slept += FIFO_TIMEOUT
         except ValueError, e:

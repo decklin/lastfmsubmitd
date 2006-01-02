@@ -30,7 +30,7 @@ if __name__ == "__main__":
     tracks = []
     for f in [file(n) for n in args] or [sys.stdin]:
         input = lastfm.asyaml.Parser(f.read())
-        tracks += [t for t in input.parse()]
+        tracks += input.items
 
     total_len = 0
     for track in tracks:
