@@ -280,13 +280,6 @@ if __name__ == '__main__':
         print >>sys.stderr, "error: user and password are required"
         sys.exit(1)
 
-    def handle_signal(signum, frame):
-        log.info("Caught signal %d, exiting" % signum)
-        sys.exit(0)
-
-    for signum in (signal.SIGTERM, signal.SIGINT):
-        signal.signal(signum, handle_signal)
-
     log = lastfm.logger.create_log("lastfmsubmitd", debug)
     log.info("Last.fm Submission Daemon starting")
 
@@ -296,6 +289,14 @@ if __name__ == '__main__':
     cache = SubCache(log, lastfm.SUBMITD_CACHE)
     if cache.subs:
         log.info("Read %d subs from cache", len(cache.subs))
+
+    def handle_signal(signum, frame):
+        log.info("Caught signal %d, exiting" % signum)
+        cache.dump(lastfm.SUBMITD_CACHE)
+        sys.exit(0)
+
+    for signum in (signal.SIGTERM, signal.SIGINT):
+        signal.signal(signum, handle_signal)
 
     while True:
         if not session.connected:

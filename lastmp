@@ -242,15 +242,15 @@ if __name__ == '__main__':
             print >>sys.stderr, "unknown option: %s", opt
             sys.exit(1)
 
+    log = lastfm.logger.create_log("lastmp", debug)
+    log.info("LastMP starting")
+
     def handle_signal(signum, frame):
         log.info("Caught signal %d, exiting" % signum)
         sys.exit(0)
 
     for signum in (signal.SIGTERM, signal.SIGINT):
         signal.signal(signum, handle_signal)
-
-    log = lastfm.logger.create_log("lastmp", debug)
-    log.info("LastMP starting")
 
     mo = MpdObserver(log, sleep, mpd_args, debug)
     # Even if we couldn't connect, start the observe loop anyway.
