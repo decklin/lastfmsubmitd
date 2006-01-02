@@ -76,6 +76,5 @@ if __name__ == "__main__":
         title = mb.GetResultData1(mq.MBE_AlbumGetTrackName, i)
         length = mb.GetResultInt1(mq.MBE_AlbumGetTrackDuration, i)
         id = mb.GetIDFromURL(mb.GetResultData1(mq.MBE_AlbumGetTrackId, i))
-        song = lastfm.asyaml.Song(artist=artist, title=title,
+        print lastfm.asyaml.Song(artist=artist, title=title,
             length=length/1000, album=album, mbid=id)
-        print song

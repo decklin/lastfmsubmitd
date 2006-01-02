@@ -100,8 +100,6 @@ class Song(Metadata, Serializable):
         for meta in ('artist', 'title', 'length'):
             if not kwargs.has_key(meta):
                 raise ValueError("missing metadata: %s" % meta)
-        if kwargs['length'] == 0:
-            raise ValueError("length must be non-zero")
         Metadata.__init__(self, **kwargs)
 
 class Submission(Song):
