@@ -291,7 +291,7 @@ if __name__ == '__main__':
     fifo = SubFifo(log, lastfm.SUBMITD_FIFO)
     cache = SubCache(log, lastfm.SUBMITD_CACHE)
     if cache.subs:
-        log.info("Read %d subs from cache", len(cache.subs))
+        log.info("Read %d sub(s) from cache", len(cache.subs))
 
     def handle_signal(signum, frame):
         log.info("Caught signal %d, exiting" % signum)
@@ -337,7 +337,7 @@ if __name__ == '__main__':
                 incoming = lastfm.asyaml.Parser(data)
                 if incoming.items:
                     cache.subs += incoming.items
-                    log.info("Read %d subs from fifo" % len(incoming.items))
+                    log.info("Read %d sub(s) from fifo" % len(incoming.items))
             else:
                 # We did time out, so adjust the throttle accordingly.
                 throttle.slept += FIFO_TIMEOUT
