@@ -19,12 +19,12 @@ CLIENT_VERSION = "0.1"
 PROTOCOL_VERSION = "1.1"
 
 HANDSHAKE_URL_BASE = "http://post.audioscrobbler.com/"
-DEF_INTERVAL = 30
+DEF_INTERVAL = 1
 
 SUB_CHUNK_SIZE = 10
 
-BACKOFF_START = 60
-BACKOFF_INCREMENT = 60
+SLEEP_TIME = 15
+INITIAL_BACKOFF = 60
 
 FIFO_TIMEOUT = 5
 
@@ -33,16 +33,38 @@ class SubTimeoutError(Exception): pass
 class SessionError(Exception): pass
 class InvalidSubError(Exception): pass
 
-class Backoff:
+class SessionThrottle:
+    """Very simple throttle class that ensures we sleep long enough between
+    network requests. If something fails, the time it takes to be 'ready' can
+    be increased. Please note, this class does not take into account any other
+    sleeping that may be going on (such as in fifo.select). Use the add method
+    if you want it to."""
+
     def __init__(self, log):
         self.log = log
         self.reset()
+
     def reset(self):
-        self.backoff = BACKOFF_START
-    def sleep(self):
-        self.log.info("Retrying in %d" % self.backoff)
-        time.sleep(self.backoff)
-        self.backoff += BACKOFF_INCREMENT
+        self.slept = 0
+        self.sleep_until = 0
+
+    def ready(self):
+        return self.slept >= self.sleep_until
+
+    def backoff(self):
+        self.slept = 0
+        if self.sleep_until < INITIAL_BACKOFF:
+            self.sleep_until = INITIAL_BACKOFF
+        else:
+            self.sleep_until *= 2
+        self.log.info("Backing off, will retry in %d secs" % self.sleep_until)
+
+    def sleep(self, secs):
+        time.sleep(secs)
+        self.slept += secs
+
+    def add(self, secs):
+        self.slept += secs
 
 class SubCache:
     def __init__(self, log, filename):
@@ -95,13 +117,11 @@ class SubFifo:
         return ''.join(data)
 
 class LastFmSession:
-    def __init__(self, log, backoff, user, password):
+    def __init__(self, log, user, password):
         self.log = log
-        self.backoff = backoff
         self.user = user
         self.password = password
         self.connected = False
-        self.backoff = BACKOFF_START
         self.interval = DEF_INTERVAL
         self.uncommitted_subs = []
         self.handshake_url = self.make_handshake_url(user)
@@ -147,10 +167,9 @@ class LastFmSession:
         else:
             raise HandshakeError("could not parse response: %s" % status_line)
 
-        self.read_interval(response)
-
         self.connected = True
-        self.backoff.reset()
+        self.read_interval(response)
+        time.sleep(self.interval)
 
     def read_submit_url(self, response):
         challenge = response.readline().strip()
@@ -174,24 +193,6 @@ class LastFmSession:
         return sess_hash.hexdigest()
 
     def submit(self, cache):
-        try:
-            self.do_submit(cache)
-            self.backoff.reset()
-        except SessionError, e:
-            self.log.error("Session failed: %s" % e)
-            self.log.debug("%d subs remain in cache" % len(cache.subs))
-            self.backoff.sleep()
-            raise
-        except InvalidSubError, e:
-            self.log.error("Submission failed: %s" % e)
-            self.log.debug("%d subs remain in cache" % len(cache.subs))
-            self.backoff.sleep()
-        except SubTimeoutError:
-            self.log.error("Submission timed out")
-            self.log.debug("%d subs remain in cache" % len(cache.subs))
-            self.backoff.sleep()
-
-    def do_submit(self, cache):
         while cache.subs:
             args = { 'u': self.user, 's': self.session_key }
             post_data = [urllib.urlencode(args)]
@@ -252,8 +253,6 @@ if __name__ == '__main__':
     log = lastfm.logger.create_log("lastfmsubmitd")
     log.info("Last.fm Submission Daemon starting")
 
-    backoff = Backoff(log)
-
     for signum in (signal.SIGTERM, signal.SIGINT):
         signal.signal(signum, handle_signal)
 
@@ -291,36 +290,55 @@ if __name__ == '__main__':
         print >>sys.stderr, "error: user and password are required"
         sys.exit(1)
 
+    session = LastFmSession(log, user, password)
+    throttle = SessionThrottle(log)
     fifo = SubFifo(log, lastfm.SUBMITD_FIFO)
-    session = LastFmSession(log, backoff, user, password)
     cache = SubCache(log, lastfm.SUBMITD_CACHE)
     if cache.subs:
         log.info("Read %d subs from cache", len(cache.subs))
 
     while True:
+        if not session.connected:
+            if throttle.ready():
+                try:
+                    session.handshake()
+                except HandshakeError, e:
+                    log.error("Handshake failed: %s" % e)
+                    throttle.backoff()
+            else:
+                throttle.sleep(SLEEP_TIME)
+
+        if session.connected and cache.subs:
+            if throttle.ready():
+                try:
+                    log.debug("Attempting submit, %d subs" % len(cache.subs))
+                    session.submit(cache)
+                    log.debug("Done, %d remain in cache" % len(cache.subs))
+                except SessionError, e:
+                    self.log.error("Session failed: %s" % e)
+                    throttle.backoff()
+                except InvalidSubError, e:
+                    self.log.error("Submission failed: %s" % e)
+                    throttle.backoff()
+                except SubTimeoutError:
+                    self.log.error("Submission timed out")
+                    throttle.backoff()
+            else:
+                throttle.sleep(SLEEP_TIME)
+
         try:
-            incoming = lastfm.asyaml.Parser(fifo.select(FIFO_TIMEOUT))
-            count = 0
-            for sub in incoming.parse():
-                cache.subs.append(sub)
-                count += 1
-            if count:
-                log.debug("Read %d subs from %s" %
-                    (count, lastfm.SUBMITD_FIFO))
+            data = fifo.select(FIFO_TIMEOUT)
+            if data:
+                incoming = lastfm.asyaml.Parser(data)
+                count = 0
+                for sub in incoming.parse():
+                    cache.subs.append(sub)
+                    count += 1
+                if count:
+                    log.debug("Read %d subs from %s" %
+                        (count, lastfm.SUBMITD_FIFO))
+            else:
+                throttle.add(FIFO_TIMEOUT)
         except ValueError, e:
             log.error("Discarding invalid data: %s" % e)
             pass
-        if not session.connected:
-            try:
-                session.handshake()
-                backoff.reset()
-            except HandshakeError, e:
-                log.error("Handshake failed: %s" % e)
-                backoff.sleep()
-        if session.connected and cache.subs:
-            try:
-                log.debug("Attempting submit, %d subs" % len(cache.subs))
-                session.submit(cache)
-                log.debug("Done, %d subs left" % len(cache.subs))
-            except SessionError:
-                log.debug("Lost session")
