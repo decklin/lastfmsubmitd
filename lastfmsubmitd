@@ -35,10 +35,8 @@ class InvalidSubError(Exception): pass
 
 class SessionThrottle:
     """Very simple throttle class that ensures we sleep long enough between
-    network requests. If something fails, the time it takes to be 'ready' can
-    be increased. Please note, this class does not take into account any other
-    sleeping that may be going on (such as in fifo.select). Use the add method
-    if you want it to."""
+    network requests. Only keeps track of how long it has slept, not the
+    actual time elapsed. You can mess with time.slept to simulate a sleep."""
 
     def __init__(self, log):
         self.log = log
@@ -65,6 +63,9 @@ class SessionThrottle:
         self.slept += secs
 
 class SubCache:
+    """Holds submissions while we are running, and saves them to persistent
+    storage on exit."""
+
     def __init__(self, log, filename):
         self.log = log
         self.subs = []
@@ -88,6 +89,9 @@ class SubCache:
                 (filename, len(self.subs)))
 
 class SubFifo:
+    """Reads one writer at a time from our fifo, making sure it actually
+    exists first."""
+
     def __init__(self, log, fifoname):
         self.log = log
         self.fifoname = fifoname
