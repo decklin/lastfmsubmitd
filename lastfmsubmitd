@@ -153,7 +153,7 @@ class LastFmSession:
             self.read_submit_url(response)
         elif status_line.startswith("UPDATE"):
             try:
-                msg, url = status_line.split(" ")
+                msg, url = status_line.split(" ", 1)
                 self.log.warning("Plugin is out of date: %s" % msg)
                 self.log.info("Please go to %s to upgrade" % url)
             except ValueError:
@@ -163,7 +163,7 @@ class LastFmSession:
             raise HandshakeError("bad username")
         elif status_line.startswith("FAILED"):
             try:
-                failed, reason = status_line.split(" ")
+                failed, reason = status_line.split(" ", 1)
             except ValueError:
                 reason = "unknown: '%s'" % status_line
             raise HandshakeError(reason)
@@ -184,7 +184,7 @@ class LastFmSession:
     def read_interval(self, response):
         interval_line = response.readline().strip()
         if interval_line and interval_line.startswith("INTERVAL"):
-            msg, secs = interval_line.split(" ")
+            msg, secs = interval_line.split(" ", 1)
             new_interval = int(secs)
             if new_interval != self.interval:
                 log.debug("Session interval changed to %d" % new_interval)
@@ -235,7 +235,7 @@ class LastFmSession:
                 raise SessionError("incorrect password")
             elif status_line.startswith("FAILED"):
                 try:
-                    failed, reason = status_line.split(" ")
+                    failed, reason = status_line.split(" ", 1)
                 except ValueError:
                     reason = "unknown: '%s'" % status_line
                 raise InvalidSubError(reason)
