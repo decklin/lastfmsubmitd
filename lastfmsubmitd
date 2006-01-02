@@ -237,8 +237,8 @@ class LastFmSession:
                 try:
                     failed, reason = status_line.split(" ")
                 except ValueError:
-                    reason = "unknown"
-                raise InvalidSubError("failed: %s" % reason)
+                    reason = "unknown: '%s'" % status_line
+                raise InvalidSubError(reason)
             else:
                 raise InvalidSubError("could not parse response: %s" %
                     status_line)
