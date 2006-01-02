@@ -79,7 +79,7 @@ class SubCache:
 
     def dump(self, filename):
         try:
-            log.info("Saving %d subs to cache" % len(cache.subs))
+            log.info("Saving %d sub(s) to cache" % len(cache.subs))
             out = file(filename, 'w')
             out.write("\n".join(map(str, self.subs)))
             out.write("\n")
