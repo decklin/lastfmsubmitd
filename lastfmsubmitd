@@ -79,8 +79,11 @@ class SubFifo:
             self.log.debug("Creating %s" % fifoname)
             os.mkfifo(self.fifoname)
 
-    def read(self, fifo, timeout):
-        chunks = []
+    def select(self, timeout):
+        fifo_fd = os.open(self.fifoname, os.O_NONBLOCK)
+        fifo = os.fdopen(fifo_fd)
+
+        data = []
         while True:
             readees, writees, errs = select.select([fifo], [], [], timeout)
             if fifo in readees:
@@ -88,19 +91,14 @@ class SubFifo:
                 if len(stuff):
                     self.log.debug("Read %d bytes" % len(stuff))
                     chunks.append(stuff)
-                    return self.read(fifo, timeout, chunks)
                 else:
-                    break
+                    self.log.debug("Nothing read, breaking")
             else:
+                self.log.debug("No pending on fifo, breaking")
                 break
-        return ''.join(chunks)
 
-    def select(self, timeout):
-        fifo_fd = os.open(self.fifoname, os.O_NONBLOCK)
-        fifo = os.fdopen(fifo_fd)
-        data = self.read(fifo, timeout)
         os.close(fifo_fd)
-        return data
+        return ''.join(data)
 
 class LastFmSession:
     def __init__(self, log, backoff, user, password):
