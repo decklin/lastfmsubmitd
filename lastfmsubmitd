@@ -34,9 +34,10 @@ class SessionError(Exception): pass
 class InvalidSubError(Exception): pass
 
 class SessionThrottle:
-    """Very simple throttle class that ensures we sleep long enough between
-    network requests. Only keeps track of how long it has slept, not the
-    actual time elapsed. You can mess with time.slept to simulate a sleep."""
+    """Very simple throttler that ensures we sleep long enough between network
+    requests, but lets you sleep a little at a time and then wake to do other
+    stuff. Only keeps track of how long it has slept, not the actual time
+    elapsed. You can mess with time.slept to simulate a sleep."""
 
     def __init__(self, log):
         self.log = log
