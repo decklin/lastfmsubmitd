@@ -79,8 +79,8 @@ class SubFifo:
             self.log.debug("Creating %s" % fifoname)
             os.mkfifo(self.fifoname)
 
-    def read(self, fifo, timeout, chunks=None):
-        if not chunks: chunks = []
+    def read(self, fifo, timeout):
+        chunks = []
         while True:
             readees, writees, errs = select.select([fifo], [], [], timeout)
             if fifo in readees:
