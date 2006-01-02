@@ -57,7 +57,8 @@ class SessionThrottle:
             self.sleep_until = INITIAL_BACKOFF
         else:
             self.sleep_until *= 2
-        self.log.info("Backing off, will retry in %d secs" % self.sleep_until)
+        self.log.info("Backing off, will retry in %d:%02d" %
+            divmod(self.sleep_until, 60))
 
     def sleep(self, secs):
         time.sleep(secs)
