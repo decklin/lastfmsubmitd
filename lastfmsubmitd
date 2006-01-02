@@ -79,25 +79,43 @@ class SubFifo:
             self.log.debug("Creating %s" % fifoname)
             os.mkfifo(self.fifoname)
 
+    # OK, here's the deal. We may have any number of writers lined up (they
+    # use the lock file, so only one will write at a time). After opening the
+    # fifo, we get the data from one writer, and then it ends. We must close
+    # the fifo and open it again if there's another writer waiting to get that
+    # writer's data.
+    #
+    # Once no one is writing to the fifo, select will return an empty reads
+    # list.
+    #
+    # Also, if a writer writes a lot of data at once, the operating system may
+    # deliver it in pieces. On my system sometimes things are split into 4096
+    # byte chunks and sometimes they are not split at all. So, for each run
+    # through, keep reading until we get nothing.
+
     def select(self, timeout):
-        fifo_fd = os.open(self.fifoname, os.O_NONBLOCK)
-        fifo = os.fdopen(fifo_fd)
-
         data = []
-        while True:
-            readees, writees, errs = select.select([fifo], [], [], timeout)
-            if fifo in readees:
-                stuff = fifo.read()
-                if len(stuff):
-                    self.log.debug("Read %d bytes" % len(stuff))
-                    data.append(stuff)
-                else:
-                    self.log.debug("Nothing read, breaking")
+        more = True
+        while more:
+            fifo_fd = os.open(self.fifoname, os.O_NONBLOCK)
+            readees, writees, errs = select.select([fifo_fd], [], [], timeout)
+            if fifo_fd in readees:
+                fifo = os.fdopen(fifo_fd)
+                try:
+                    stuff = fifo.read()
+                    while stuff:
+                        self.log.debug("Read %d bytes" % len(stuff))
+                        data.append(stuff)
+                        stuff = fifo.read()
+                except IOError:
+                    self.log.debug("EOF")
             else:
-                self.log.debug("No pending on fifo, breaking")
-                break
-
-        os.close(fifo_fd)
+                self.log.debug("Nothing pending")
+                more = False
+            try:
+                os.close(fifo_fd)
+            except OSError:
+                self.log.debug("Can't close")
         return ''.join(data)
 
 class LastFmSession:
