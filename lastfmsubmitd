@@ -298,6 +298,18 @@ if __name__ == '__main__':
         log.info("Read %d subs from cache", len(cache.subs))
 
     while True:
+        try:
+            incoming = lastfm.asyaml.Parser(fifo.select(FIFO_TIMEOUT))
+            count = 0
+            for sub in incoming.parse():
+                cache.subs.append(sub)
+                count += 1
+            if count:
+                log.debug("Read %d subs from %s" %
+                    (count, lastfm.SUBMITD_FIFO))
+        except ValueError, e:
+            log.error("Discarding invalid data: %s" % e)
+            pass
         if not session.connected:
             try:
                 session.handshake()
@@ -312,15 +324,3 @@ if __name__ == '__main__':
                 log.debug("Done, %d subs left" % len(cache.subs))
             except SessionError:
                 log.debug("Lost session")
-        try:
-            incoming = lastfm.asyaml.Parser(fifo.select(FIFO_TIMEOUT))
-            count = 0
-            for sub in incoming.parse():
-                cache.subs.append(sub)
-                count += 1
-            if count:
-                log.debug("Read %d subs from %s" %
-                    (count, lastfm.SUBMITD_FIFO))
-        except ValueError, e:
-            log.error("Discarding invalid data: %s" % e)
-            pass
