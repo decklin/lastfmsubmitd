@@ -112,6 +112,7 @@ class SubFifo:
                 if chunk:
                     self.log.debug("Read %d bytes" % len(chunk))
                     data.append(chunk)
+                    rx, wx, ex = select.select([fd], [], [], timeout)
                 else:
                     break
         os.close(fd)
