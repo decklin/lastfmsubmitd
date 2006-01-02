@@ -59,6 +59,7 @@ class SessionThrottle:
             divmod(self.sleep_until, 60))
 
     def sleep(self, secs):
+        secs = min(secs, self.sleep_until - self.slept)
         time.sleep(secs)
         self.slept += secs
 
@@ -332,11 +333,13 @@ if __name__ == '__main__':
         try:
             data = fifo.select(FIFO_TIMEOUT)
             if data:
+                # We may have timed out for a few seconds, but whatever.
                 incoming = lastfm.asyaml.Parser(data)
                 if incoming.items:
                     cache.subs += incoming.items
                     log.info("Read %d subs from fifo" % len(incoming.items))
             else:
+                # We did time out, so adjust the throttle accordingly.
                 throttle.slept += FIFO_TIMEOUT
         except ValueError, e:
             log.error("Discarding invalid data: %s" % e)
