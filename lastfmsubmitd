@@ -90,7 +90,7 @@ class SubFifo:
                 stuff = fifo.read()
                 if len(stuff):
                     self.log.debug("Read %d bytes" % len(stuff))
-                    chunks.append(stuff)
+                    data.append(stuff)
                 else:
                     self.log.debug("Nothing read, breaking")
             else:
