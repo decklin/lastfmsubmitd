@@ -64,9 +64,6 @@ class SessionThrottle:
         time.sleep(secs)
         self.slept += secs
 
-    def add(self, secs):
-        self.slept += secs
-
 class SubCache:
     def __init__(self, log, filename):
         self.log = log
@@ -339,7 +336,6 @@ if __name__ == '__main__':
                 if count:
                     log.info("Read %d subs from fifo" % count)
             else:
-                throttle.add(FIFO_TIMEOUT)
+                throttle.slept += FIFO_TIMEOUT
         except ValueError, e:
             log.error("Discarding invalid data: %s" % e)
-            pass
