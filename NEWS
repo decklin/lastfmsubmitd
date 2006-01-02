@@ -1,3 +1,13 @@
+0.7 (2006-01-02):
+=================
+
+* Redesign the main loop so that we can increase the network backoff
+  exponentially without forcing lastfmsubmit to block until we succeed.
+  Instead, just sleep for 15 seconds or so at a time and check if we're
+  ready to try the network again. This will keep the fifo from clogging
+  up, so we can read it only once per loop without worrying about
+  falling behind.
+
 0.6 (2006-01-01):
 =================
 
