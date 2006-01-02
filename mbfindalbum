@@ -42,6 +42,7 @@ if __name__ == '__main__':
     artistspec = None
     albumspec = None
     verbose = False
+
     for opt, arg in opts:
         if opt in ('--artist', '-a'):
             artistspec = arg

@@ -2,7 +2,7 @@ import logging
 
 LASTFM_LOG = '/var/log/lastfm.log'
 
-def create_log(name, debug=True):
+def create_log(name, debug=False):
 
     if debug:
         level = logging.DEBUG

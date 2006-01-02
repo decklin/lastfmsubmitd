@@ -15,13 +15,13 @@ if __name__ == "__main__":
     shortopts = 'o:'
     longopts = ['output=']
 
-    outfile = lastfm.SUBMITD_FIFO
-
     try:
         opts, args = getopt.getopt(sys.argv[1:], shortopts, longopts)
     except getopt.GetoptError, e:
         print >>sys.stderr, "error: %s" % e
         sys.exit(1)
+
+    outfile = lastfm.SUBMITD_FIFO
 
     for opt, arg in opts:
         if opt in ('--output', '-o'):

@@ -16,9 +16,7 @@ lastfmsubmitd."""
 
 if __name__ == '__main__':
     encoding = locale.getpreferredencoding()
-    log = lastfm.logger.create_log("lastfmsubmit")
-
-    shortopts = 'a:s:l:d:b:m:o:'
+    shortopts = 'a:s:l:d:b:m:o:d'
     longopts = [
         'artist=',
         'title=',
@@ -27,10 +25,8 @@ if __name__ == '__main__':
         'album=',
         'mbid=',
         'output=',
+        'debug',
         ]
-
-    subinfo = { 'time': time.gmtime(), }
-    outfile = lastfm.SUBMITD_FIFO
 
     try:
         opts, args = getopt.getopt(sys.argv[1:], shortopts, longopts)
@@ -40,6 +36,10 @@ if __name__ == '__main__':
     if args:
         print >>sys.stderr, "extra args: %s" % ' '.join(args)
         sys.exit(1)
+
+    subinfo = { 'time': time.gmtime(), }
+    outfile = lastfm.SUBMITD_FIFO
+    debug = False
 
     for opt, arg in opts:
         if opt in ('--artist', '-a'):
@@ -64,6 +64,10 @@ if __name__ == '__main__':
             subinfo['mbid'] = arg
         elif opt in ('--output', '-o'):
             outfile = arg
+        elif opt in ('--debug', '-d'):
+            debug = True
+
+    log = lastfm.logger.create_log("lastfmsubmit", debug)
 
     try:
         sub = lastfm.asyaml.Submission(**subinfo)

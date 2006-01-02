@@ -58,9 +58,10 @@ class Song:
             divmod(int(self.time), 60))
 
 class MpdObserver:
-    def __init__(self, log, sleep, mpd_args):
+    def __init__(self, log, sleep, mpd_args, debug):
         self.log = log
         self.sleep = sleep
+        self.debug = debug
         self.children = []
 
         try:
@@ -195,6 +196,8 @@ class MpdObserver:
                         args += ["--album", song.album]
                     #if song.mbid:
                     #    args += ["--mbid", song.album]
+                    if debug:
+                        args += ["--debug"]
                     os.execvp(LASTFMSUBMIT, args)
                 else:
                     return pid
@@ -203,20 +206,9 @@ class MpdObserver:
         else:
             self.log.warning("Missing artist/title/length, not submitting")
 
-def handle_signal(signum, frame):
-    if signum in (signal.SIGTERM, signal.SIGINT):
-        log.info("Caught signal %d, exiting" % signum)
-        sys.exit(0)
-
 if __name__ == '__main__':
-    log = lastfm.logger.create_log("lastmp")
-    log.info("LastMP starting")
-
-    for signum in (signal.SIGTERM, signal.SIGINT):
-        signal.signal(signum, handle_signal)
-
-    shortopts = 's:h:p:o:'
-    longopts = ['sleep=', 'host=', 'password=', 'port=']
+    shortopts = 's:h:p:o:d'
+    longopts = ['sleep=', 'host=', 'password=', 'port=', 'debug']
 
     try:
         opts, args = getopt.getopt(sys.argv[1:], shortopts, longopts)
@@ -229,6 +221,8 @@ if __name__ == '__main__':
 
     sleep = DEF_SLEEP
     mpd_args = {}
+    debug = False
+
     for opt, arg in opts:
         if opt in ('--sleep', '-s'):
             sleep = int(arg)
@@ -236,14 +230,29 @@ if __name__ == '__main__':
                 print >>sys.stderr, "sleep value %d is too large (>%d)" % \
                     (sleep, lastfm.MIN_LEN / 2)
                 sys.exit(1)
-        if opt in ('--host', '-h'):
+        elif opt in ('--host', '-h'):
             mpd_args['host'] = arg
-        if opt in ('--password', '-p'):
+        elif opt in ('--password', '-p'):
             mpd_args['password'] = arg
-        if opt in ('--port', '-o'):
+        elif opt in ('--port', '-o'):
             mpd_args['port'] = arg
+        elif opt in ('--debug', '-d'):
+            debug = True
+        else:
+            print >>sys.stderr, "unknown option: %s", opt
+            sys.exit(1)
 
-    mo = MpdObserver(log, sleep, mpd_args)
+    def handle_signal(signum, frame):
+        log.info("Caught signal %d, exiting" % signum)
+        sys.exit(0)
+
+    for signum in (signal.SIGTERM, signal.SIGINT):
+        signal.signal(signum, handle_signal)
+
+    log = lastfm.logger.create_log("lastmp", debug)
+    log.info("LastMP starting")
+
+    mo = MpdObserver(log, sleep, mpd_args, debug)
     # Even if we couldn't connect, start the observe loop anyway.
     # Perhaps MPD failed at boot and the admin will fix it later.
     mo.observe()

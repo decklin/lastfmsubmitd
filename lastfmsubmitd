@@ -243,21 +243,9 @@ class LastFmSession:
             self.read_interval(response)
             time.sleep(self.interval)
 
-def handle_signal(signum, frame):
-    if signum in (signal.SIGTERM, signal.SIGINT):
-        log.info("Caught signal %d, exiting" % signum)
-        cache.dump(lastfm.SUBMITD_CACHE)
-        sys.exit(0)
-
 if __name__ == '__main__':
-    log = lastfm.logger.create_log("lastfmsubmitd")
-    log.info("Last.fm Submission Daemon starting")
-
-    for signum in (signal.SIGTERM, signal.SIGINT):
-        signal.signal(signum, handle_signal)
-
-    shortopts = 'u:p:'
-    longopts = ['user=', 'password=']
+    shortopts = 'u:p:d'
+    longopts = ['user=', 'password=', 'debug']
 
     try:
         opts, args = getopt.getopt(sys.argv[1:], shortopts, longopts)
@@ -268,20 +256,22 @@ if __name__ == '__main__':
         print >>sys.stderr, "extra args: %s" % ' '.join(args)
         sys.exit(1)
 
-    try:
-        user = os.environ['LASTFM_USER']
-    except KeyError:
-        user = None
-    try:
-        password = os.environ['LASTFM_PASSWORD']
-    except KeyError:
-        password = None
+    user = None
+    password = None
+    debug = False
+
+    try: user = os.environ['LASTFM_USER']
+    except KeyError: pass
+    try: password = os.environ['LASTFM_PASSWORD']
+    except KeyError: pass
 
     for opt, arg in opts:
         if opt in ('--user', '-u'):
             user = arg
         elif opt in ('--password', '-p'):
             password = arg
+        elif opt in ('--debug', '-d'):
+            debug = True
         else:
             print >>sys.stderr, "unknown option: %s", opt
             sys.exit(1)
@@ -289,6 +279,16 @@ if __name__ == '__main__':
     if not (user and password):
         print >>sys.stderr, "error: user and password are required"
         sys.exit(1)
+
+    def handle_signal(signum, frame):
+        log.info("Caught signal %d, exiting" % signum)
+        sys.exit(0)
+
+    for signum in (signal.SIGTERM, signal.SIGINT):
+        signal.signal(signum, handle_signal)
+
+    log = lastfm.logger.create_log("lastfmsubmitd", debug)
+    log.info("Last.fm Submission Daemon starting")
 
     session = LastFmSession(log, user, password)
     throttle = SessionThrottle(log)

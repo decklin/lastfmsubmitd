@@ -39,6 +39,7 @@ if __name__ == "__main__":
         sys.exit(1)
 
     id = None
+
     if opts:
         for opt, arg in opts:
             if opt in ('--device', '-d'):
