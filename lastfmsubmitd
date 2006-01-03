@@ -340,7 +340,8 @@ if __name__ == '__main__':
                 incoming = lastfm.asyaml.Parser(data)
                 if incoming.items:
                     cache.subs += incoming.items
-                    log.info("Read %d sub(s) from fifo" % len(incoming.items))
+                    log.debug("Read %d sub(s) from fifo" %
+                        len(incoming.items))
             else:
                 # We did time out, so adjust the throttle accordingly.
                 throttle.slept += FIFO_TIMEOUT
