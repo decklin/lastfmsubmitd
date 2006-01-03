@@ -199,7 +199,7 @@ class LastFmSession:
     def submit(self, cache):
         while cache.subs:
             self.log.info("Submitting %d songs" %
-                len(cache.subs[:SUB_CHUNK_SIZE])
+                len(cache.subs[:SUB_CHUNK_SIZE]))
 
             args = { 'u': self.user, 's': self.session_key }
             post_data = [urllib.urlencode(args)]
