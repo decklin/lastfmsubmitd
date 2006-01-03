@@ -198,7 +198,7 @@ class LastFmSession:
 
     def submit(self, cache):
         while cache.subs:
-            self.log.info("Submitting %d songs" %
+            self.log.info("Submitting %d song(s)" %
                 len(cache.subs[:SUB_CHUNK_SIZE]))
 
             args = { 'u': self.user, 's': self.session_key }
