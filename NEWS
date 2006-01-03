@@ -1,3 +1,10 @@
+0.10 (2006-01-xx):
+==================
+
+* Added setup.py and install.sh so that installation should be
+  relatively painless. setup.py does the actual installing; install.sh
+  merely sets up users and permissions.
+
 0.9 (2006-01-03):
 =================
 

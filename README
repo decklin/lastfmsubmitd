@@ -53,7 +53,9 @@ lastfmsubmitd uses /var/run/lastfmsubmitd/fifo for IPC and
 runs. I would recommend creating "lastfmsubmitd" and "lastmp" user
 accounts and putting them in a "lastfm" group, with the FIFO
 group-writable. If you plan on using lastcdreplay from your normal user
-account, add that account to the "lastfm" group as well.
+account, add that account to the "lastfm" group as well. The install.sh
+script can be used to set up the appropriate users and permissions
+automatically.
 
 Requirements
 ============
