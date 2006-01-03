@@ -4,6 +4,9 @@
 * Some small fixes in how we handle rejected submissions and other
   FAILED responses.
 
+* Make log messages more user-friendly and less redundant if debugging
+  is off.
+
 0.8 (2006-01-02):
 =================
 

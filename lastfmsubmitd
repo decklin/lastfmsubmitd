@@ -198,6 +198,9 @@ class LastFmSession:
 
     def submit(self, cache):
         while cache.subs:
+            self.log.info("Submitting %d songs" %
+                len(cache.subs[:SUB_CHUNK_SIZE])
+
             args = { 'u': self.user, 's': self.session_key }
             post_data = [urllib.urlencode(args)]
             for i, sub in enumerate(cache.subs[:SUB_CHUNK_SIZE]):
@@ -214,7 +217,7 @@ class LastFmSession:
                     args['m[%d]' % i] = (sub.mbid)
                 else:
                     args['m[%d]' % i] = ''
-                self.log.info("Submitting: %s" % sub.shortname())
+                self.log.debug("Submitting: %s" % sub.shortname())
                 post_data.append(urllib.urlencode(args))
 
             post_str = '&'.join(post_data)
