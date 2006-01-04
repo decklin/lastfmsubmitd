@@ -19,7 +19,7 @@ setup(
         'Programming Language :: Python',
         ],
     package_dir = {'': 'lib'},
-    packages = ['lib/lastfm'],
+    packages = ['lastfm'],
     scripts = [
         'lastcd',
         'lastcdreplay',
