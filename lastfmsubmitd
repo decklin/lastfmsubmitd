@@ -308,9 +308,9 @@ if __name__ == '__main__':
     while True:
         if not session.connected:
             if throttle.ready():
-                throttle.reset()
                 try:
                     session.handshake()
+                    throttle.reset()
                 except HandshakeError, e:
                     log.error("Handshake failed: %s" % e)
                     throttle.backoff()
@@ -319,11 +319,11 @@ if __name__ == '__main__':
 
         if session.connected and cache.subs:
             if throttle.ready():
-                throttle.reset()
                 try:
                     log.debug("Attempting submit, %d subs" % len(cache.subs))
                     session.submit(cache)
                     log.debug("Done, %d remain in cache" % len(cache.subs))
+                    throttle.reset()
                 except SessionError, e:
                     log.error("Session failed: %s" % e)
                     throttle.backoff()
