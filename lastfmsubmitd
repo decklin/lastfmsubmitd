@@ -344,7 +344,7 @@ if __name__ == '__main__':
         try:
             data = fifo.select(FIFO_TIMEOUT)
             while data:
-                # This may have timed out for a few seconds, but whatever.
+                # We may have timed out for a few seconds, but whatever.
                 incoming = lastfm.asyaml.Parser(data)
                 if incoming.items:
                     cache.subs += incoming.items
