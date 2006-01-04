@@ -6,6 +6,7 @@ import stat
 import time
 import getopt
 import select
+import socket
 import urllib
 import md5
 import signal
@@ -13,6 +14,9 @@ import signal
 import lastfm
 import lastfm.logger
 import lastfm.asyaml
+
+# This is only a band-aid until a proper solution is implemented.
+socket.setdefaulttimeout(300)
 
 CLIENT_ID = "lsd"
 CLIENT_VERSION = "0.10"

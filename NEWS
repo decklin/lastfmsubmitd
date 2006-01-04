@@ -1,6 +1,9 @@
 * Reset throttle only when we successfully handshake or submit, so that
   we actually back off exponentially.
 
+* Set the default timeout for socket in an attempt to make urllib behave
+  nicer. I believe this does not work under 2.4, but it's something.
+
 0.10 (2006-01-04):
 ==================
 
