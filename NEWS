@@ -4,6 +4,10 @@
 * Set the default timeout for socket in an attempt to make urllib behave
   nicer. I believe this does not work under 2.4, but it's something.
 
+* If there are multiple writers waiting (for example, upon startup or
+  after a long network timeout), read from all of them and wait until
+  there is nothing left before submitting.
+
 0.10 (2006-01-04):
 ==================
 

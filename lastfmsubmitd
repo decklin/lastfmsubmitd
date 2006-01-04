@@ -341,14 +341,14 @@ if __name__ == '__main__':
                 throttle.sleep(SLEEP_TIME)
 
         try:
-            data = fifo.select(FIFO_TIMEOUT)
-            if data:
-                # We may have timed out for a few seconds, but whatever.
+            data = None
+            while not data:
+                # This may have timed out for a few seconds, but whatever.
+                data = fifo.select(FIFO_TIMEOUT)
                 incoming = lastfm.asyaml.Parser(data)
                 if incoming.items:
                     cache.subs += incoming.items
-                    log.debug("Read %d sub(s) from fifo" %
-                        len(incoming.items))
+                    log.debug("Read %d new sub(s)" % len(incoming.items))
             else:
                 # We did time out, so adjust the throttle accordingly.
                 throttle.slept += FIFO_TIMEOUT
