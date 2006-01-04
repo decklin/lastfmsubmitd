@@ -3,9 +3,9 @@
 # If you're installing by hand, run this as root, and run the daemons from the
 # following user accounts.
 
-addgroup lastfm
-adduser --ingroup lastfm lastfmsubmitd
-adduser --ingroup lastfm lastmp
+groupadd lastfm
+useradd -g lastfm lastfmsubmitd
+useradd -g lastfm lastmp
 
 RUN=/var/run/lastfmsubmitd
 CACHE=/var/cache/lastfmsubmitd
