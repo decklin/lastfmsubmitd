@@ -1,3 +1,6 @@
+* Reset throttle only when we successfully handshake or submit, so that
+  we actually back off exponentially.
+
 0.10 (2006-01-04):
 ==================
 
