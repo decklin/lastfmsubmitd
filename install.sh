@@ -12,10 +12,10 @@ CACHE=/var/cache/lastfmsubmitd
 
 mkdir $RUN
 mkfifo $RUN/fifo
-chown lastfmsubmitd:lastmp $RUN/fifo
+chown lastfmsubmitd:lastfm $RUN/fifo
 chmod 660 $RUN/fifo
 
 mkdir $CACHE
 touch $CACHE/subs
-chown lastfmsubmitd:lastmp $CACHE/subs
+chown lastfmsubmitd:lastfm $CACHE/subs
 chmod 660 $CACHE/subs
