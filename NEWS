@@ -5,6 +5,8 @@
   relatively painless. setup.py does the actual installing; install.sh
   merely sets up users and permissions.
 
+* Improve the handling of an empty or nonexistent cache.
+
 0.9 (2006-01-03):
 =================
 
