@@ -129,11 +129,13 @@ class Parser:
     (see Doc)."""
 
     def __init__(self, data=None):
+        self.items = []
         if data:
             self.feed(data)
 
     def feed(self, data):
-        self.items = [i for i in self._parse(data)]
+        for i in self._parse(data):
+            self.items.append(i)
 
     def _parse(self, data):
         if data:
