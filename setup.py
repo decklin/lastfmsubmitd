@@ -18,7 +18,7 @@ setup(
         'Environment :: No Input/Output (Daemon)',
         'Programming Language :: Python',
         ],
-    package_dir = {'': 'lib'}
+    package_dir = {'': 'lib'},
     packages = ['lib/lastfm'],
     scripts = [
         'lastcd',
