@@ -1,3 +1,6 @@
+0.12 (2006-01-07):
+==================
+
 * Don't mark new songs as skipped if crossfade is on.
 
 * In install.sh, set up directory permissions and run setup.py.
