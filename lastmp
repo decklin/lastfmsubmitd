@@ -96,7 +96,8 @@ class MpdObserver:
                 if currentsong != self.prevsong or \
                         self.prevstatus.state == 'stop':
                     self.log.info("New song: %s", currentsong)
-                    if (self.prevsong and time > self.sleep + FUZZ) or \
+                    if (self.prevsong and
+                            time > self.sleep + FUZZ + status.xfade) or \
                             (self.prevsong is None and
                             time/len > lastfm.SUB_PERCENT):
                         self.log.warning(
