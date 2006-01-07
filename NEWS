@@ -1,3 +1,6 @@
+* Brown paper bag fix: mpdclient2 sucks, and we need to convert
+  crossfade time to an int.
+
 0.12 (2006-01-07):
 ==================
 
