@@ -1,3 +1,6 @@
+0.13 (2006-01-08):
+==================
+
 * Log untagged files as errors.
 
 * Work around some mpdclient2 breakage that was causing lastmp to crash
