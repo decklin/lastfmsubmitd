@@ -14,8 +14,8 @@ CACHE=/var/cache/lastfmsubmitd
 LOG=/var/log/lastfm.log
 
 touch $LOG
-chown 664 $LOG
 chgrp lastfm $LOG
+chmod 664 $LOG
 
 mkdir $RUN
 chgrp lastfm $RUN
