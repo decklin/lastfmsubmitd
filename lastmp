@@ -32,12 +32,28 @@ LASTFMSUBMIT = 'lastfmsubmit'
 
 class Song:
     def __init__(self, mpdclientsongobj):
-        # XXX: Cache these, perhaps?
-        self.artist = getattr(mpdclientsongobj, 'artist', None)
-        self.title = getattr(mpdclientsongobj, 'title', None)
-        self.album = getattr(mpdclientsongobj, 'album', None)
-        self.time = getattr(mpdclientsongobj, 'time', None)
-        self.file = getattr(mpdclientsongobj, 'file', None)
+        # Warning: mpdclient2 is rather confused about whether these are
+        # attributes or keys or what. Hence the funny exceptions.
+        try:
+            self.artist = mpdclientsongobj.artist
+        except AttributeError, KeyError:
+            self.artist = None
+        try:
+            self.title = mpdclientsongobj.title
+        except AttributeError, KeyError:
+            self.title = None
+        try:
+            self.album = mpdclientsongobj.album
+        except AttributeError, KeyError:
+            self.album = None
+        try:
+            self.time = mpdclientsongobj.time
+        except AttributeError, KeyError:
+            self.time = None
+        try:
+            self.file = mpdclientsongobj.file
+        except AttributeError, KeyError:
+            self.file = None
 
     def __eq__(self, other):
         if other == None:
