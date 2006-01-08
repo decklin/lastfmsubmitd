@@ -1,4 +1,7 @@
-0.13 (2006-01-08):
+* Change musicbrainz.queries to just musicbrainz as the python bindings
+  decided to move things around for no good reason.
+
+0.14 (2006-01-08):
 ==================
 
 * Log untagged files as errors.

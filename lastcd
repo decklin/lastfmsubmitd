@@ -3,7 +3,6 @@
 import sys
 import getopt
 import musicbrainz
-import musicbrainz.queries as mq
 
 import lastfm.asyaml
 
@@ -12,18 +11,18 @@ DEF_CD_DEV = '/dev/cdrom'
 def get_toc_discid(mb, dev):
     mb.SetDevice(dev)
     try:
-        mb.Query(mq.MBQ_GetCDTOC)
-        return mb.GetResultData(mq.MBE_TOCGetCDIndexId)
+        mb.Query(musicbrainz.MBQ_GetCDTOC)
+        return mb.GetResultData(musicbrainz.MBE_TOCGetCDIndexId)
     except musicbrainz.MusicBrainzError:
         print >>sys.stderr, "error: could not read TOC from disc"
         sys.exit(1)
 
 def lookup_discid(mb, id):
-    mb.QueryWithArgs(mq.MBQ_GetCDInfoFromCDIndexId, [id])
+    mb.QueryWithArgs(musicbrainz.MBQ_GetCDInfoFromCDIndexId, [id])
 
 def lookup_albumid(mb, id):
     mb.SetDepth(4)
-    mb.QueryWithArgs(mq.MBQ_GetAlbumById, [id])
+    mb.QueryWithArgs(musicbrainz.MBQ_GetAlbumById, [id])
 
 if __name__ == "__main__":
     shortopts = 'd:i:a:'
@@ -55,16 +54,16 @@ if __name__ == "__main__":
         id = get_toc_discid(mb, DEF_CD_DEV)
         lookup_discid(mb, id)
 
-    matches = mb.GetResultInt(mq.MBE_GetNumAlbums)
+    matches = mb.GetResultInt(musicbrainz.MBE_GetNumAlbums)
     if matches == 0:
         print >>sys.stderr, "could not find an entry for this CD"
         sys.exit(1)
     if matches > 1:
         print >>sys.stderr, "warning: multiple matches, using first"
 
-    mb.Select1(mq.MBS_SelectAlbum, 1)
-    album = mb.GetResultData(mq.MBE_AlbumGetAlbumName)
-    n = mb.GetResultInt(mq.MBE_AlbumGetNumTracks)
+    mb.Select1(musicbrainz.MBS_SelectAlbum, 1)
+    album = mb.GetResultData(musicbrainz.MBE_AlbumGetAlbumName)
+    n = mb.GetResultInt(musicbrainz.MBE_AlbumGetNumTracks)
 
     if args:
         tracks = map(int, args)
@@ -72,9 +71,10 @@ if __name__ == "__main__":
         tracks = range(1, n+1)
 
     for i in tracks:
-        artist = mb.GetResultData1(mq.MBE_AlbumGetArtistName, i)
-        title = mb.GetResultData1(mq.MBE_AlbumGetTrackName, i)
-        length = mb.GetResultInt1(mq.MBE_AlbumGetTrackDuration, i)
-        id = mb.GetIDFromURL(mb.GetResultData1(mq.MBE_AlbumGetTrackId, i))
+        artist = mb.GetResultData1(musicbrainz.MBE_AlbumGetArtistName, i)
+        title = mb.GetResultData1(musicbrainz.MBE_AlbumGetTrackName, i)
+        length = mb.GetResultInt1(musicbrainz.MBE_AlbumGetTrackDuration, i)
+        id = mb.GetIDFromURL(
+            mb.GetResultData1(musicbrainz.MBE_AlbumGetTrackId, i))
         print lastfm.asyaml.Song(artist=artist, title=title,
             length=length/1000, album=album, mbid=id)

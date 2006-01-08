@@ -3,28 +3,30 @@
 import sys
 import getopt
 import musicbrainz
-import musicbrainz.queries as mq
 
 def print_selected_album(mb):
-    id = mb.GetIDFromURL(mb.GetResultData(mq.MBE_AlbumGetAlbumId))
-    album = mb.GetResultData(mq.MBE_AlbumGetAlbumName)
-    tracks = mb.GetResultInt(mq.MBE_AlbumGetNumTracks)
+    id = mb.GetIDFromURL(mb.GetResultData(musicbrainz.MBE_AlbumGetAlbumId))
+    album = mb.GetResultData(musicbrainz.MBE_AlbumGetAlbumName)
+    tracks = mb.GetResultInt(musicbrainz.MBE_AlbumGetNumTracks)
 
-    artistid = mb.GetIDFromURL(mb.GetResultData(mq.MBE_AlbumGetAlbumArtistId))
-    if artistid == mq.MBI_VARIOUS_ARTIST_ID:
+    artistid = mb.GetIDFromURL(
+        mb.GetResultData(musicbrainz.MBE_AlbumGetAlbumArtistId))
+    if artistid == musicbrainz.MBI_VARIOUS_ARTIST_ID:
         artist = '[Various Artists]'
     else:
         try:
-            artist = mb.GetResultData1(mq.MBE_AlbumGetArtistName, 1)
+            artist = mb.GetResultData1(musicbrainz.MBE_AlbumGetArtistName, 1)
         except musicbrainz.MusicBrainzError:
             artist = '[Unknown]'
 
     total_dur = 0
     for i in range(1, tracks+1):
-        total_dur += mb.GetResultInt1(mq.MBE_AlbumGetTrackDuration, i)
+        total_dur += mb.GetResultInt1(musicbrainz.MBE_AlbumGetTrackDuration,
+            i)
 
     m, s = divmod(total_dur/1000, 60)
-    print "%s %s - %s [%d:%02d, %d tracks]" % (id, artist, album, m, s, tracks)
+    print "%s %s - %s [%d:%02d, %d tracks]" % (id, artist, album, m, s,
+        tracks)
 
 if __name__ == '__main__':
     shortopts = 'a:b:v'
@@ -52,27 +54,27 @@ if __name__ == '__main__':
             verbose = True
 
     if albumspec:
-        mb.QueryWithArgs(mq.MBQ_FindAlbumByName, [albumspec])
+        mb.QueryWithArgs(musicbrainz.MBQ_FindAlbumByName, [albumspec])
         if verbose:
             print mb.GetResultRDF()
-        n = mb.GetResultInt(mq.MBE_GetNumAlbums)
+        n = mb.GetResultInt(musicbrainz.MBE_GetNumAlbums)
         for i in range(1, n+1):
-            mb.Select1(mq.MBS_SelectAlbum, i)
+            mb.Select1(musicbrainz.MBS_SelectAlbum, i)
             print_selected_album(mb)
-            mb.Select(mq.MBS_Rewind)
+            mb.Select(musicbrainz.MBS_Rewind)
     elif artistspec:
-        mb.QueryWithArgs(mq.MBQ_FindArtistByName, [artistspec])
+        mb.QueryWithArgs(musicbrainz.MBQ_FindArtistByName, [artistspec])
         if verbose:
             print mb.GetResultRDF()
-        n = mb.GetResultInt(mq.MBE_GetNumArtists)
+        n = mb.GetResultInt(musicbrainz.MBE_GetNumArtists)
         for i in range(1, n+1):
-            mb.Select1(mq.MBS_SelectArtist, i)
-            m = mb.GetResultInt(mq.MBE_GetNumAlbums)
+            mb.Select1(musicbrainz.MBS_SelectArtist, i)
+            m = mb.GetResultInt(musicbrainz.MBE_GetNumAlbums)
             for j in range(1, m+1):
-                mb.Select1(mq.MBS_SelectAlbum, j)
+                mb.Select1(musicbrainz.MBS_SelectAlbum, j)
                 print_selected_album(mb)
-                mb.Select(mq.MBS_Back)
-            mb.Select(mq.MBS_Rewind)
+                mb.Select(musicbrainz.MBS_Back)
+            mb.Select(musicbrainz.MBS_Rewind)
     else:
         print >>sys.stderr, "must specify an album or artist name"
         sys.exit(1)
