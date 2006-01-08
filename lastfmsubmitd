@@ -91,7 +91,7 @@ class SubCache:
             out.write("\n")
             self.subs = []
         except IOError:
-            self.log.error("Cannot write to %s, discarding %d subs" %
+            self.log.error("Cannot write to %s, discarding %d sub(s)" %
                 (filename, len(self.subs)))
 
 class SubFifo:
@@ -325,7 +325,8 @@ if __name__ == '__main__':
         if session.connected and cache.subs:
             if throttle.ready():
                 try:
-                    log.debug("Attempting submit, %d subs" % len(cache.subs))
+                    log.debug("Attempting submit, %d sub(s)" %
+                        len(cache.subs))
                     session.submit(cache)
                     log.debug("Done, %d remain in cache" % len(cache.subs))
                     throttle.reset()
