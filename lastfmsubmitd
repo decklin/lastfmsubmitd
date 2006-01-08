@@ -19,7 +19,7 @@ import lastfm.asyaml
 socket.setdefaulttimeout(300)
 
 CLIENT_ID = "lsd"
-CLIENT_VERSION = "0.14"
+CLIENT_VERSION = "0.15"
 PROTOCOL_VERSION = "1.1"
 
 HANDSHAKE_URL_BASE = "http://post.audioscrobbler.com/"
