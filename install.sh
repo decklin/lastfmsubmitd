@@ -1,9 +1,7 @@
 #!/bin/sh
 
 # If you're installing by hand, run this as root, and run the daemons from the
-# following user accounts.
-
-./setup.py install
+# user accounts below. Make sure you also run setup.py as usual, of course.
 
 groupadd lastfm
 useradd -g lastfm lastfmsubmitd

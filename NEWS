@@ -1,3 +1,6 @@
+* Take setup.py back out of install.sh. This doesn't work if you need to
+  set any options such as --prefix, so it's not very useful.
+
 * Change musicbrainz.queries to just musicbrainz as the python bindings
   decided to move things around for no good reason.
 
