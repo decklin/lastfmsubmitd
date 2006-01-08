@@ -353,5 +353,6 @@ if __name__ == '__main__':
             else:
                 # We did time out, so adjust the throttle accordingly.
                 throttle.slept += FIFO_TIMEOUT
+            log.debug("Done reading, %d sub(s) in cache" % len(cache.subs))
         except ValueError, e:
             log.error("Discarding invalid data: %s" % e)
