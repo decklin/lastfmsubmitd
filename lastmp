@@ -36,23 +36,23 @@ class Song:
         # attributes or keys or what. Hence the funny exceptions.
         try:
             self.artist = mpdclientsongobj.artist
-        except AttributeError, KeyError:
+        except (AttributeError, KeyError):
             self.artist = None
         try:
             self.title = mpdclientsongobj.title
-        except AttributeError, KeyError:
+        except (AttributeError, KeyError):
             self.title = None
         try:
             self.album = mpdclientsongobj.album
-        except AttributeError, KeyError:
+        except (AttributeError, KeyError):
             self.album = None
         try:
             self.time = mpdclientsongobj.time
-        except AttributeError, KeyError:
+        except (AttributeError, KeyError):
             self.time = None
         try:
             self.file = mpdclientsongobj.file
-        except AttributeError, KeyError:
+        except (AttributeError, KeyError):
             raise ValueError("song must at least have a filename")
 
     def __eq__(self, other):
