@@ -221,7 +221,8 @@ class MpdObserver:
             except OSError:
                 self.log.warning("Could not fork")
         else:
-            self.log.warning("Missing artist/title/length, not submitting")
+            self.log.error("File %s is missing artist or title or length" %
+                song.file)
 
 if __name__ == '__main__':
     shortopts = 's:h:p:o:d'
