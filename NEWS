@@ -1,3 +1,5 @@
+* Log untagged files as errors.
+
 * Work around some mpdclient2 breakage that was causing lastmp to crash
   on any song missing one or more pieces of metadata.
 
