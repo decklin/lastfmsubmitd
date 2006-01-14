@@ -86,9 +86,9 @@ class SubCache:
     def dump(self, filename):
         try:
             log.info("Saving %d sub(s) to cache" % len(cache.subs))
-            out = file(filename, 'w')
-            out.write("\n".join(map(str, self.subs)))
-            out.write("\n")
+            output = file(filename, 'w')
+            output.write("\n".join(map(str, self.subs)))
+            output.write("\n")
             self.subs = []
         except IOError:
             self.log.error("Cannot write to %s, discarding %d sub(s)" %
@@ -203,12 +203,12 @@ class LastFmSession:
 
     def submit(self, cache):
         while cache.subs:
-            self.log.info("Submitting %d song(s)" %
-                len(cache.subs[:SUB_CHUNK_SIZE]))
+            chunk = cache.subs[:SUB_CHUNK_SIZE]
+            self.log.info("Submitting %d song(s)" % len(chunk))
 
             args = { 'u': self.user, 's': self.session_key }
             post_data = [urllib.urlencode(args)]
-            for i, sub in enumerate(cache.subs[:SUB_CHUNK_SIZE]):
+            for i, sub in enumerate(chunk):
                 args = {}
                 args['a[%d]' % i] =  sub.artist.encode('utf-8')
                 args['t[%d]' % i] =  sub.title.encode('utf-8')
@@ -342,18 +342,21 @@ if __name__ == '__main__':
             else:
                 throttle.sleep(SLEEP_TIME)
 
-        try:
+        read = []
+        data = fifo.select(FIFO_TIMEOUT)
+        while data:
+            # We may have timed out for a few seconds, but whatever.
+            read.append(data)
             data = fifo.select(FIFO_TIMEOUT)
-            while data:
-                # We may have timed out for a few seconds, but whatever.
-                incoming = lastfm.asyaml.Parser(data)
+        else:
+            # We did time out, so adjust the throttle accordingly.
+            throttle.slept += FIFO_TIMEOUT
+        if read:
+            try:
+                incoming = lastfm.asyaml.Parser(''.join(read))
                 if incoming.items:
                     cache.subs += incoming.items
                     log.debug("Read %d sub(s) from fifo, %d total" %
                         (len(incoming.items), len(cache.subs)))
-                data = fifo.select(FIFO_TIMEOUT)
-            else:
-                # We did time out, so adjust the throttle accordingly.
-                throttle.slept += FIFO_TIMEOUT
-        except ValueError, e:
-            log.error("Discarding invalid data: %s" % e)
+            except ValueError, e:
+                log.error("Discarding invalid data: %s" % e)

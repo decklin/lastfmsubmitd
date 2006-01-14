@@ -7,23 +7,22 @@ class Writer:
         self.lockfile = filename + ".lock"
         self.log = log
 
-    def write(self, subs):
-        lock = file(self.lockfile, 'w')
+        self.lock = file(self.lockfile, 'w')
         self.log.debug("Requesting lock on %s" % self.lockfile)
-        fcntl.flock(lock, fcntl.LOCK_EX)
+        fcntl.flock(self.lock, fcntl.LOCK_EX)
 
-        self.log.debug("We have lock, writing to %s" % self.outfile)
         # This will block until we have a reader (which means more writers
         # may pile up, but that's OK, because they should get the lock in
-        # the order they requested them)
-        out = file(self.outfile, 'w')
-        for sub in subs:
-            print >>out, sub
-            self.log.info("Sent %s to submit daemon", sub.shortname())
-        # And then we must flush and get out of the way of the next writer
-        # before releasing the lock
-        out.close()
+        # the order they requested them).
+        self.out = file(self.outfile, 'w')
 
-        fcntl.flock(lock, fcntl.LOCK_UN)
-        lock.close()
+    def __del__(self):
+        # We must flush and get out of the way of the next writer before
+        # releasing the lock.
+        self.out.close()
+        fcntl.flock(self.lock, fcntl.LOCK_UN)
+        self.lock.close()
         self.log.debug("Released lock")
+
+    def write(self, s):
+        self.out.write(s)

@@ -1,3 +1,8 @@
+* Various cleanups taken from the syck branch. In particular, reading
+  from the fifo should be a bit saner about catching multiple writes.
+
+* Can now use --debug in lastcdreplay.
+
 0.15 (2006-01-08):
 ==================
 
