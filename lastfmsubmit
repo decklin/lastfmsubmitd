@@ -1,12 +1,12 @@
 #!/usr/bin/python
 
 import sys
-import time
 import getopt
 import locale
+import datetime
+import syck
 
 import lastfm
-import lastfm.asyaml
 import lastfm.logger
 import lastfm.queue
 
@@ -37,7 +37,7 @@ if __name__ == '__main__':
         print >>sys.stderr, "extra args: %s" % ' '.join(args)
         sys.exit(1)
 
-    subinfo = { 'time': time.gmtime(), }
+    subinfo = { 'time': datetime.datetime.utcnow() }
     outfile = lastfm.SUBMITD_FIFO
     debug = False
 
@@ -47,14 +47,10 @@ if __name__ == '__main__':
         elif opt in ('--title', '-t'):
             subinfo['title'] = unicode(arg, encoding)
         elif opt in ('--length', '-l'):
-            try:
-                subinfo['length'] = lastfm.asyaml.parse_length(arg)
-            except ValueError:
-                log.error("could not parse length %s" % arg)
-                sys.exit(1)
+            subinfo['length'] = int(arg)
         elif opt in ('--time', '-i'):
             try:
-                subinfo['time'] = lastfm.asyaml.parse_time(arg)
+                subinfo['time'] = datetime.datetime.utcnow() # XXX ???
             except ValueError:
                 log.error("could not parse time %s" % arg)
                 sys.exit(1)
@@ -69,19 +65,19 @@ if __name__ == '__main__':
 
     log = lastfm.logger.create_log("lastfmsubmit", debug)
 
-    try:
-        sub = lastfm.asyaml.Submission(**subinfo)
-    except ValueError:
-        self.log.error("Not queueing anything, some info was missing")
-        print >>sys.stderr, "Must specify at least artist, title, and length"
-        sys.exit(1)
+    for required in ('artist', 'title', 'length'):
+        if not subinfo.has_key(required):
+            print >>sys.stderr, "Must specify %s" % required
+            sys.exit(1)
 
     if outfile == "-":
-        print sub
+        print syck.dump(subinfo)
     else:
         try:
             writer = lastfm.queue.Writer(outfile, log)
-            writer.write([sub])
+            print >>writer, syck.dump(subinfo)
+            log.info("Sent %s to submit daemon",
+                lastfm.logger.short_name(subinfo))
         except IOError:
             log.error("Could not write to %s" % outfile)
             sys.exit(1)

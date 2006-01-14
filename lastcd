@@ -3,8 +3,7 @@
 import sys
 import getopt
 import musicbrainz
-
-import lastfm.asyaml
+import syck
 
 DEF_CD_DEV = '/dev/cdrom'
 
@@ -71,10 +70,17 @@ if __name__ == "__main__":
         tracks = range(1, n+1)
 
     for i in tracks:
-        artist = mb.GetResultData1(musicbrainz.MBE_AlbumGetArtistName, i)
-        title = mb.GetResultData1(musicbrainz.MBE_AlbumGetTrackName, i)
-        length = mb.GetResultInt1(musicbrainz.MBE_AlbumGetTrackDuration, i)
-        id = mb.GetIDFromURL(
-            mb.GetResultData1(musicbrainz.MBE_AlbumGetTrackId, i))
-        print lastfm.asyaml.Song(artist=artist, title=title,
-            length=length/1000, album=album, mbid=id)
+        trackinfo = {
+            'number': i,
+            'artist': mb.GetResultData1(
+                musicbrainz.MBE_AlbumGetArtistName, i),
+            'title': mb.GetResultData1(
+                musicbrainz.MBE_AlbumGetTrackName, i),
+            'length': mb.GetResultInt1(
+                musicbrainz.MBE_AlbumGetTrackDuration, i) / 1000,
+            'album': mb.GetResultData1(
+                musicbrainz.MBE_AlbumGetAlbumName, i),
+            'mbid': mb.GetIDFromURL(
+                mb.GetResultData1(musicbrainz.MBE_AlbumGetTrackId, i)),
+            }
+        print syck.dump(trackinfo)

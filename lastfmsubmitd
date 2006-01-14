@@ -10,10 +10,12 @@ import socket
 import urllib
 import md5
 import signal
+import syck
+import datetime
 
 import lastfm
 import lastfm.logger
-import lastfm.asyaml
+# XXX: queue.Reader?
 
 # This is only a band-aid until a proper solution is implemented.
 socket.setdefaulttimeout(300)
@@ -77,18 +79,18 @@ class SubCache:
         self.log = log
         self.subs = []
         try:
-            cache = file(filename)
-            stored = lastfm.asyaml.Parser(cache.read())
-            self.subs += stored.items
+            # XXX: comprehension?
+            input = file(filename)
+            for doc in syck.load_documents(input):
+                self.subs.append(doc)
         except IOError:
             pass
 
     def dump(self, filename):
         try:
             log.info("Saving %d sub(s) to cache" % len(cache.subs))
-            out = file(filename, 'w')
-            out.write("\n".join(map(str, self.subs)))
-            out.write("\n")
+            output = file(filename, 'w')
+            syck.dump_documents(self.subs, output)
             self.subs = []
         except IOError:
             self.log.error("Cannot write to %s, discarding %d sub(s)" %
@@ -203,26 +205,28 @@ class LastFmSession:
 
     def submit(self, cache):
         while cache.subs:
-            self.log.info("Submitting %d song(s)" %
-                len(cache.subs[:SUB_CHUNK_SIZE]))
+            chunk = cache.subs[:SUB_CHUNK_SIZE]
+            self.log.info("Submitting %d song(s)" % len(chunk))
 
             args = { 'u': self.user, 's': self.session_key }
             post_data = [urllib.urlencode(args)]
-            for i, sub in enumerate(cache.subs[:SUB_CHUNK_SIZE]):
+            for i, sub in enumerate(chunk):
                 args = {}
-                args['a[%d]' % i] =  sub.artist.encode('utf-8')
-                args['t[%d]' % i] =  sub.title.encode('utf-8')
-                args['l[%d]' % i] =  str(sub.length)
-                args['i[%d]' % i] =  lastfm.asyaml.format_time(sub.time)
-                if hasattr(sub, 'album'):
-                    args['b[%d]' % i] = sub.album.encode('utf-8')
+                args['a[%d]' % i] = sub['artist'].encode('utf-8')
+                args['t[%d]' % i] = sub['title'].encode('utf-8')
+                args['l[%d]' % i] = sub['length']
+                args['i[%d]' % i] = sub['time'].strftime(lastfm.TIME_FMT)
+                # XXX: try (all of these, maybe)
+                if sub.has_key('album'):
+                    args['b[%d]' % i] = sub['album'].encode('utf-8')
                 else:
                     args['b[%d]' % i] = ''
-                if hasattr(sub, 'mbid'):
-                    args['m[%d]' % i] = (sub.mbid)
+                if sub.has_key('mbid'):
+                    args['m[%d]' % i] = sub['mbid'].encode('utf-8')
                 else:
                     args['m[%d]' % i] = ''
-                self.log.debug("Submitting: %s" % sub.shortname())
+                self.log.debug("Submitting: %s" %
+                    lastfm.logger.short_name(sub))
                 post_data.append(urllib.urlencode(args))
 
             post_str = '&'.join(post_data)
@@ -342,18 +346,25 @@ if __name__ == '__main__':
             else:
                 throttle.sleep(SLEEP_TIME)
 
-        try:
+        read = []
+        data = fifo.select(FIFO_TIMEOUT)
+        while data:
+            # We may have timed out for a few seconds, but whatever.
+            read.append(data)
             data = fifo.select(FIFO_TIMEOUT)
-            while data:
-                # We may have timed out for a few seconds, but whatever.
-                incoming = lastfm.asyaml.Parser(data)
-                if incoming.items:
-                    cache.subs += incoming.items
-                    log.debug("Read %d sub(s) from fifo, %d total" %
-                        (len(incoming.items), len(cache.subs)))
-                data = fifo.select(FIFO_TIMEOUT)
-            else:
-                # We did time out, so adjust the throttle accordingly.
-                throttle.slept += FIFO_TIMEOUT
-        except ValueError, e:
-            log.error("Discarding invalid data: %s" % e)
+        else:
+            # We did time out, so adjust the throttle accordingly.
+            throttle.slept += FIFO_TIMEOUT
+        if read:
+            count = 0
+            try:
+                for doc in syck.load_documents(''.join(read)):
+                    log.debug("Adding: %s" %
+                        lastfm.logger.short_name(doc))
+                    cache.subs.append(doc)
+                    count += 1
+                log.debug("Read %d sub(s) from fifo, %d total" %
+                    (count, len(cache.subs)))
+            # XXX: this still the right one? catching at all?
+            except ValueError, e:
+                log.error("Discarding invalid data: %s" % e)

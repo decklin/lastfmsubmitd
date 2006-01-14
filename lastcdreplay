@@ -3,17 +3,16 @@
 import sys
 import time
 import getopt
+import syck
+import datetime
 
 import lastfm
-import lastfm.asyaml
 import lastfm.logger
 import lastfm.queue
 
 if __name__ == "__main__":
-    log = lastfm.logger.create_log("lastcdreplay")
-
-    shortopts = 'o:'
-    longopts = ['output=']
+    shortopts = 'o:d'
+    longopts = ['output=', 'debug']
 
     try:
         opts, args = getopt.getopt(sys.argv[1:], shortopts, longopts)
@@ -21,44 +20,56 @@ if __name__ == "__main__":
         print >>sys.stderr, "error: %s" % e
         sys.exit(1)
 
+    debug = False
     outfile = lastfm.SUBMITD_FIFO
 
     for opt, arg in opts:
         if opt in ('--output', '-o'):
             outfile = arg
+        elif opt in ('--debug', '-d'):
+            debug = True
+        else:
+            print >>sys.stderr, "unknown option: %s", opt
+            sys.exit(1)
+
+    log = lastfm.logger.create_log("lastcdreplay", debug)
 
     tracks = []
-    for f in [file(n) for n in args] or [sys.stdin]:
-        input = lastfm.asyaml.Parser(f.read())
-        tracks += input.items
+    for f in [file(name) for name in args] or [sys.stdin]:
+        for doc in syck.load_documents(f):
+            tracks.append(doc)
 
-    total_len = 0
-    for track in tracks:
-        total_len += track.length
+    len = 0
+    for t in tracks:
+        len += t['length']
 
     # We will simulate things as if the last track in our input just
     # finished playing right now.
-    start = time.time() - total_len
 
-    pos = start
+    pos = datetime.datetime.utcnow() - datetime.timedelta(seconds=len)
+
     subs = []
-    for track in tracks:
-        if track.length >= lastfm.MIN_LEN and track.length <= lastfm.MAX_LEN:
-            if track.length:
-                date = pos + track.length / 2
-                subs.append(lastfm.asyaml.Submission(track=track,
-                    time=time.gmtime(date)))
-                pos += track.length
-            else:
-                print >>sys.stderr, "all tracks must have non-zero length"
-                sys.exit(1)
+    for t in tracks:
+        len = t['length']
+        if len:
+            if len >= lastfm.MIN_LEN and len <= lastfm.MAX_LEN:
+                date = pos + datetime.timedelta(seconds=len/2)
+                t['time'] = pos.replace()
+                subs.append(t)
+            pos = pos + datetime.timedelta(seconds=len)
+        else:
+            print >>sys.stderr, "all tracks must have a non-zero length"
+            sys.exit(1)
 
     if outfile == "-":
-        for sub in subs:
-            print sub
+        for s in subs:
+            print syck.dump(s)
     else:
         try:
             writer = lastfm.queue.Writer(outfile, log)
-            writer.write(subs)
+            for s in subs:
+                log.info("Sent %s to submit daemon",
+                    lastfm.logger.short_name(s))
+                print >>writer, syck.dump(s)
         except IOError:
             print >>sys.stderr, "error: could not write to %s" % outfile

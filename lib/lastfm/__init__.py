@@ -1,5 +1,8 @@
 __all__ = ['asyaml', 'logger', 'queue']
 
+# XXX: put all this in lastfm.protocol?
+TIME_FMT = "%Y-%m-%d %H:%M:%S"
+
 # Our IPC mechanisms.
 SUBMITD_CACHE = "/var/cache/lastfmsubmitd/subs"
 SUBMITD_FIFO = "/var/run/lastfmsubmitd/fifo"
@@ -16,4 +19,3 @@ SUB_PERCENT = 0.5
 
 # ...or if it has been played for this many seconds.
 SUB_SECONDS = 240
-
