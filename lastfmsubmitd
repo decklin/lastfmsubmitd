@@ -359,8 +359,6 @@ if __name__ == '__main__':
             count = 0
             try:
                 for doc in syck.load_documents(''.join(read)):
-                    log.debug("Adding: %s" %
-                        lastfm.logger.short_name(doc))
                     cache.subs.append(doc)
                     count += 1
                 log.debug("Read %d sub(s) from fifo, %d total" %
