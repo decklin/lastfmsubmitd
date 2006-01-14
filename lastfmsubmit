@@ -81,7 +81,7 @@ if __name__ == '__main__':
     else:
         try:
             writer = lastfm.queue.Writer(outfile, log)
-            writer.write(sub)
+            print >>writer, sub
         except IOError:
             log.error("Could not write to %s" % outfile)
             sys.exit(1)

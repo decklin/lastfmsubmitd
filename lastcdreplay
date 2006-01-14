@@ -40,12 +40,12 @@ if __name__ == "__main__":
 
     len = 0
     for t in tracks:
-        total_len += t.length
+        len += t.length
 
     # We will simulate things as if the last track in our input just
     # finished playing right now.
 
-    pos = time.time() - total_len
+    pos = time.time() - len
 
     subs = []
     for t in tracks:
@@ -66,6 +66,6 @@ if __name__ == "__main__":
         try:
             writer = lastfm.queue.Writer(outfile, log)
             for s in subs:
-                writer.write(s)
+                print >>writer, s
         except IOError:
             print >>sys.stderr, "error: could not write to %s" % outfile
