@@ -17,22 +17,32 @@ import lastfm
 import lastfm.logger
 # XXX: queue.Reader?
 
-# This is only a band-aid until a proper solution is implemented.
-socket.setdefaulttimeout(300)
+SLEEP_TIME = 15
+FIFO_TIMEOUT = 5
 
 CLIENT_ID = "lsd"
 CLIENT_VERSION = "0.15"
-PROTOCOL_VERSION = "1.1"
 
+PROTOCOL_VERSION = "1.1"
 HANDSHAKE_URL_BASE = "http://post.audioscrobbler.com/"
 DEF_INTERVAL = 1
-
 SUB_CHUNK_SIZE = 10
 
-SLEEP_TIME = 15
-INITIAL_BACKOFF = 60
+# This should be something small, because the server times out quickly. If
+# there is any congestion at either end of the network, it will give up and
+# try to process a partial read, leading to "not all request variables set"
+# errors. So, there is little point in waiting around for the rest of the data
+# to get there. Of course, we don't want to time out *faster* than the server
+# does, because after a timeout we assume none of the subs went through at all
+# and will thus retry all of them. If half of the subs were actually read this
+# will lead to duplicate submits which will then have to be dropped by the
+# spam filter.
 
-FIFO_TIMEOUT = 5
+HTTP_TIMEOUT = 30
+
+# This, on the other hand, is totally arbitrary.
+
+INITIAL_BACKOFF = 60
 
 class HandshakeError(Exception): pass
 class SubTimeoutError(Exception): pass
@@ -152,10 +162,14 @@ class LastFmSession:
         self.log.debug("Handshake URL: %s" % self.handshake_url)
 
         try:
+            signal.alarm(HTTP_TIMEOUT)
             response = urllib.urlopen(self.handshake_url)
             status_line = response.readline().strip()
+            signal.alarm(0)
         except IOError, e:
+            signal.alarm(0)
             raise HandshakeError(e)
+        # XXX: handshaketimeouterror?
 
         if status_line == "UPTODATE":
             self.read_submit_url(response)
@@ -232,8 +246,11 @@ class LastFmSession:
             post_str = '&'.join(post_data)
             self.log.debug("POST data: %s" % post_str)
             try:
+                signal.alarm(HTTP_TIMEOUT)
                 response = urllib.urlopen(self.submit_url, post_str)
+                signal.alarm(0)
             except IOError, e:
+                signal.alarm(0)
                 raise SubTimeoutError(e)
 
             failed = False
@@ -258,6 +275,18 @@ class LastFmSession:
 
             self.read_interval(response)
             time.sleep(self.interval)
+
+def shutdown(signum, frame):
+    log.info("Caught signal %d, exiting" % signum)
+    cache.dump(lastfm.SUBMITD_CACHE)
+    sys.exit(0)
+
+def alarm(signum, frame):
+    log.info("Caught signal %d, resuming" % signum)
+
+def reinit(signum, frame):
+    # XXX: reread config, reset backoff and throttle, rehandshake
+    pass
 
 if __name__ == '__main__':
     shortopts = 'u:p:d'
@@ -306,13 +335,10 @@ if __name__ == '__main__':
     if cache.subs:
         log.info("Read %d sub(s) from cache", len(cache.subs))
 
-    def handle_signal(signum, frame):
-        log.info("Caught signal %d, exiting" % signum)
-        cache.dump(lastfm.SUBMITD_CACHE)
-        sys.exit(0)
-
-    for signum in (signal.SIGTERM, signal.SIGINT):
-        signal.signal(signum, handle_signal)
+    signal.signal(signal.SIGTERM, shutdown)
+    signal.signal(signal.SIGINT, shutdown)
+    signal.signal(signal.SIGHUP, reinit)
+    signal.signal(signal.SIGALRM, alarm)
 
     while True:
         if not session.connected:
