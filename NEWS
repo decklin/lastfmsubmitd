@@ -1,7 +1,10 @@
+* Use a proper alarm-based timeout on HTTP connections to the server, so
+  that it doesn't matter what implementation of urllib we have.
+
 * Various cleanups taken from the syck branch. In particular, reading
   from the fifo should be a bit saner about catching multiple writes.
 
-* Can now use --debug in lastcdreplay.
+* Add --debug to lastcdreplay.
 
 0.15 (2006-01-08):
 ==================
