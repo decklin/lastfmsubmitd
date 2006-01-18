@@ -161,7 +161,6 @@ class MpdObserver:
     def observe(self):
         """Loop forever, periodically checking MPD's state and
         submitting songs when necessary."""
-        SAVEME= 42
         while True:
             if self.mpd is None:
                 try:
