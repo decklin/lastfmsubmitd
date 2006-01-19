@@ -19,7 +19,7 @@ SLEEP_TIME = 15
 FIFO_TIMEOUT = 5
 
 CLIENT_ID = "lsd"
-CLIENT_VERSION = "0.15"
+CLIENT_VERSION = "0.16"
 
 PROTOCOL_VERSION = "1.1"
 HANDSHAKE_URL_BASE = "http://post.audioscrobbler.com/"
