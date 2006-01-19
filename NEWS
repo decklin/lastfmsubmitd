@@ -1,3 +1,6 @@
+0.16 (2006-01-19):
+==================
+
 * Use a proper alarm-based timeout on HTTP connections to the server, so
   that it doesn't matter what implementation of urllib we have.
 
