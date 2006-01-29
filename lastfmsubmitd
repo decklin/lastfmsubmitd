@@ -64,7 +64,6 @@ class SessionThrottle:
         self.sleep_until = 0
 
     def ready(self):
-        self.log.debug("Slept %d of %d secs" % (self.slept, self.sleep_until))
         return self.slept >= self.sleep_until
 
     def backoff(self):
@@ -72,7 +71,8 @@ class SessionThrottle:
         if self.sleep_until < INITIAL_BACKOFF:
             self.sleep_until = INITIAL_BACKOFF
         else:
-            self.sleep_until *= 2
+            if self.sleep_until < 4 * 3600:
+                self.sleep_until *= 2
         self.log.info("Backing off, will retry in %d:%02d" %
             divmod(self.sleep_until, 60))
 
