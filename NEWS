@@ -12,8 +12,9 @@
 
 * Removed --debug from lastfmsubmit.
 
-* Create run and cache directories on startup if nonexistent. Took this
-  out of the install.
+* Removed the old install entirely. We now create run and cache
+  directories on startup if nonexistent. Everything else is documented
+  in README instead.
 
 0.16 (2006-01-19):
 ==================
