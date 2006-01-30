@@ -24,6 +24,18 @@ caches them if submission is not possible due to network or server
 errors. Handling of network errors is relatively flakey at the moment,
 so keep an eye on your log file.
 
+Installation
+============
+
+1. Run ``./setup.py install`` as usual.
+
+2. Create a user/group for the daemon(s) (I use lastfm:lastfm).
+
+3. Create the directory /var/log/lastfm and make it writable by whatever
+   user is going to be running the daemon(s).
+
+4. If you need an init script, look at init-example.sh.
+
 Replaying tracks from a CD
 ==========================
 
@@ -44,18 +56,6 @@ it does not really work and cannot be used in combination with --album.)
 lastcdreplay will take a list of songs encoded in this format, add
 submission times to them as if they had all just been played in order,
 and write them to lastfmsubit's FIFO or the file specified by --output.
-
-Daemon Usage
-============
-
-lastfmsubmitd uses /var/run/lastfmsubmitd/fifo for IPC and
-/var/cache/lastfmsubmitd/subs to save uncommitted submissions between
-runs. I would recommend creating "lastfmsubmitd" and "lastmp" user
-accounts and putting them in a "lastfm" group, with the FIFO
-group-writable. If you plan on using lastcdreplay from your normal user
-account, add that account to the "lastfm" group as well. The install.sh
-script can be used to set up the appropriate users and permissions
-automatically.
 
 Requirements
 ============

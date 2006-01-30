@@ -27,10 +27,8 @@ setup(
         'lastfmsubmitd',
         'lastmp',
         'mbfindalbum',
-         ],
-    # Note to self: write man pages.
-    #data_files=[
-    #    ('share/man1',
-    #        ['pygmy.glade', 'README']),
-    #    ],
+        ],
+    data_files=[
+        # ('share/man1', ['lastfmsubmitd.1', 'etc...']),
+        ],
     )
