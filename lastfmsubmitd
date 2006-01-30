@@ -90,7 +90,7 @@ class SubCache:
         try:
             # XXX: comprehension?
             input = file(filename)
-            for doc in lastfm.marshaller.load_documents(input):
+            for doc in lastfm.marshaller.load_documents(input.read()):
                 self.subs.append(doc)
         except IOError:
             pass
