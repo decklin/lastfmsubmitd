@@ -10,6 +10,8 @@
 
 * Don't let the exponential backoff grow larger than ~4 hours.
 
+* Removed --debug from lastfmsubmit.
+
 0.16 (2006-01-19):
 ==================
 
