@@ -15,8 +15,8 @@ import mpdclient2
 import lastfm.logger
 
 """This program connects to MPD and runs in the background. When a valid
-track is played (valid = must be tagged, played w/o skipping for the
-first 50% or 240s), it invokes lastfmsubmit, which will submit the track
+song is played (valid = must be tagged, played w/o skipping for the
+first 50% or 240s), it invokes lastfmsubmit, which will submit the song
 to Last.fm."""
 
 # Sleep this many seconds at a time, if not otherwise specified.

@@ -70,7 +70,7 @@ if __name__ == "__main__":
         tracks = range(1, n+1)
 
     for i in tracks:
-        track = {
+        song = {
             'number': i,
             'artist': mb.GetResultData1(
                 musicbrainz.MBE_AlbumGetArtistName, i),
@@ -83,4 +83,4 @@ if __name__ == "__main__":
             'mbid': mb.GetIDFromURL(
                 mb.GetResultData1(musicbrainz.MBE_AlbumGetTrackId, i)),
             }
-        print lastfm.marshaller.dump(track)
+        print lastfm.marshaller.dump(song)

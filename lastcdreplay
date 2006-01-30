@@ -33,14 +33,14 @@ if __name__ == "__main__":
 
     log = lastfm.logger.create_log("lastcdreplay", debug)
 
-    tracks = []
+    songs = []
     for f in [file(name) for name in args] or [sys.stdin]:
-        for track in lastfm.marshaller.load_documents(f.read()):
-            tracks.append(track)
+        for song in lastfm.marshaller.load_documents(f.read()):
+            songs.append(song)
 
     len = 0
-    for t in tracks:
-        len += t['length']
+    for s in songs:
+        len += s['length']
 
     # We will simulate things as if the last track in our input just
     # finished playing right now.
@@ -48,13 +48,13 @@ if __name__ == "__main__":
     pos = time.time() - len
 
     subs = []
-    for t in tracks:
-        len = t['length']
+    for s in songs:
+        len = s['length']
         if len:
             if len >= lastfm.MIN_LEN and len <= lastfm.MAX_LEN:
                 date = pos + len / 2
-                t['time'] = time.gmtime(pos)
-                subs.append(t)
+                s['time'] = time.gmtime(pos)
+                subs.append(s)
             pos = pos + len
         else:
             print >>sys.stderr, "all tracks must have a non-zero length"
