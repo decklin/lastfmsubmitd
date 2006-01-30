@@ -12,6 +12,9 @@
 
 * Removed --debug from lastfmsubmit.
 
+* Create run and cache directories on startup if nonexistent. Took this
+  out of the install.
+
 0.16 (2006-01-19):
 ==================
 

@@ -79,20 +79,25 @@ class SessionThrottle:
         time.sleep(secs)
         self.slept += secs
 
+def makedirs(path):
+    dir, file = os.path.split(path)
+    if not os.path.isdir(dir):
+        os.mkdir(dir)
+        os.chmod(dir, 0775)
+
 class SubCache:
     """Holds submissions while we are running, and saves them to persistent
     storage on exit."""
 
     def __init__(self, log, filename):
         self.log = log
-        self.subs = []
+        makedirs(filename)
         try:
-            # XXX: comprehension?
             input = file(filename)
-            for doc in lastfm.marshaller.load_documents(input.read()):
-                self.subs.append(doc)
+            self.subs = [d for d in
+                lastfm.marshaller.load_documents(input.read())]
         except IOError:
-            pass
+            self.subs = []
 
     def dump(self, filename):
         try:
@@ -111,13 +116,13 @@ class SubFifo:
     def __init__(self, log, fifoname):
         self.log = log
         self.fifoname = fifoname
+        makedirs(fifoname)
         try:
-            if not stat.S_ISFIFO(os.stat(fifoname).st_mode):
-                self.log.error('%s exists but is not a fifo, exiting')
-                sys.exit(1)
-        except OSError:
-            self.log.debug('Creating %s' % fifoname)
+            assert stat.S_ISFIFO(os.stat(fifoname).st_mode)
+        except OSError, AssertionError:
+            self.log.debug('Creating %s' % self.fifoname)
             os.mkfifo(self.fifoname)
+            os.chmod(self.fifoname, 0664)
 
     def select(self, timeout):
         fd = os.open(self.fifoname, os.O_NONBLOCK)
