@@ -225,10 +225,10 @@ class LastFmSession:
             post_data = [urllib.urlencode(args)]
             for i, sub in enumerate(chunk):
                 args = {}
-                args['a[%d]' % i] = sub['artist'].encode('utf-8')
-                args['t[%d]' % i] = sub['title'].encode('utf-8')
-                args['l[%d]' % i] = sub['length']
-                args['i[%d]' % i] = sub['time'].strftime(lastfm.TIME_FMT)
+                args['a[%d]'%i] = sub['artist'].encode('utf-8')
+                args['t[%d]'%i] = sub['title'].encode('utf-8')
+                args['l[%d]'%i] = sub['length']
+                args['i[%d]'%i] = time.strftime(lastfm.TIME_FMT, sub['time'])
                 # XXX: try (all of these, maybe)
                 if sub.has_key('album'):
                     args['b[%d]' % i] = sub['album'].encode('utf-8')
