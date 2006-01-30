@@ -4,11 +4,11 @@ class Writer:
 
     def __init__(self, filename, log):
         self.outfile = filename
-        self.lockfile = filename + ".lock"
+        self.lockfile = filename + '.lock'
         self.log = log
 
         self.lock = file(self.lockfile, 'w')
-        self.log.debug("Requesting lock on %s" % self.lockfile)
+        self.log.debug('Requesting lock on %s' % self.lockfile)
         fcntl.flock(self.lock, fcntl.LOCK_EX)
 
         # This will block until we have a reader (which means more writers
@@ -22,7 +22,7 @@ class Writer:
         self.out.close()
         fcntl.flock(self.lock, fcntl.LOCK_UN)
         self.lock.close()
-        self.log.debug("Released lock")
+        self.log.debug('Released lock')
 
     def write(self, s):
         self.out.write(s)

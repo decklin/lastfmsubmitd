@@ -1,12 +1,12 @@
 __all__ = ['logger', 'marshaller', 'queue']
 
 # XXX: put all this in lastfm.protocol?
-TIME_FMT = "%Y-%m-%d %H:%M:%S"
+TIME_FMT = '%Y-%m-%d %H:%M:%S'
 
 # Our IPC mechanisms.
-SUBMITD_CACHE = "/var/cache/lastfmsubmitd/subs"
-SUBMITD_FIFO = "/var/run/lastfmsubmitd/fifo"
-SUBMITD_PIDFILE = "/var/run/lastfmsubmitd/pid"
+SUBMITD_CACHE = '/var/cache/lastfmsubmitd/subs'
+SUBMITD_FIFO = '/var/run/lastfmsubmitd/fifo'
+SUBMITD_PIDFILE = '/var/run/lastfmsubmitd/pid'
 
 # A song under this length will not be submitted.
 MIN_LEN = 30

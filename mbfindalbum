@@ -25,7 +25,7 @@ def print_selected_album(mb):
             i)
 
     m, s = divmod(total_dur/1000, 60)
-    print "%s %s - %s [%d:%02d, %d tracks]" % (id, artist, album, m, s,
+    print '%s %s - %s [%d:%02d, %d tracks]' % (id, artist, album, m, s,
         tracks)
 
 if __name__ == '__main__':
@@ -38,7 +38,7 @@ if __name__ == '__main__':
     try:
         opts, args = getopt.getopt(sys.argv[1:], shortopts, longopts)
     except getopt.GetoptError, e:
-        print >>sys.stderr, "error: %s" % e
+        print >>sys.stderr, 'error: %s' % e
         sys.exit(1)
 
     artistspec = None
@@ -76,5 +76,5 @@ if __name__ == '__main__':
                 mb.Select(musicbrainz.MBS_Back)
             mb.Select(musicbrainz.MBS_Rewind)
     else:
-        print >>sys.stderr, "must specify an album or artist name"
+        print >>sys.stderr, 'must specify an album or artist name'
         sys.exit(1)

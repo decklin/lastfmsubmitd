@@ -16,7 +16,7 @@ lastfmsubmitd."""
 
 if __name__ == '__main__':
     encoding = locale.getpreferredencoding()
-    log = lastfm.logger.create_log("lastfmsubmit", debug)
+    log = lastfm.logger.create_log('lastfmsubmit', debug)
 
     shortopts = 'a:s:l:d:b:m:o:d'
     longopts = [
@@ -32,10 +32,10 @@ if __name__ == '__main__':
     try:
         opts, args = getopt.getopt(sys.argv[1:], shortopts, longopts)
     except getopt.GetoptError, e:
-        print >>sys.stderr, "error: %s" % e
+        print >>sys.stderr, 'error: %s' % e
         sys.exit(1)
     if args:
-        print >>sys.stderr, "extra args: %s" % ' '.join(args)
+        print >>sys.stderr, 'extra args: %s' % ' '.join(args)
         sys.exit(1)
 
     sub = { 'time': time.gmtime() }
@@ -52,7 +52,7 @@ if __name__ == '__main__':
             try:
                 sub['time'] = time.strptime(arg, lastfm.TIME_FMT)
             except ValueError:
-                log.error("could not parse time %s" % arg)
+                log.error('could not parse time %s' % arg)
                 sys.exit(1)
         elif opt in ('--album', '-b'):
             sub['album'] = unicode(arg, encoding)
@@ -63,17 +63,17 @@ if __name__ == '__main__':
 
     for required in ('artist', 'title', 'length'):
         if not sub.has_key(required):
-            print >>sys.stderr, "Must specify %s" % required
+            print >>sys.stderr, 'Must specify %s' % required
             sys.exit(1)
 
-    if outfile == "-":
+    if outfile == '-':
         print lastfm.marshaller.dump(sub)
     else:
         try:
             writer = lastfm.queue.Writer(outfile, log)
             print >>writer, lastfm.marshaller.dump(sub)
-            log.info("Sent %s to submit daemon",
+            log.info('Sent %s to submit daemon',
                 lastfm.logger.short_name(sub))
         except IOError:
-            log.error("Could not write to %s" % outfile)
+            log.error('Could not write to %s' % outfile)
             sys.exit(1)

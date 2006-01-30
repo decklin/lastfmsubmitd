@@ -9,14 +9,14 @@ import lastfm.logger
 import lastfm.queue
 import lastfm.marshaller
 
-if __name__ == "__main__":
+if __name__ == '__main__':
     shortopts = 'o:d'
     longopts = ['output=', 'debug']
 
     try:
         opts, args = getopt.getopt(sys.argv[1:], shortopts, longopts)
     except getopt.GetoptError, e:
-        print >>sys.stderr, "error: %s" % e
+        print >>sys.stderr, 'error: %s' % e
         sys.exit(1)
 
     debug = False
@@ -28,10 +28,10 @@ if __name__ == "__main__":
         elif opt in ('--debug', '-d'):
             debug = True
         else:
-            print >>sys.stderr, "unknown option: %s", opt
+            print >>sys.stderr, 'unknown option: %s', opt
             sys.exit(1)
 
-    log = lastfm.logger.create_log("lastcdreplay", debug)
+    log = lastfm.logger.create_log('lastcdreplay', debug)
 
     songs = []
     for f in [file(name) for name in args] or [sys.stdin]:
@@ -57,22 +57,22 @@ if __name__ == "__main__":
                 subs.append(s)
             pos = pos + len
         else:
-            print >>sys.stderr, "all tracks must have a non-zero length"
+            print >>sys.stderr, 'all tracks must have a non-zero length'
             sys.exit(1)
 
     if not subs:
-        print >>sys.stderr, "no usable tracks found"
+        print >>sys.stderr, 'no usable tracks found'
         sys.exit(1)
 
-    if outfile == "-":
+    if outfile == '-':
         for s in subs:
             print lastfm.marshaller.dump(s)
     else:
         try:
             writer = lastfm.queue.Writer(outfile, log)
             for s in subs:
-                log.info("Sent %s to submit daemon",
+                log.info('Sent %s to submit daemon',
                     lastfm.logger.short_name(s))
                 print >>writer, lastfm.marshaller.dump(s)
         except IOError:
-            print >>sys.stderr, "error: could not write to %s" % outfile
+            print >>sys.stderr, 'error: could not write to %s' % outfile

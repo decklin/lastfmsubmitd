@@ -23,5 +23,5 @@ def create_log(name, debug=False):
     return log
 
 def short_name(track):
-    return "%s - %s [%d:%02d]" % ((track['artist'], track['title']) +
+    return '%s - %s [%d:%02d]' % ((track['artist'], track['title']) +
         divmod(track['length'], 60))
