@@ -31,7 +31,11 @@ if __name__ == '__main__':
             print >>sys.stderr, 'unknown option: %s', opt
             sys.exit(1)
 
-    log = lastfm.logger.create_log('lastcdreplay', debug)
+    try:
+        log = lastfm.logger.create_log('lastcdreplay', debug)
+    except IOError, e:
+        print >>sys.stderr, 'could not open log: %s' % e
+        sys.exit(1)
 
     songs = []
     for f in [file(name) for name in args] or [sys.stdin]:

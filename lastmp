@@ -257,7 +257,12 @@ if __name__ == '__main__':
             print >>sys.stderr, 'unknown option: %s', opt
             sys.exit(1)
 
-    log = lastfm.logger.create_log('lastmp', debug)
+    try:
+        log = lastfm.logger.create_log('lastmp', debug)
+    except IOError, e:
+        print >>sys.stderr, 'could not open log: %s' % e
+        sys.exit(1)
+
     log.info('LastMP starting')
 
     def handle_signal(signum, frame):

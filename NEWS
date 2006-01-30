@@ -16,6 +16,9 @@
   directories on startup if nonexistent. Everything else is documented
   in README instead.
 
+* Provide some better error messages if the log file cannot be opened
+  for writing.
+
 0.16 (2006-01-19):
 ==================
 

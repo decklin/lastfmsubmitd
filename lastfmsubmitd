@@ -328,7 +328,12 @@ if __name__ == '__main__':
         print >>sys.stderr, 'error: user and password are required'
         sys.exit(1)
 
-    log = lastfm.logger.create_log('lastfmsubmitd', debug)
+    try:
+        log = lastfm.logger.create_log('lastfmsubmitd', debug)
+    except IOError, e:
+        print >>sys.stderr, 'could not open log: %s' % e
+        sys.exit(1)
+
     log.info('Last.fm Submission Daemon starting')
 
     session = LastFmSession(log, user, password)

@@ -16,7 +16,12 @@ lastfmsubmitd."""
 
 if __name__ == '__main__':
     encoding = locale.getpreferredencoding()
-    log = lastfm.logger.create_log('lastfmsubmit')
+
+    try:
+        log = lastfm.logger.create_log('lastfmsubmit')
+    except IOError, e:
+        print >>sys.stderr, 'could not open log: %s' % e
+        sys.exit(1)
 
     shortopts = 'a:s:l:d:b:m:o:d'
     longopts = [
