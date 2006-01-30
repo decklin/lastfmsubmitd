@@ -60,6 +60,10 @@ if __name__ == "__main__":
             print >>sys.stderr, "all tracks must have a non-zero length"
             sys.exit(1)
 
+    if not subs:
+        print >>sys.stderr, "no usable tracks found"
+        sys.exit(1)
+
     if outfile == "-":
         for s in subs:
             print lastfm.marshaller.dump(s)
