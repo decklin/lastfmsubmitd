@@ -16,7 +16,7 @@ lastfmsubmitd."""
 
 if __name__ == '__main__':
     encoding = locale.getpreferredencoding()
-    log = lastfm.logger.create_log('lastfmsubmit', debug)
+    log = lastfm.logger.create_log('lastfmsubmit')
 
     shortopts = 'a:s:l:d:b:m:o:d'
     longopts = [
