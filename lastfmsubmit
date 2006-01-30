@@ -16,6 +16,8 @@ lastfmsubmitd."""
 
 if __name__ == '__main__':
     encoding = locale.getpreferredencoding()
+    log = lastfm.logger.create_log("lastfmsubmit", debug)
+
     shortopts = 'a:s:l:d:b:m:o:d'
     longopts = [
         'artist=',
@@ -25,7 +27,6 @@ if __name__ == '__main__':
         'album=',
         'mbid=',
         'output=',
-        'debug',
         ]
 
     try:
@@ -39,7 +40,6 @@ if __name__ == '__main__':
 
     subinfo = { 'time': time.gmtime() }
     outfile = lastfm.SUBMITD_FIFO
-    debug = False
 
     for opt, arg in opts:
         if opt in ('--artist', '-a'):
@@ -60,10 +60,6 @@ if __name__ == '__main__':
             subinfo['mbid'] = arg
         elif opt in ('--output', '-o'):
             outfile = arg
-        elif opt in ('--debug', '-d'):
-            debug = True
-
-    log = lastfm.logger.create_log("lastfmsubmit", debug)
 
     for required in ('artist', 'title', 'length'):
         if not subinfo.has_key(required):
