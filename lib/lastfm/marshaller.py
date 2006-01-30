@@ -11,7 +11,7 @@ def dump(song):
     for k, v in song.items():
         if k in ('time'):
             v = '!timestamp %s' % time.strftime(lastfm.TIME_FMT, v)
-        if k in ('length'):
+        elif k in ('length'):
             v = '%d:%02d' % divmod(v, 60)
         else:
             v = unicode(v).encode('utf-8')
@@ -28,7 +28,7 @@ def load(doc):
             k, v = line.split(': ', 1)
             if k in ('time'):
                 v = time.strptime(v, '!timestamp %s' % lastfm.TIME_FMT)
-            if k in ('length'):
+            elif k in ('length'):
                 v = parse_length(v)
             else:
                 v = v.decode('utf-8')
