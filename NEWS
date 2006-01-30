@@ -8,7 +8,8 @@
 * Reading from the fifo should be a bit saner about catching multiple
   writers, and will always wait until there are none before continuing.
 
-* Don't let the exponential backoff grow larger than ~4 hours.
+* Don't let the exponential backoff keep growing if it becomes longer
+  than 6 hours.
 
 * Removed --debug from lastfmsubmit.
 
