@@ -14,7 +14,6 @@ import signal
 import lastfm
 import lastfm.logger
 import lastfm.marshaller
-# XXX: queue.Reader?
 
 SLEEP_TIME = 15
 FIFO_TIMEOUT = 5
