@@ -18,6 +18,9 @@ def dump(song):
         doc.append(': '.join((k, v)))
     return '\n'.join(doc)
 
+def dump_documents(docs, out):
+    out.write('\n'.join([dump(d) for d in docs]))
+
 def load(doc):
     song = {}
     for line in doc.split('\n'):
@@ -35,6 +38,6 @@ def load(doc):
     return song
 
 def load_documents(docs):
-    for doc in docs.split('---\n'):
+    for doc in map(str.strip, docs.split('---\n')):
         if doc:
             yield load(doc)
