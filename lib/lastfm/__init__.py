@@ -1,4 +1,4 @@
-__all__ = ['asyaml', 'logger', 'queue']
+__all__ = ['logger', 'marshaller', 'queue']
 
 # XXX: put all this in lastfm.protocol?
 TIME_FMT = "%Y-%m-%d %H:%M:%S"

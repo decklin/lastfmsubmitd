@@ -3,12 +3,11 @@
 import sys
 import time
 import getopt
-import syck
-import datetime
 
 import lastfm
 import lastfm.logger
 import lastfm.queue
+import lastfm.marshaller
 
 if __name__ == "__main__":
     shortopts = 'o:d'
@@ -36,8 +35,8 @@ if __name__ == "__main__":
 
     tracks = []
     for f in [file(name) for name in args] or [sys.stdin]:
-        for doc in syck.load_documents(f):
-            tracks.append(doc)
+        for track in lastfm.marshaller.load_documents(f.read()):
+            tracks.append(track)
 
     len = 0
     for t in tracks:
@@ -46,30 +45,30 @@ if __name__ == "__main__":
     # We will simulate things as if the last track in our input just
     # finished playing right now.
 
-    pos = datetime.datetime.utcnow() - datetime.timedelta(seconds=len)
+    pos = time.time() - len
 
     subs = []
     for t in tracks:
         len = t['length']
         if len:
             if len >= lastfm.MIN_LEN and len <= lastfm.MAX_LEN:
-                date = pos + datetime.timedelta(seconds=len/2)
-                t['time'] = pos.replace()
+                date = pos + len / 2
+                t['time'] = time.gmtime(pos)
                 subs.append(t)
-            pos = pos + datetime.timedelta(seconds=len)
+            pos = pos + len
         else:
             print >>sys.stderr, "all tracks must have a non-zero length"
             sys.exit(1)
 
     if outfile == "-":
         for s in subs:
-            print syck.dump(s)
+            print lastfm.marshaller.dump(s)
     else:
         try:
             writer = lastfm.queue.Writer(outfile, log)
             for s in subs:
                 log.info("Sent %s to submit daemon",
                     lastfm.logger.short_name(s))
-                print >>writer, syck.dump(s)
+                print >>writer, lastfm.marshaller.dump(s)
         except IOError:
             print >>sys.stderr, "error: could not write to %s" % outfile

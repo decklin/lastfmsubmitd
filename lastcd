@@ -3,7 +3,7 @@
 import sys
 import getopt
 import musicbrainz
-import syck
+import lastfm.marshaller
 
 DEF_CD_DEV = '/dev/cdrom'
 
@@ -70,7 +70,7 @@ if __name__ == "__main__":
         tracks = range(1, n+1)
 
     for i in tracks:
-        trackinfo = {
+        track = {
             'number': i,
             'artist': mb.GetResultData1(
                 musicbrainz.MBE_AlbumGetArtistName, i),
@@ -83,4 +83,4 @@ if __name__ == "__main__":
             'mbid': mb.GetIDFromURL(
                 mb.GetResultData1(musicbrainz.MBE_AlbumGetTrackId, i)),
             }
-        print syck.dump(trackinfo)
+        print lastfm.marshaller.dump(track)

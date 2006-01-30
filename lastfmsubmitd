@@ -10,11 +10,10 @@ import socket
 import urllib
 import md5
 import signal
-import syck
-import datetime
 
 import lastfm
 import lastfm.logger
+import lastfm.marshaller
 # XXX: queue.Reader?
 
 SLEEP_TIME = 15
@@ -91,7 +90,7 @@ class SubCache:
         try:
             # XXX: comprehension?
             input = file(filename)
-            for doc in syck.load_documents(input):
+            for doc in lastfm.marshaller.load_documents(input):
                 self.subs.append(doc)
         except IOError:
             pass
@@ -100,7 +99,7 @@ class SubCache:
         try:
             log.info("Saving %d sub(s) to cache" % len(cache.subs))
             output = file(filename, 'w')
-            syck.dump_documents(self.subs, output)
+            lastfm.marshaller.dump_documents(self.subs, output)
             self.subs = []
         except IOError:
             self.log.error("Cannot write to %s, discarding %d sub(s)" %
@@ -384,7 +383,7 @@ if __name__ == '__main__':
         if read:
             count = 0
             try:
-                for doc in syck.load_documents(''.join(read)):
+                for doc in lastfm.marshaller.load_documents(''.join(read)):
                     cache.subs.append(doc)
                     count += 1
                 log.debug("Read %d sub(s) from fifo, %d total" %

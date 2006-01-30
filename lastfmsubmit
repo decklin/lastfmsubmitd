@@ -1,14 +1,14 @@
 #!/usr/bin/python
 
 import sys
+import time
 import getopt
 import locale
-import datetime
-import syck
 
 import lastfm
 import lastfm.logger
 import lastfm.queue
+import lastfm.marshaller
 
 """This program accepts information about a played song on the commandline,
 generates a submission in lastfmsubmitd format, and sends it to the running
@@ -37,7 +37,7 @@ if __name__ == '__main__':
         print >>sys.stderr, "extra args: %s" % ' '.join(args)
         sys.exit(1)
 
-    subinfo = { 'time': datetime.datetime.utcnow() }
+    subinfo = { 'time': time.gmtime() }
     outfile = lastfm.SUBMITD_FIFO
     debug = False
 
@@ -47,10 +47,10 @@ if __name__ == '__main__':
         elif opt in ('--title', '-t'):
             subinfo['title'] = unicode(arg, encoding)
         elif opt in ('--length', '-l'):
-            subinfo['length'] = int(arg)
+            subinfo['length'] = lastfm.marshaller.parse_length(arg)
         elif opt in ('--time', '-i'):
             try:
-                subinfo['time'] = datetime.datetime.utcnow() # XXX ???
+                subinfo['time'] = time.strptime(arg, lastfm.TIME_FMT)
             except ValueError:
                 log.error("could not parse time %s" % arg)
                 sys.exit(1)
@@ -71,11 +71,11 @@ if __name__ == '__main__':
             sys.exit(1)
 
     if outfile == "-":
-        print syck.dump(subinfo)
+        print lastfm.marshaller.dump(subinfo)
     else:
         try:
             writer = lastfm.queue.Writer(outfile, log)
-            print >>writer, syck.dump(subinfo)
+            print >>writer, lastfm.marshaller.dump(subinfo)
             log.info("Sent %s to submit daemon",
                 lastfm.logger.short_name(subinfo))
         except IOError:
