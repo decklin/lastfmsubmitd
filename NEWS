@@ -1,3 +1,10 @@
+0.17 (2007-01-30):
+==================
+
+* Replaced the asyaml format with a simple marshaller module that uses a
+  format much closer to a simple YAML map. It should now be trivial to
+  use libsyck (once it is working properly) as a drop-in replacement.
+
 0.16 (2006-01-19):
 ==================
 
