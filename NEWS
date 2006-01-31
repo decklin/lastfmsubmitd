@@ -9,6 +9,9 @@
   existing setup, please change it! It will no longer be compatable with
   the Debian package.
 
+* The daemons now fork into the background by default. Added a
+  --no-daemon option to prevent this.
+
 * Replaced the asyaml format with a simple marshaller module that uses a
   format much closer to a simple YAML map. It should now be trivial to
   use libsyck (once it is working properly, and once pysyck is updated

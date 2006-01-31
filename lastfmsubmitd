@@ -272,22 +272,9 @@ class LastFmSession:
             self.read_interval(response)
             time.sleep(self.interval)
 
-def shutdown(signum, frame):
-    log.info('Caught signal %d, exiting' % signum)
-    cache.dump(lastfm.CACHE)
-    os.remove(PIDFILE)
-    sys.exit(0)
-
-def alarm(signum, frame):
-    log.info('Caught signal %d, resuming' % signum)
-
-def reinit(signum, frame):
-    # XXX: reread config, reopen log, reset throttle, rehandshake
-    pass
-
 if __name__ == '__main__':
-    shortopts = 'u:p:d'
-    longopts = ['user=', 'password=', 'debug']
+    shortopts = 'u:p:dn'
+    longopts = ['user=', 'password=', 'debug', 'no-daemon']
 
     try:
         opts, args = getopt.getopt(sys.argv[1:], shortopts, longopts)
@@ -301,6 +288,7 @@ if __name__ == '__main__':
     user = None
     password = None
     debug = False
+    fork = True
 
     try: user = os.environ['LASTFM_USER']
     except KeyError: pass
@@ -314,6 +302,8 @@ if __name__ == '__main__':
             password = arg
         elif opt in ('--debug', '-d'):
             debug = True
+        elif opt in ('--no-daemon', '-n'):
+            fork = False
         else:
             print >>sys.stderr, 'unknown option: %s', opt
             sys.exit(1)
@@ -328,10 +318,36 @@ if __name__ == '__main__':
         print >>sys.stderr, 'could not open log: %s' % e
         sys.exit(1)
 
+    if fork:
+        try:
+            pid = os.fork()
+            if pid != 0: sys.exit(0)
+        except OSError:
+            print >>sys.stderr, 'could not fork daemon, aborting'
+            sys.exit(1)
+
     log.info('Last.fm Submission Daemon starting')
     pidfile = open(PIDFILE, 'w')
     print >>pidfile, os.getpid()
     pidfile.close()
+
+    def shutdown(signum, frame):
+        log.info('Caught signal %d, exiting' % signum)
+        cache.dump(lastfm.CACHE)
+        os.remove(PIDFILE)
+        sys.exit(0)
+
+    def alarm(signum, frame):
+        log.info('Caught signal %d, resuming' % signum)
+
+    def reinit(signum, frame):
+        # XXX: reread config, reopen log, reset throttle, rehandshake
+        pass
+
+    signal.signal(signal.SIGTERM, shutdown)
+    signal.signal(signal.SIGINT, shutdown)
+    signal.signal(signal.SIGHUP, reinit)
+    signal.signal(signal.SIGALRM, alarm)
 
     session = LastFmSession(log, user, password)
     throttle = SessionThrottle(log)
@@ -339,11 +355,6 @@ if __name__ == '__main__':
     cache = SubCache(log, lastfm.CACHE)
     if cache.subs:
         log.info('Read %d sub(s) from cache', len(cache.subs))
-
-    signal.signal(signal.SIGTERM, shutdown)
-    signal.signal(signal.SIGINT, shutdown)
-    signal.signal(signal.SIGHUP, reinit)
-    signal.signal(signal.SIGALRM, alarm)
 
     while True:
         if not session.connected:
