@@ -15,15 +15,7 @@ generates a submission in lastfmsubmitd format, and sends it to the running
 lastfmsubmitd."""
 
 if __name__ == '__main__':
-    encoding = locale.getpreferredencoding()
-
-    try:
-        log = lastfm.logger.getlog('lastfmsubmit', lastfm.LOGFILE)
-    except IOError, e:
-        print >>sys.stderr, 'could not open log: %s' % e
-        sys.exit(1)
-
-    shortopts = 'a:s:l:d:b:m:o:d'
+    shortopts = 'a:s:l:d:b:m:o:e:d'
     longopts = [
         'artist=',
         'title=',
@@ -32,6 +24,8 @@ if __name__ == '__main__':
         'album=',
         'mbid=',
         'output=',
+        'encoding=',
+        'debug',
         ]
 
     try:
@@ -45,12 +39,30 @@ if __name__ == '__main__':
 
     sub = { 'time': time.gmtime() }
     outfile = lastfm.FIFO
+    debug = False
+    encoding = locale.getpreferredencoding()
+
+    # We need to have the log and the encoding while parsing the other
+    # options, so make two passes here.
+
+    for opt, arg in opts:
+        if opt in ('--encoding', '-e'):
+            encoding = arg
+        if opt in ('--debug', '-d'):
+            debug = True
+
+    try:
+        # XXX: needs to go to stderr as well.
+        log = lastfm.logger.getlog('lastfmsubmit', lastfm.LOGFILE, debug)
+    except IOError, e:
+        print >>sys.stderr, 'could not open log: %s' % e
+        sys.exit(1)
 
     for opt, arg in opts:
         if opt in ('--artist', '-a'):
-            sub['artist'] = unicode(arg, encoding)
+            sub['artist'] = unicode(arg, encoding, errors='replace')
         elif opt in ('--title', '-t'):
-            sub['title'] = unicode(arg, encoding)
+            sub['title'] = unicode(arg, encoding, errors='replace')
         elif opt in ('--length', '-l'):
             sub['length'] = lastfm.marshaller.parse_length(arg)
         elif opt in ('--time', '-i'):
@@ -60,7 +72,7 @@ if __name__ == '__main__':
                 log.error('could not parse time %s' % arg)
                 sys.exit(1)
         elif opt in ('--album', '-b'):
-            sub['album'] = unicode(arg, encoding)
+            sub['album'] = unicode(arg, encoding, errors='replace')
         elif opt in ('--mbid', '-m'):
             sub['mbid'] = arg
         elif opt in ('--output', '-o'):

@@ -23,7 +23,9 @@
 * Don't let the exponential backoff keep growing if it becomes longer
   than 6 hours.
 
-* Removed --debug from lastfmsubmit. There was no need for it anyway.
+* Added an --encoding option to lastfmsubmit. If not specified, the
+  locale's default will still be used. If invalid data is given, it will
+  be replaced rather than causing an error.
 
 * Provide some nicer error messages if the log file cannot be opened
   for writing.
