@@ -9,7 +9,7 @@ LOGFILE = '/var/log/lastfm/lastfm.log'
 # Our IPC mechanisms.
 CACHE = '/var/cache/lastfm/subs'
 FIFO = '/var/run/lastfm/fifo'
-PID_DIR = '/var/run/lastfm/pid'
+PID_DIR = '/var/run/lastfm'
 
 # A song under this length will not be submitted.
 MIN_LEN = 30

@@ -1,7 +1,7 @@
 import os
 import logging
 
-def getlog(self, name, logfile, debug=False):
+def getlog(name, logfile, debug=False):
     if debug:
         level = logging.DEBUG
     else:
