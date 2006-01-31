@@ -15,7 +15,7 @@ def getlog(name, logfile, debug=False):
 
     loghandler = logging.FileHandler(logfile)
     loghandler.setLevel(level)
-    loghandler.setFormatter(format)
+    loghandler.setFormatter(formatter)
     logger.addHandler(loghandler)
 
     os.chmod(logfile, 0664)
