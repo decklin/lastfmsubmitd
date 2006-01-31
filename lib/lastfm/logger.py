@@ -1,9 +1,7 @@
 import os
 import logging
 
-LASTFM_LOG = '/var/log/lastfm.log'
-
-def getlog(self, name, logfile=LASTFM_LOG, debug=False):
+def getlog(self, name, logfile, debug=False):
     if debug:
         level = logging.DEBUG
     else:

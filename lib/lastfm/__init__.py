@@ -3,6 +3,9 @@ __all__ = ['logger', 'marshaller', 'queue']
 # XXX: put all this in lastfm.protocol?
 TIME_FMT = '%Y-%m-%d %H:%M:%S'
 
+# Shared log.
+LASTFM_LOG = '/var/log/lastfm/lastfm.log'
+
 # Our IPC mechanisms.
 SUBMITD_CACHE = '/var/cache/lastfmsubmitd/subs'
 SUBMITD_FIFO = '/var/run/lastfmsubmitd/fifo'

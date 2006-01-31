@@ -18,7 +18,7 @@ if __name__ == '__main__':
     encoding = locale.getpreferredencoding()
 
     try:
-        log = lastfm.logger.getlog('lastfmsubmit')
+        log = lastfm.logger.getlog('lastfmsubmit', lastfm.LOGFILE)
     except IOError, e:
         print >>sys.stderr, 'could not open log: %s' % e
         sys.exit(1)
