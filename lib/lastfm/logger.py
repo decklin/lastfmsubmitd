@@ -7,20 +7,19 @@ def getlog(name, logfile, debug=False):
     else:
         level = logging.INFO
 
-    log = logging.getLogger(name)
-    log.setLevel(level)
+    logger = logging.getLogger(name)
+    logger.setLevel(level)
 
-    format = logging.Formatter(
+    formatter = logging.Formatter(
         '%(asctime)s %(name)s[%(process)s] %(levelname)s: %(message)s')
 
-    logfile = logging.FileHandler(logfile)
-    logfile.setLevel(level)
-    logfile.setFormatter(format)
-    log.addHandler(logfile)
+    loghandler = logging.FileHandler(logfile)
+    loghandler.setLevel(level)
+    loghandler.setFormatter(format)
+    logger.addHandler(loghandler)
 
     os.chmod(logfile, 0664)
-
-    return log
+    return logger
 
 def short_name(track):
     return '%s - %s [%d:%02d]' % ((track['artist'], track['title']) +
