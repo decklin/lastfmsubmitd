@@ -258,6 +258,7 @@ if __name__ == '__main__':
 
     try:
         log = lastfm.logger.getlog('lastmp', lastfm.LOGFILE, debug)
+        log.info("LastMP starting")
     except IOError, e:
         print >>sys.stderr, 'could not open log: %s' % e
         sys.exit(1)
