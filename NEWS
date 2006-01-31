@@ -2,10 +2,12 @@
 ==================
 
 * Got rid of the old install. The new way of doing things is: One
-  user/group lastfm:lastfm, everything in /var/{log,run,cache}/lastfm.
-  Put better instructions for this in INSTALL, install-example.sh, and
-  init-example.sh. If you have an existing setup, please change it! It
-  will no longer be compatable with the Debian package.
+  user/group lastfm:lastfm, everything in /var/{log,run,cache}/lastfm
+  (which must be created by root), we own and always fix permissions of
+  files in those directories. Put better instructions for this in
+  INSTALL, install-example.sh, and init-example.sh. If you have an
+  existing setup, please change it! It will no longer be compatable with
+  the Debian package.
 
 * Replaced the asyaml format with a simple marshaller module that uses a
   format much closer to a simple YAML map. It should now be trivial to
