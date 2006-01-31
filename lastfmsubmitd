@@ -331,6 +331,7 @@ if __name__ == '__main__':
     log.info('Last.fm Submission Daemon starting')
     pidfile = open(PIDFILE, 'w')
     print >>pidfile, os.getpid()
+    pidfile.close()
 
     session = LastFmSession(log, user, password)
     throttle = SessionThrottle(log)

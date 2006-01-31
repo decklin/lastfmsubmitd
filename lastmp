@@ -264,6 +264,7 @@ if __name__ == '__main__':
 
     pidfile = open(PIDFILE, 'w')
     print >>pidfile, os.getpid()
+    pidfile.close()
 
     def handle_signal(signum, frame):
         log.info('Caught signal %d, exiting' % signum)
