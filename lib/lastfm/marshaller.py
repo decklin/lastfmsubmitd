@@ -3,8 +3,8 @@ import lastfm
 
 def parse_length(length):
     # Just think, if we had Python 2.4, this could all be one line.
-    l = [int(c) for c in length.split(':')]; l.reverse()
-    return reduce(int.__add__, [c * 60**p for p, c in enumerate(l)])
+    parts = [int(p) for p in length.split(':')]; parts.reverse()
+    return sum([p * u for p, u in zip(parts, (1, 60, 3600, 86400))])
 
 def dump(song):
     doc = ['---']
