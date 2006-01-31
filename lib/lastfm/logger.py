@@ -18,6 +18,8 @@ def getlog(name, logfile, debug=False):
     logfile.setFormatter(format)
     log.addHandler(logfile)
 
+    os.chmod(logfile, 0664)
+
     return log
 
 def short_name(track):
