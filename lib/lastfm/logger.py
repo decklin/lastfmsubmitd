@@ -1,9 +1,9 @@
+import os
 import logging
 
 LASTFM_LOG = '/var/log/lastfm.log'
 
-def create_log(name, debug=False):
-
+def getlog(self, name, logfile=LASTFM_LOG, debug=False):
     if debug:
         level = logging.DEBUG
     else:
@@ -15,7 +15,7 @@ def create_log(name, debug=False):
     format = logging.Formatter(
         '%(asctime)s %(name)s[%(process)s] %(levelname)s: %(message)s')
 
-    logfile = logging.FileHandler(LASTFM_LOG)
+    logfile = logging.FileHandler(logfile)
     logfile.setLevel(level)
     logfile.setFormatter(format)
     log.addHandler(logfile)

@@ -1,5 +1,7 @@
 #!/bin/sh
 
+# A very basic init script.
+
 export LASTFM_USER=username
 export LASTFM_PASSWORD=secret
 

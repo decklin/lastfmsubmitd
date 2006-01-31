@@ -19,16 +19,14 @@ song is played (valid = must be tagged, played w/o skipping for the
 first 50% or 240s), it invokes lastfmsubmit, which will submit the song
 to Last.fm."""
 
-# Sleep this many seconds at a time, if not otherwise specified.
 DEF_SLEEP = 5
+PIDFILE = '/var/run/lastfm/lastmp.pid'
 
 # If the system load is high, we may not wake again until slightly
 # longer than we slept. This should really be like 0.1, but
 # unfortunately MPD only reports times with a resolution of 1 second.
-FUZZ = 1
 
-# Name of our submission helper program, which we will fork/exec.
-LASTFMSUBMIT = 'lastfmsubmit'
+FUZZ = 1
 
 class Song:
     def __init__(self, mpdclientsongobj):
@@ -258,15 +256,17 @@ if __name__ == '__main__':
             sys.exit(1)
 
     try:
-        log = lastfm.logger.create_log('lastmp', debug)
+        log = lastfm.logger.getlog('lastmp', debug)
     except IOError, e:
         print >>sys.stderr, 'could not open log: %s' % e
         sys.exit(1)
 
-    log.info('LastMP starting')
+    pidfile = open(PIDFILE, 'w')
+    print >>pidfile, os.getpid()
 
     def handle_signal(signum, frame):
         log.info('Caught signal %d, exiting' % signum)
+        os.remove(PIDFILE)
         sys.exit(0)
 
     for signum in (signal.SIGTERM, signal.SIGINT):

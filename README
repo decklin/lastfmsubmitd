@@ -24,18 +24,6 @@ caches them if submission is not possible due to network or server
 errors. Handling of network errors is relatively flakey at the moment,
 so keep an eye on your log file.
 
-Installation
-============
-
-1. Run ``./setup.py install`` as usual.
-
-2. Create a user/group for the daemon(s) (I use lastfm:lastfm).
-
-3. Create the directory /var/log/lastfm and make it writable by whatever
-   user is going to be running the daemon(s).
-
-4. If you need an init script, look at init-example.sh.
-
 Replaying tracks from a CD
 ==========================
 

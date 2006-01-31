@@ -17,6 +17,7 @@ import lastfm.marshaller
 
 SLEEP_TIME = 15
 FIFO_TIMEOUT = 5
+PIDFILE = '/var/run/lastfm/lastfmsubmitd.pid'
 
 CLIENT_ID = 'lsd'
 CLIENT_VERSION = '0.16'
@@ -79,19 +80,12 @@ class SessionThrottle:
         time.sleep(secs)
         self.slept += secs
 
-def makedirs(path):
-    dir, file = os.path.split(path)
-    if not os.path.isdir(dir):
-        os.mkdir(dir)
-        os.chmod(dir, 0775)
-
 class SubCache:
     """Holds submissions while we are running, and saves them to persistent
     storage on exit."""
 
     def __init__(self, log, filename):
         self.log = log
-        makedirs(filename)
         try:
             input = file(filename)
             self.subs = [d for d in
@@ -116,7 +110,6 @@ class SubFifo:
     def __init__(self, log, fifoname):
         self.log = log
         self.fifoname = fifoname
-        makedirs(fifoname)
         try:
             assert stat.S_ISFIFO(os.stat(fifoname).st_mode)
         except OSError, AssertionError:
@@ -282,13 +275,14 @@ class LastFmSession:
 def shutdown(signum, frame):
     log.info('Caught signal %d, exiting' % signum)
     cache.dump(lastfm.SUBMITD_CACHE)
+    os.remove(PIDFILE)
     sys.exit(0)
 
 def alarm(signum, frame):
     log.info('Caught signal %d, resuming' % signum)
 
 def reinit(signum, frame):
-    # XXX: reread config, reset backoff and throttle, rehandshake
+    # XXX: reread config, reopen log, reset throttle, rehandshake
     pass
 
 if __name__ == '__main__':
@@ -329,12 +323,14 @@ if __name__ == '__main__':
         sys.exit(1)
 
     try:
-        log = lastfm.logger.create_log('lastfmsubmitd', debug)
+        log = lastfm.logger.getlog('lastfmsubmitd', debug)
     except IOError, e:
         print >>sys.stderr, 'could not open log: %s' % e
         sys.exit(1)
 
     log.info('Last.fm Submission Daemon starting')
+    pidfile = open(PIDFILE, 'w')
+    print >>pidfile, os.getpid()
 
     session = LastFmSession(log, user, password)
     throttle = SessionThrottle(log)

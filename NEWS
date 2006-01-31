@@ -13,9 +13,10 @@
 
 * Removed --debug from lastfmsubmit.
 
-* Removed the old install entirely. We now create run and cache
-  directories on startup if nonexistent. Everything else is documented
-  in README instead.
+* Got rid of the old install. The new way of doing things is: One
+  user/group lastfm:lastfm, everything in /var/{log,run,cache}/lastfm.
+  Put better instructions for this in INSTALL, install-example.sh, and
+  init-example.sh.
 
 * Provide some better error messages if the log file cannot be opened
   for writing.

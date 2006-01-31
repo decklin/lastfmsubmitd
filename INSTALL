@@ -1,0 +1,17 @@
+Installation
+============
+
+1. Run ``./setup.py install`` as usual.
+
+2. Create a user/group for the daemon(s) (I use lastfm:lastfm), and
+   the following directories:
+
+   * ``/var/log/lastfm``
+   * ``/var/run/lastfm``
+   * ``/var/cache/lastfm``
+
+   Make them writable by whatever user is going to be running the
+   daemon(s). ``install-example.sh`` shows how this should be done on most
+   systems.
+
+4. If you need an init script, look at ``init-example.sh``.
