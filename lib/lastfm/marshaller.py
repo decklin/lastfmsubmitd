@@ -24,7 +24,7 @@ def dump_documents(docs, out):
 def load(doc):
     song = {}
     for line in doc.split('\n'):
-        try:
+        if line:
             k, v = line.split(': ', 1)
             if k in ('time'):
                 v = time.strptime(v, '!timestamp %s' % lastfm.TIME_FMT)
@@ -33,8 +33,6 @@ def load(doc):
             else:
                 v = v.decode('utf-8')
             song[k] = v
-        except ValueError:
-            pass
     return song
 
 def load_documents(docs):

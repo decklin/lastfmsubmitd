@@ -405,6 +405,5 @@ if __name__ == '__main__':
                     count += 1
                 log.debug('Read %d sub(s) from fifo, %d total' %
                     (count, len(cache.subs)))
-            # XXX: this still the right one? catching at all?
             except ValueError, e:
                 log.error('Discarding invalid data: %s' % e)
