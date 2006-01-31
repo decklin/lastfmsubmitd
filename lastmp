@@ -211,7 +211,7 @@ class MpdObserver:
                         args += ['--album', song.album]
                     #if song.mbid:
                     #    args += ['--mbid', song.album]
-                    os.execvp(LASTFMSUBMIT, args)
+                    os.execvp('lastfmsubmit', args)
                 else:
                     return pid
             except OSError:
