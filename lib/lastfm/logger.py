@@ -13,12 +13,12 @@ def getlog(name, logfile, debug=False):
     formatter = logging.Formatter(
         '%(asctime)s %(name)s[%(process)s] %(levelname)s: %(message)s')
 
+    os.umask(002)
     loghandler = logging.FileHandler(logfile)
     loghandler.setLevel(level)
     loghandler.setFormatter(formatter)
     logger.addHandler(loghandler)
 
-    os.chmod(logfile, 0664)
     return logger
 
 def short_name(track):
