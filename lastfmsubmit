@@ -44,7 +44,7 @@ if __name__ == '__main__':
         sys.exit(1)
 
     sub = { 'time': time.gmtime() }
-    outfile = lastfm.SUBMITD_FIFO
+    outfile = lastfm.FIFO
 
     for opt, arg in opts:
         if opt in ('--artist', '-a'):

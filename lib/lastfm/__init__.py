@@ -4,12 +4,12 @@ __all__ = ['logger', 'marshaller', 'queue']
 TIME_FMT = '%Y-%m-%d %H:%M:%S'
 
 # Shared log.
-LASTFM_LOG = '/var/log/lastfm/lastfm.log'
+LOGFILE = '/var/log/lastfm/lastfm.log'
 
 # Our IPC mechanisms.
-SUBMITD_CACHE = '/var/cache/lastfmsubmitd/subs'
-SUBMITD_FIFO = '/var/run/lastfmsubmitd/fifo'
-SUBMITD_PIDFILE = '/var/run/lastfmsubmitd/pid'
+CACHE = '/var/cache/lastfm/subs'
+FIFO = '/var/run/lastfm/fifo'
+PID_DIR = '/var/run/lastfm/pid'
 
 # A song under this length will not be submitted.
 MIN_LEN = 30

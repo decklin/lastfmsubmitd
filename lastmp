@@ -12,6 +12,7 @@ import getopt
 import signal
 
 import mpdclient2
+import lastfm
 import lastfm.logger
 
 """This program connects to MPD and runs in the background. When a valid
@@ -20,7 +21,7 @@ first 50% or 240s), it invokes lastfmsubmit, which will submit the song
 to Last.fm."""
 
 DEF_SLEEP = 5
-PIDFILE = '/var/run/lastfm/lastmp.pid'
+PIDFILE = os.path.join(lastfm.PID_DIR, 'lastmp.pid')
 
 # If the system load is high, we may not wake again until slightly
 # longer than we slept. This should really be like 0.1, but

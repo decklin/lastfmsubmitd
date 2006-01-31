@@ -17,7 +17,7 @@ import lastfm.marshaller
 
 SLEEP_TIME = 15
 FIFO_TIMEOUT = 5
-PIDFILE = '/var/run/lastfm/lastfmsubmitd.pid'
+PIDFILE = os.path.join(lastfm.PID_DIR, 'lastfmsubmitd.pid')
 
 CLIENT_ID = 'lsd'
 CLIENT_VERSION = '0.16'
@@ -274,7 +274,7 @@ class LastFmSession:
 
 def shutdown(signum, frame):
     log.info('Caught signal %d, exiting' % signum)
-    cache.dump(lastfm.SUBMITD_CACHE)
+    cache.dump(lastfm.CACHE)
     os.remove(PIDFILE)
     sys.exit(0)
 
@@ -334,8 +334,8 @@ if __name__ == '__main__':
 
     session = LastFmSession(log, user, password)
     throttle = SessionThrottle(log)
-    fifo = SubFifo(log, lastfm.SUBMITD_FIFO)
-    cache = SubCache(log, lastfm.SUBMITD_CACHE)
+    fifo = SubFifo(log, lastfm.FIFO)
+    cache = SubCache(log, lastfm.CACHE)
     if cache.subs:
         log.info('Read %d sub(s) from cache', len(cache.subs))
 
