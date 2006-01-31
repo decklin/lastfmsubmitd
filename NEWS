@@ -1,9 +1,16 @@
 0.17 (2007-01-30):
 ==================
 
+* Got rid of the old install. The new way of doing things is: One
+  user/group lastfm:lastfm, everything in /var/{log,run,cache}/lastfm.
+  Put better instructions for this in INSTALL, install-example.sh, and
+  init-example.sh. If you have an existing setup, please change it! It
+  will no longer be compatable with the Debian package.
+
 * Replaced the asyaml format with a simple marshaller module that uses a
   format much closer to a simple YAML map. It should now be trivial to
-  use libsyck (once it is working properly) as a drop-in replacement.
+  use libsyck (once it is working properly, and once pysyck is updated
+  and packaged) as a drop-in replacement.
 
 * Reading from the fifo should be a bit saner about catching multiple
   writers, and will always wait until there are none before continuing.
@@ -11,14 +18,9 @@
 * Don't let the exponential backoff keep growing if it becomes longer
   than 6 hours.
 
-* Removed --debug from lastfmsubmit.
+* Removed --debug from lastfmsubmit. There was no need for it anyway.
 
-* Got rid of the old install. The new way of doing things is: One
-  user/group lastfm:lastfm, everything in /var/{log,run,cache}/lastfm.
-  Put better instructions for this in INSTALL, install-example.sh, and
-  init-example.sh.
-
-* Provide some better error messages if the log file cannot be opened
+* Provide some nicer error messages if the log file cannot be opened
   for writing.
 
 0.16 (2006-01-19):
