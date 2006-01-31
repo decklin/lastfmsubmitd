@@ -114,7 +114,8 @@ class MpdObserver:
                     if (self.prevsong and time > self.sleep +
                             FUZZ + int(status.xfade)) or \
                             (self.prevsong is None and
-                            time/len > lastfm.SUB_PERCENT):
+                            time/len > lastfm.SUB_PERCENT or
+                            time > lastfm.SUB_SECONDS):
                         self.log.warning(
                             'Started at %d, will not submit' % time)
                         self.skipped = True

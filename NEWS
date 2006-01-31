@@ -1,3 +1,6 @@
+* If lastmp starts when a song is after 4:00 but not at 50%, assume it
+  was already submitted at 4:00 and don't submit it again.
+
 0.17 (2007-01-30):
 ==================
 
