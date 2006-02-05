@@ -1,0 +1,24 @@
+#!/usr/bin/python
+
+import sys
+import os
+import musicbrainz
+import webbrowser
+
+if __name__ == "__main__":
+    mb = musicbrainz.mb()
+
+    mb.Query(musicbrainz.MBQ_GetCDTOC)
+    cdid = mb.GetResultData(musicbrainz.MBE_TOCGetCDIndexId)
+    mb.QueryWithArgs(musicbrainz.MBQ_GetCDInfoFromCDIndexId, [cdid])
+
+    if mb.GetResultInt(musicbrainz.MBE_GetNumAlbums) == 0:
+        url = mb.GetWebSubmitURL()
+        if url:
+            webbrowser.open_new(url)
+        else:
+            print >>sys.stderr, "no web submit url"
+            sys.exit(1)
+    else:
+        print >>sys.stderr, "discid is already entered"
+        sys.exit(2)
