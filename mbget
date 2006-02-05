@@ -2,24 +2,24 @@
 
 import sys
 import getopt
-from musicbrainz import * # you win, fuckers.
+import musicbrainz
 import lastfm.marshaller
 
-class Abby(mb):
+class Abby(musicbrainz.mb):
     def __init__(self):
-        mb.__init__(self)
+        musicbrainz.mb.__init__(self)
 
     def readcd(self, dev='/dev/cdrom'):
         self.SetDevice(dev)
         try:
-            self.Query(MBQ_GetCDTOC)
-            return self.GetResultData(MBE_TOCGetCDIndexId)
+            self.Query(musicbrainz.MBQ_GetCDTOC)
+            return self.GetResultData(musicbrainz.MBE_TOCGetCDIndexId)
         except MusicBrainzError:
             raise RuntimeError('could not read TOC from disc')
 
     def fake(self):
-        first = m.GetResultData1(MBE_TOCGetFirstTrack)
-        last = m.GetResultData1(MBE_TOCGetLastTrack)
+        first = m.GetResultData1(musicbrainz.MBE_TOCGetFirstTrack)
+        last = m.GetResultData1(musicbrainz.MBE_TOCGetLastTrack)
 
         tracks = []
         for i in range(first, last+1):
@@ -28,7 +28,7 @@ class Abby(mb):
                 'artist': '',
                 'title': '',
                 'length': self.GetResultInt1(
-                    MBE_TOCGetTrackNumSectors, i) / 75,
+                    musicbrainz.MBE_TOCGetTrackNumSectors, i) / 75,
                 })
 
         return tracks
@@ -37,30 +37,35 @@ class Abby(mb):
 
         if discid:
             self.SetDepth(2)
-            self.QueryWithArgs(MBQ_GetCDInfoFromCDIndexId, [discid])
+            self.QueryWithArgs(musicbrainz.MBQ_GetCDInfoFromCDIndexId,
+                [discid])
         elif albumid:
             self.SetDepth(4)
-            self.QueryWithArgs(MBQ_GetAlbumById, [albumid])
+            self.QueryWithArgs(musicbrainz.MBQ_GetAlbumById,
+                [albumid])
 
-        matches = self.GetResultInt(MBE_GetNumAlbums)
+        matches = self.GetResultInt(musicbrainz.MBE_GetNumAlbums)
         if matches == 0:
             raise RuntimeError('could not find an entry for this CD')
         if matches > 1:
             print >>sys.stderr, 'warning: multiple matches, using first'
-        self.Select1(MBS_SelectAlbum, 1)
-        n = self.GetResultInt(MBE_AlbumGetNumTracks)
+        self.Select1(musicbrainz.MBS_SelectAlbum, 1)
+        n = self.GetResultInt(musicbrainz.MBE_AlbumGetNumTracks)
 
         tracks = []
         for i in range(1, n+1):
             tracks.append({
                 'number': i,
-                'artist': self.GetResultData1(MBE_AlbumGetArtistName, i),
-                'title': self.GetResultData1(MBE_AlbumGetTrackName, i),
+                'artist': self.GetResultData1(
+                    musicbrainz.MBE_AlbumGetArtistName, i),
+                'title': self.GetResultData1(
+                    musicbrainz.MBE_AlbumGetTrackName, i),
                 'length': self.GetResultInt1(
-                    MBE_AlbumGetTrackDuration, i) / 1000,
-                'album': self.GetResultData(MBE_AlbumGetAlbumName),
+                    musicbrainz.MBE_AlbumGetTrackDuration, i) / 1000,
+                'album': self.GetResultData(
+                    musicbrainz.MBE_AlbumGetAlbumName),
                 'mbid': self.GetIDFromURL(self.GetResultData1(
-                    MBE_AlbumGetTrackId, i)),
+                    musicbrainz.MBE_AlbumGetTrackId, i)),
                 })
 
         return tracks
