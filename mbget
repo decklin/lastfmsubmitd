@@ -2,33 +2,72 @@
 
 import sys
 import getopt
-import musicbrainz
+from musicbrainz import * # you win, fuckers.
 import lastfm.marshaller
 
-DEF_CD_DEV = '/dev/cdrom'
+class Abby(mb):
+    def __init__(self):
+        mb.__init__(self)
 
-def get_toc_discid(mb, dev):
-    mb.SetDevice(dev)
-    try:
-        mb.Query(musicbrainz.MBQ_GetCDTOC)
-        return mb.GetResultData(musicbrainz.MBE_TOCGetCDIndexId)
-    except musicbrainz.MusicBrainzError:
-        print >>sys.stderr, 'error: could not read TOC from disc'
-        sys.exit(1)
+    def readcd(self, dev='/dev/cdrom'):
+        self.SetDevice(dev)
+        try:
+            self.Query(MBQ_GetCDTOC)
+            return self.GetResultData(MBE_TOCGetCDIndexId)
+        except MusicBrainzError:
+            raise RuntimeError('could not read TOC from disc')
 
-def lookup_discid(mb, id):
-    mb.QueryWithArgs(musicbrainz.MBQ_GetCDInfoFromCDIndexId, [id])
+    def fake(self):
+        first = m.GetResultData1(MBE_TOCGetFirstTrack)
+        last = m.GetResultData1(MBE_TOCGetLastTrack)
 
-def lookup_albumid(mb, id):
-    mb.SetDepth(4)
-    mb.QueryWithArgs(musicbrainz.MBQ_GetAlbumById, [id])
+        tracks = []
+        for i in range(first, last+1):
+            tracks.append({
+                'number': i,
+                'artist': '',
+                'title': '',
+                'length': self.GetResultInt1(
+                    MBE_TOCGetTrackNumSectors, i) / 75,
+                })
+
+        return tracks
+
+    def select(self, discid=None, albumid=None):
+
+        if discid:
+            self.SetDepth(2)
+            self.QueryWithArgs(MBQ_GetCDInfoFromCDIndexId, [discid])
+        elif albumid:
+            self.SetDepth(4)
+            self.QueryWithArgs(MBQ_GetAlbumById, [albumid])
+
+        matches = self.GetResultInt(MBE_GetNumAlbums)
+        if matches == 0:
+            raise RuntimeError('could not find an entry for this CD')
+        if matches > 1:
+            print >>sys.stderr, 'warning: multiple matches, using first'
+        self.Select1(MBS_SelectAlbum, 1)
+        n = self.GetResultInt(MBE_AlbumGetNumTracks)
+
+        tracks = []
+        for i in range(1, n+1):
+            tracks.append({
+                'number': i,
+                'artist': self.GetResultData1(MBE_AlbumGetArtistName, i),
+                'title': self.GetResultData1(MBE_AlbumGetTrackName, i),
+                'length': self.GetResultInt1(
+                    MBE_AlbumGetTrackDuration, i) / 1000,
+                'album': self.GetResultData(MBE_AlbumGetAlbumName),
+                'mbid': self.GetIDFromURL(self.GetResultData1(
+                    MBE_AlbumGetTrackId, i)),
+                })
+
+        return tracks
 
 if __name__ == '__main__':
-    shortopts = 'd:i:a:'
-    longopts = ['device=', 'discid=', 'albumid=']
-
-    mb = musicbrainz.mb()
-    mb.SetDepth(2)
+    shortopts = 'd:i:a:n'
+    longopts = ['device=', 'discid=', 'albumid=', 'no-lookup']
 
     try:
         opts, args = getopt.getopt(sys.argv[1:], shortopts, longopts)
@@ -36,51 +75,25 @@ if __name__ == '__main__':
         print >>sys.stderr, 'error: %s' % e
         sys.exit(1)
 
-    id = None
+    a = Abby()
+    tracks = None
 
-    if opts:
-        for opt, arg in opts:
-            if opt in ('--device', '-d'):
-                id = get_toc_discid(mb, arg)
-                lookup_discid(mb, id)
-            if opt in ('--discid', '-i'):
-                id = arg
-                lookup_discid(mb, id)
-            if opt in ('--albumid', '-a'):
-                id = arg
-                lookup_albumid(mb, id)
-    if not id:
-        id = get_toc_discid(mb, DEF_CD_DEV)
-        lookup_discid(mb, id)
-
-    matches = mb.GetResultInt(musicbrainz.MBE_GetNumAlbums)
-    if matches == 0:
-        print >>sys.stderr, 'could not find an entry for this CD'
-        sys.exit(1)
-    if matches > 1:
-        print >>sys.stderr, 'warning: multiple matches, using first'
-
-    mb.Select1(musicbrainz.MBS_SelectAlbum, 1)
-    album = mb.GetResultData(musicbrainz.MBE_AlbumGetAlbumName)
-    n = mb.GetResultInt(musicbrainz.MBE_AlbumGetNumTracks)
+    for opt, arg in opts:
+        if opt in ('--device', '-d'):
+            id = a.readcd(arg)
+            tracks = a.select(id)
+        elif opt in ('--discid', '-i'):
+            tracks = a.select(arg)
+        elif opt in ('--albumid', '-a'):
+            tracks = a.select(albumid=arg)
+        elif opt in ('--no-lookup', '-n'):
+            tracks = a.fake(None)
+    else:
+        id = a.readcd()
+        tracks = a.select(id)
 
     if args:
-        tracks = map(int, args)
-    else:
-        tracks = range(1, n+1)
+        tracks = [tracks[int(a)-1] for a in args]
 
-    for i in tracks:
-        song = {
-            'number': i,
-            'artist': mb.GetResultData1(
-                musicbrainz.MBE_AlbumGetArtistName, i),
-            'title': mb.GetResultData1(
-                musicbrainz.MBE_AlbumGetTrackName, i),
-            'length': mb.GetResultInt1(
-                musicbrainz.MBE_AlbumGetTrackDuration, i) / 1000,
-            'album': mb.GetResultData1(
-                musicbrainz.MBE_AlbumGetAlbumName, i),
-            'mbid': mb.GetIDFromURL(
-                mb.GetResultData1(musicbrainz.MBE_AlbumGetTrackId, i)),
-            }
-        print lastfm.marshaller.dump(song)
+    for t in tracks:
+        print lastfm.marshaller.dump(t)
