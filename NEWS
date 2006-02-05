@@ -1,3 +1,11 @@
+* Gratuitously renamed all the "other" programs. For consistency with
+  lastmp, the thing that takes a log and sends it to the daemon is now
+  named lastcd. The thing that used to be lastcd, which only fetches
+  data from MusicBrainz and is not Last.fm-specific, is not named mbget.
+  For consistency with that, mbfindalbum is now simply named mbfind. And
+  for symmetry with those two, I have added mbsubmit, which assists in
+  sending disc IDs to MusicBrainz.
+
 * If lastmp starts when a song is after 4:00 but not at 50%, assume it
   was already submitted at 4:00 and don't submit it again.
 
