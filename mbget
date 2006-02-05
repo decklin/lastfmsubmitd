@@ -64,6 +64,9 @@ class Abby(musicbrainz.mb):
         return albumartist, album, tracks
 
     def localdiscinfo(self):
+        # Ensure that previous query was local TOC (ugh)
+        self.readdisc()
+
         first = self.GetResultInt(musicbrainz.MBE_TOCGetFirstTrack)
         last = self.GetResultInt(musicbrainz.MBE_TOCGetLastTrack)
 
