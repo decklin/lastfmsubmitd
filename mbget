@@ -34,7 +34,6 @@ class Abby(musicbrainz.mb):
         return tracks
 
     def select(self, discid=None, albumid=None):
-
         if discid:
             self.SetDepth(2)
             self.QueryWithArgs(musicbrainz.MBQ_GetCDInfoFromCDIndexId,
@@ -93,7 +92,7 @@ if __name__ == '__main__':
             tracks = a.select(albumid=arg)
         elif opt in ('--no-lookup', '-n'):
             tracks = a.fake(None)
-    else:
+    if not tracks:
         id = a.readcd()
         tracks = a.select(id)
 
