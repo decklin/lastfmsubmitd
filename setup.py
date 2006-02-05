@@ -21,12 +21,13 @@ setup(
     package_dir = {'': 'lib'},
     packages = ['lastfm'],
     scripts = [
-        'lastcd',
-        'lastcdreplay',
-        'lastfmsubmit',
         'lastfmsubmitd',
+        'lastfmsubmit',
         'lastmp',
-        'mbfindalbum',
+        'lastcd',
+        'mbfind',
+        'mbget',
+        'mbsubmit',
         ],
     data_files=[
         # ('share/man1', ['lastfmsubmitd.1', 'etc...']),
