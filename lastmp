@@ -203,7 +203,7 @@ class MpdObserver:
                 pid = os.fork()
                 if pid == 0:
                     args = [
-                        'lastfmsubmit',
+                        'lastfmsubmit', '--quiet',
                         '--artist', song.artist,
                         '--title', song.title,
                         '--length', song.time
