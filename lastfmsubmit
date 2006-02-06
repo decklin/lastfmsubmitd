@@ -1,6 +1,7 @@
 #!/usr/bin/python
 
 import sys
+import os
 import time
 import getopt
 import locale
@@ -15,6 +16,8 @@ generates a submission in lastfmsubmitd format, and sends it to the running
 lastfmsubmitd."""
 
 if __name__ == '__main__':
+    os.umask(002)
+
     shortopts = 'a:s:l:d:b:m:o:e:dq'
     longopts = [
         'artist=',

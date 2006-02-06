@@ -212,6 +212,7 @@ class MpdObserver:
                         args += ['--album', song.album]
                     #if song.mbid:
                     #    args += ['--mbid', song.album]
+                    self.log.debug('Executing %s' % ' '.join(args))
                     os.execvp('lastfmsubmit', args)
                 else:
                     return pid
@@ -222,6 +223,8 @@ class MpdObserver:
                 song.file)
 
 if __name__ == '__main__':
+    os.umask(002)
+
     shortopts = 's:h:p:o:dn'
     longopts = ['sleep=', 'host=', 'password=', 'port=', 'debug', 'no-daemon']
 

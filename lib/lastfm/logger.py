@@ -9,8 +9,6 @@ def getlog(name, logfile, debug=False, stderr=False):
     logger = logging.getLogger(name)
     logger.setLevel(level)
 
-    os.umask(002)
-
     filefmt = '%(asctime)s %(name)s[%(process)s] %(levelname)s: %(message)s'
     filehandler = logging.FileHandler(logfile)
     filehandler.setLevel(level)

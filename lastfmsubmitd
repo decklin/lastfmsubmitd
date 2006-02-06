@@ -115,7 +115,6 @@ class SubFifo:
         except OSError, AssertionError:
             self.log.debug('Creating %s' % self.fifoname)
             os.mkfifo(self.fifoname)
-            os.chmod(self.fifoname, 0664)
 
     def select(self, timeout):
         fd = os.open(self.fifoname, os.O_NONBLOCK)
@@ -273,6 +272,8 @@ class LastFmSession:
             time.sleep(self.interval)
 
 if __name__ == '__main__':
+    os.umask(002)
+
     shortopts = 'u:p:dn'
     longopts = ['user=', 'password=', 'debug', 'no-daemon']
 
