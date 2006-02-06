@@ -20,7 +20,7 @@ FIFO_TIMEOUT = 5
 PIDFILE = os.path.join(lastfm.PID_DIR, 'lastfmsubmitd.pid')
 
 CLIENT_ID = 'lsd'
-CLIENT_VERSION = '0.17'
+CLIENT_VERSION = '0.18'
 
 PROTOCOL_VERSION = '1.1'
 HANDSHAKE_URL_BASE = 'http://post.audioscrobbler.com/'

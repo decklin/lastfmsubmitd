@@ -1,3 +1,6 @@
+0.18 (2006-02-06):
+==================
+
 * Gratuitously renamed all the "other" programs. For consistency with
   lastmp, the thing that takes a log and sends it to the daemon is now
   named lastcd. The thing that used to be lastcd, which only fetches
@@ -6,7 +9,7 @@
   for symmetry with those two, I have added mbsubmit, which assists in
   sending disc IDs to MusicBrainz.
 
-* Added a --freedb option to mbget, which fakes a CDDB-format listing,
+* Added a --freedb option to mbget, which fakes a CDDB-format listing
   suitable for use with abcde or other CD-ripping programs which use
   FreeDB.
 
@@ -17,7 +20,7 @@
   the locale encoding (this can still be overridden with --encoding). If
   neither work, abort rather than sending something corrupted.
 
-0.17 (2007-01-30):
+0.17 (2006-01-30):
 ==================
 
 * Got rid of the old install. The new way of doing things is: One
