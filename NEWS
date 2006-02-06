@@ -6,6 +6,10 @@
   for symmetry with those two, I have added mbsubmit, which assists in
   sending disc IDs to MusicBrainz.
 
+* Added a --freedb option to mbget, which fakes a CDDB-format listing,
+  suitable for use with abcde or other CD-ripping programs which use
+  FreeDB.
+
 * If lastmp starts when a song is after 4:00 but not at 50%, assume it
   was already submitted at 4:00 and don't submit it again.
 
