@@ -10,8 +10,8 @@ import lastfm.logger
 import lastfm.queue
 import lastfm.marshaller
 
-if __name__ == '__main__':
-    os.umask(002)
+def main():
+    global log
 
     shortopts = 'o:d'
     longopts = ['output=', 'debug']
@@ -68,6 +68,7 @@ if __name__ == '__main__':
             sys.exit(1)
 
     if not subs:
+        raise RuntimeError('foo')
         print >>sys.stderr, 'no usable tracks found'
         sys.exit(1)
 
@@ -83,3 +84,13 @@ if __name__ == '__main__':
                 print >>writer, lastfm.marshaller.dump(s)
         except IOError:
             print >>sys.stderr, 'error: could not write to %s' % outfile
+
+if __name__ == '__main__':
+    global log
+    os.umask(002)
+
+    try:
+        main()
+    except Exception, e:
+        log.error('Aborting: %s' % e.value)
+        sys.exit(1)

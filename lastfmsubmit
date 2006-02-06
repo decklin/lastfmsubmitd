@@ -15,8 +15,8 @@ import lastfm.marshaller
 generates a submission in lastfmsubmitd format, and sends it to the running
 lastfmsubmitd."""
 
-if __name__ == '__main__':
-    os.umask(002)
+def main():
+    global log
 
     shortopts = 'a:s:l:d:b:m:o:e:dq'
     longopts = [
@@ -104,3 +104,13 @@ if __name__ == '__main__':
         except IOError:
             log.error('Could not write to %s' % outfile)
             sys.exit(1)
+
+if __name__ == '__main__':
+    global log
+    os.umask(002)
+
+    try:
+        main()
+    except Exception, e:
+        log.error('Aborting: %s' % e.value)
+        sys.exit(1)
