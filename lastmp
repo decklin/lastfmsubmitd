@@ -219,6 +219,8 @@ class MpdObserver:
                         args += ['--album', song.album]
                     #if song.mbid:
                     #    args += ['--mbid', song.album]
+                    if self.debug:
+                        args += ['--debug']
                     log.debug('Executing %s' % ' '.join(args))
                     os.execvp('lastfmsubmit', args)
                 else:
