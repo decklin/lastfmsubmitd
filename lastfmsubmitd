@@ -237,7 +237,7 @@ class LastFmSession:
                 args['i[%d]'%i] = time.strftime(lastfm.TIME_FMT, sub['time'])
                 try:
                     args['b[%d]' % i] = sub['album'].encode('utf-8')
-                except KeyError
+                except KeyError:
                     args['b[%d]' % i] = ''
                 try:
                     args['m[%d]' % i] = sub['mbid'].encode('utf-8')
@@ -407,19 +407,15 @@ def main():
             # We did time out, so adjust the throttle accordingly.
             throttle.slept += FIFO_TIMEOUT
         if read:
-            count = 0
             try:
                 for doc in lastfm.marshaller.load_documents(''.join(read)):
                     try:
                         log.debug('Read %s' % lastfm.logger.repr(doc))
                         cache.subs.append(doc)
-                        count += 1
-                    except KeyError:
-                        log.error('Missing artist/title/length, discarding')
-                log.debug('Read %d sub(s) from fifo, %d total' %
-                    (count, len(cache.subs)))
+                    except KeyError, e:
+                        log.error('Missing info, discarding: %s' % e)
             except ValueError, e:
-                log.error('Discarding invalid data: %s' % e)
+                log.error('Invalid data, discarding: %s' % e)
 
 if __name__ == '__main__':
     global log
