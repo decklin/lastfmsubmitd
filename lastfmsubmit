@@ -100,7 +100,6 @@ def main():
         try:
             writer = lastfm.queue.Writer(outfile, log)
             print >>writer, lastfm.marshaller.dump(sub)
-            log.info('Sent %s to daemon', lastfm.logger.short_name(sub))
         except IOError:
             log.error('Could not write to %s' % outfile)
             sys.exit(1)

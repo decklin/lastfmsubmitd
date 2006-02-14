@@ -24,6 +24,6 @@ def getlog(name, logfile, debug=False, stderr=False):
 
     return logger
 
-def short_name(track):
-    return '%s - %s [%d:%02d]' % ((track['artist'], track['title']) +
-        divmod(track['length'], 60))
+def repr(song):
+    return '%s - %s [%d:%02d]' % ((song['artist'], song['title']) +
+        divmod(song['length'], 60))

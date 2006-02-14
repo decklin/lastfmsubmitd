@@ -235,17 +235,15 @@ class LastFmSession:
                 args['t[%d]'%i] = sub['title'].encode('utf-8')
                 args['l[%d]'%i] = sub['length']
                 args['i[%d]'%i] = time.strftime(lastfm.TIME_FMT, sub['time'])
-                # XXX: try (all of these, maybe)
-                if sub.has_key('album'):
+                try:
                     args['b[%d]' % i] = sub['album'].encode('utf-8')
-                else:
+                except KeyError
                     args['b[%d]' % i] = ''
-                if sub.has_key('mbid'):
+                try:
                     args['m[%d]' % i] = sub['mbid'].encode('utf-8')
-                else:
+                except KeyError:
                     args['m[%d]' % i] = ''
-                log.debug('Submitting: %s' %
-                    lastfm.logger.short_name(sub))
+                log.debug('Submitting: %s' % lastfm.logger.repr(sub))
                 post_data.append(urllib.urlencode(args))
 
             post_str = '&'.join(post_data)
@@ -412,8 +410,12 @@ def main():
             count = 0
             try:
                 for doc in lastfm.marshaller.load_documents(''.join(read)):
-                    cache.subs.append(doc)
-                    count += 1
+                    try:
+                        log.debug('Read %s' % lastfm.logger.repr(doc))
+                        cache.subs.append(doc)
+                        count += 1
+                    except KeyError:
+                        log.error('Missing artist/title/length, discarding')
                 log.debug('Read %d sub(s) from fifo, %d total' %
                     (count, len(cache.subs)))
             except ValueError, e:
