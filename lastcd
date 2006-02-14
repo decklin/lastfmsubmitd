@@ -79,6 +79,7 @@ def main():
             writer = lastfm.queue.Writer(outfile, log)
             for s in subs:
                 print >>writer, lastfm.marshaller.dump(s)
+                log.debug('Sent %s to daemon' % lastfm.logger.repr(s))
         except IOError:
             print >>sys.stderr, 'error: could not write to %s' % outfile
 
