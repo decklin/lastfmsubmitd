@@ -1,3 +1,5 @@
+* If we crash for any reason, write it to the log.
+
 0.18 (2006-02-06):
 ==================
 
