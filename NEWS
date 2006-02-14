@@ -1,4 +1,6 @@
-* If we crash for any reason, write it to the log.
+* If we crash for any reason, write it to the log. Make debug logging a
+  bit more useful in general and regular logging perhaps a bit less
+  annoying.
 
 0.18 (2006-02-06):
 ==================
