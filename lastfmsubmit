@@ -112,5 +112,5 @@ if __name__ == '__main__':
     try:
         main()
     except Exception, e:
-        log.error('Aborting: %s' % e.value)
+        log.error('Aborting: %s' % e)
         sys.exit(1)
