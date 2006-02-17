@@ -87,8 +87,4 @@ if __name__ == '__main__':
     global log
     os.umask(002)
 
-    try:
-        main()
-    except Exception, e:
-        log.error('Aborting: %s' % e)
-        sys.exit(1)
+    main()

@@ -423,6 +423,8 @@ if __name__ == '__main__':
 
     try:
         main()
-    except Exception, e:
+    except:
+        import traceback
+        e = traceback.format_exception(*sys.exc_info())
         log.error('Aborting: %s' % e)
         sys.exit(1)
