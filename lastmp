@@ -205,7 +205,7 @@ class MpdObserver:
         global log
 
         if song.artist and song.title and song.time:
-            log.info('Ready for submission')
+            log.info('Sending to daemon')
             try:
                 pid = os.fork()
                 if pid == 0:
@@ -221,7 +221,7 @@ class MpdObserver:
                     #    args += ['--mbid', song.album]
                     if self.debug:
                         args += ['--debug']
-                    log.debug('Executing %s' % ' '.join(args))
+                    log.debug('Exec %s' % ' '.join(args))
                     os.execvp('lastfmsubmit', args)
                 else:
                     return pid
