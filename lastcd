@@ -45,26 +45,26 @@ def main():
         for song in lastfm.marshaller.load_documents(f.read()):
             songs.append(song)
 
-    len = 0
+    total_len = 0
     for s in songs:
-        len += s['length']
+        total_len += s['length']
 
     # We will simulate things as if the last track in our input just
     # finished playing right now.
 
-    pos = time.time() - len
+    pos = time.time() - total_len
 
     subs = []
     for s in songs:
-        len = s['length']
-        if len:
-            if len >= lastfm.MIN_LEN and len <= lastfm.MAX_LEN:
-                date = pos + len / 2
+        l = s['length']
+        if l:
+            if l >= lastfm.MIN_LEN and l <= lastfm.MAX_LEN:
+                date = pos + l / 2
                 s['time'] = time.gmtime(pos)
                 subs.append(s)
-            pos = pos + len
+            pos = pos + l
         else:
-            print >>sys.stderr, 'all tracks must have a non-zero length'
+            print >>sys.stderr, 'all tracks must have a non-zero lgth'
             sys.exit(1)
 
     if not subs:

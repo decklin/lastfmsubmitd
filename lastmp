@@ -109,7 +109,7 @@ class MpdObserver:
                 log.debug('Changed state: paused')
 
         if status.state in ('play', 'pause'):
-            time, len = map(float, status.time.split(':'))
+            time, l = map(float, status.time.split(':'))
             if status.state == 'play':
                 if currentsong != self.prevsong or \
                         self.prevstatus.state == 'stop':
@@ -117,7 +117,7 @@ class MpdObserver:
                     if (self.prevsong and time > self.sleep +
                             FUZZ + int(status.xfade)) or \
                             (self.prevsong is None and
-                            time/len > lastfm.SUB_PERCENT or
+                            time/l > lastfm.SUB_PERCENT or
                             time > lastfm.SUB_SECONDS):
                         log.warning(
                             'Started at %d, will not submit' % time)
@@ -128,7 +128,7 @@ class MpdObserver:
                         self.played_enough = False
                 else:
                     if self.prevtime and time < self.sleep + FUZZ and \
-                            (self.prevtime/len >= lastfm.SUB_PERCENT or \
+                            (self.prevtime/l >= lastfm.SUB_PERCENT or \
                             self.prevtime >= lastfm.SUB_SECONDS):
                         log.info('Restarted song')
                         self.skipped = False
@@ -141,12 +141,10 @@ class MpdObserver:
                             (self.prevtime, time))
                         self.skipped = True
                     if not self.skipped and not self.played_enough and \
-                            len >= lastfm.MIN_LEN and \
-                            len <= lastfm.MAX_LEN and \
-                            (time/len >= lastfm.SUB_PERCENT or \
+                            l >= lastfm.MIN_LEN and l <= lastfm.MAX_LEN and \
+                            (time/l >= lastfm.SUB_PERCENT or \
                             time >= lastfm.SUB_SECONDS):
-                        log.debug('OK, %d of %d seconds played' %
-                            (time, len))
+                        log.debug('OK, %d of %d seconds played' % (time, l))
                         self.played_enough = True
                     if not self.submitted and not self.skipped and \
                             self.played_enough:
