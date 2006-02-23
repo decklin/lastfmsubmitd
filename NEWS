@@ -1,3 +1,9 @@
+0.22 (2006-02-23):
+==================
+
+* Fix possible truncating of song titles. This is another brown paper
+  bag fix, isn't it. Today is not my day.
+
 0.21 (2006-02-23):
 ==================
 
