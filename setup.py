@@ -30,7 +30,7 @@ setup(
         'mbsubmit',
         ],
     data_files=[
-        ('share/man1', [
+        ('share/man/man1', [
             'doc/lastfmsubmitd.1',
             'doc/lastmp.1',
             'doc/mbget.1',
