@@ -9,7 +9,7 @@ def parse_length(length):
 def parse_string(s):
     s = s.decode('utf-8')
     if s.startswith('"') and s.endswith('"'):
-        return s[1:-2].replace('\\"', '"')
+        return s[1:-1].replace('\\"', '"')
     else:
         return s
 
