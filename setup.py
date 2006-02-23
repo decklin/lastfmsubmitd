@@ -4,7 +4,7 @@ from distutils.core import setup
 
 setup(
     name='lastfmsubmitd',
-    version='0.9',
+    version='0.20',
     description='Last.fm submit daemon and example clients for MPD/MusicBrainz',
     author='Decklin Foster',
     author_email='decklin@red-bean.com',
@@ -30,6 +30,10 @@ setup(
         'mbsubmit',
         ],
     data_files=[
-        ('share/man1', ['lastfmsubmitd.1', 'lastmp.1', 'mbget.1']),
+        ('share/man1', [
+            'doc/lastfmsubmitd.1',
+            'doc/lastmp.1',
+            'doc/mbget.1',
+            ]),
         ],
     )
