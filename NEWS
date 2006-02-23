@@ -1,3 +1,6 @@
+* If mbfind or mbget are printing to a pipe, replace non-ascii values
+  rather than raising an error.
+
 * Quote all string values when serializing, so as to be more compatible
   with real YAML implementations.
 

@@ -4,10 +4,12 @@ import sys
 import getopt
 import musicbrainz
 
+import lastfm.mbutil
+
 def print_selected_album(mb):
     id = mb.GetIDFromURL(mb.GetResultData(musicbrainz.MBE_AlbumGetAlbumId))
     album = mb.GetResultData(musicbrainz.MBE_AlbumGetAlbumName)
-    tracks = mb.GetResultInt(musicbrainz.MBE_AlbumGetNumTracks)
+    n = mb.GetResultInt(musicbrainz.MBE_AlbumGetNumTracks)
 
     artistid = mb.GetIDFromURL(
         mb.GetResultData(musicbrainz.MBE_AlbumGetAlbumArtistId))
@@ -19,18 +21,18 @@ def print_selected_album(mb):
         except musicbrainz.MusicBrainzError:
             artist = '[Unknown]'
 
-    total_dur = 0
-    for i in range(1, tracks+1):
-        total_dur += mb.GetResultInt1(musicbrainz.MBE_AlbumGetTrackDuration,
-            i)
+    dur = 0
+    for i in range(1, n+1):
+        dur += mb.GetResultInt1(musicbrainz.MBE_AlbumGetTrackDuration, i)
 
-    m, s = divmod(total_dur/1000, 60)
-    print '%s %s - %s [%d:%02d, %d tracks]' % (id, artist, album, m, s,
-        tracks)
+    m, s = divmod(dur/1000, 60)
+    print '%s %s - %s [%d:%02d, %d tracks]' % (id, artist, album, m, s, n)
 
 if __name__ == '__main__':
     shortopts = 'a:b:v'
     longopts = ['artist=', 'album=', 'verbose']
+
+    sys.stdout = lastfm.mbutil.EncodedFile(sys.stdout)
 
     mb = musicbrainz.mb()
     mb.SetDepth(4)

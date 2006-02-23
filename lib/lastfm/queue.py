@@ -3,7 +3,6 @@ import fcntl
 # XXX: perhaps a Reader class here as well
 
 class Writer:
-
     def __init__(self, filename, log):
         self.outfile = filename
         self.lockfile = filename + '.lock'
