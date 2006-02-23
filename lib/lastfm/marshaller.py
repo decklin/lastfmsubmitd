@@ -21,7 +21,7 @@ def dump(song):
         elif k in ('length'):
             v = '%d:%02d' % divmod(v, 60)
         else:
-            v = '"%s"' % v.replace('"', '\\"').encode('utf-8')
+            v = '"%s"' % unicode(v).replace('"', '\\"').encode('utf-8')
         doc.append(': '.join((k, v)))
     return '\n'.join(doc)
 
