@@ -83,15 +83,10 @@ def main():
             elif opt in ('--output', '-o'):
                 outfile = arg
         except UnicodeDecodeError:
-            log.error('Could not decode %s ("%s")' % (opt, arg))
+            log.error('Could not decode %s "%s"' % (opt, arg))
             sys.exit(1)
         except ValueError:
-            log.error('Could not parse %s ("%s")' % (opt, arg))
-            sys.exit(1)
-
-    for required in ('artist', 'title', 'length'):
-        if not sub.has_key(required):
-            log.error('No %s specified' % required)
+            log.error('Could not parse %s "%s"' % (opt, arg))
             sys.exit(1)
 
     if outfile == '-':

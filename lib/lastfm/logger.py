@@ -25,5 +25,13 @@ def getlog(name, logfile, debug=False, stderr=False):
     return logger
 
 def repr(song):
-    return '%s - %s [%d:%02d]' % ((song['artist'], song['title']) +
-        divmod(song['length'], 60))
+    try:
+        name = '%s - %s' % (song['artist'], song['title'])
+    except KeyError:
+        name = 'None'
+    try:
+        time = '[%d:%02d]' % divmod(song['length'], 60)
+    except KeyError:
+        time = '[None]'
+
+    return name + ' ' + time

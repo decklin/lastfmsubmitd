@@ -86,12 +86,25 @@ class SubCache:
     storage on exit."""
 
     def __init__(self, filename):
+        global log
+
+        self.subs = []
         try:
             input = file(filename)
-            self.subs = [d for d in
-                lastfm.marshaller.load_documents(input.read())]
+            for doc in lastfm.marshaller.load_documents(input.read()):
+                try:
+                    self.add(doc)
+                except ValueError, e:
+                    log.warning('Invalid cache, ignoring: %s' % e)
         except IOError:
-            self.subs = []
+            pass
+
+    def add(self, sub):
+        for required in ('artist', 'title', 'length'):
+            if not sub.has_key(required):
+                raise ValueError('missing %s' % required)
+        else:
+            self.subs.append(sub)
 
     def dump(self, filename):
         global log
@@ -407,15 +420,12 @@ def main():
             # We did time out, so adjust the throttle accordingly.
             throttle.slept += FIFO_TIMEOUT
         if read:
-            try:
-                for doc in lastfm.marshaller.load_documents(''.join(read)):
-                    try:
-                        log.debug('Read %s' % lastfm.logger.repr(doc))
-                        cache.subs.append(doc)
-                    except KeyError, e:
-                        log.error('Missing info, discarding: %s' % e)
-            except ValueError, e:
-                log.error('Invalid data, discarding: %s' % e)
+            for doc in lastfm.marshaller.load_documents(''.join(read)):
+                try:
+                    log.debug('Read %s' % lastfm.logger.repr(doc))
+                    cache.add(doc)
+                except ValueError, e:
+                    log.error('Invalid data, discarding: %s' % e)
 
 if __name__ == '__main__':
     global log

@@ -80,7 +80,7 @@ def main():
             log.info('Sending %s songs to daemon' % len(subs))
             for s in subs:
                 print >>writer, lastfm.marshaller.dump(s)
-                log.debug('Sent %s' % lastfm.logger.repr(s))
+                log.debug('Sent song: %s' % lastfm.logger.repr(s))
         except IOError:
             print >>sys.stderr, 'error: could not write to %s' % outfile
 
