@@ -1,3 +1,8 @@
+0.20 (2006-02-23):
+==================
+
+* Wrote man pages.
+
 * Convert everything to unicode before serializing. Unfortunately, this
   includes track numbers, but those only exist to make the output easier
   to read. If we need them for something we'll do real number parsing.

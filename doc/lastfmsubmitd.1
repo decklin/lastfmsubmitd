@@ -1,0 +1,91 @@
+.TH lastfm 1
+.SH NAME
+lastfmsubmitd, lastfmsubmit \- Last.fm submission daemon and helper
+.SH SYNOPSIS
+.B lastfmsubmitd
+.RI [ --user\ USER ]
+.RI [ --password\ PASS ]
+.RI [ --debug ]
+.RI [ --no-daemon ]
+.br
+.B lastfmsubmit
+.RI [ --encoding\ ENC ]
+.RI [ --artist\ ARTIST ]
+.RI [ --title\ TITLE ]
+.RI [ --length\ LEN ]
+.RI [ --time\ STAMP ]
+.RI [ --album\ ALBUM ]
+.RI [ --mbid\ TRACKID ]
+.RI [ --output\ FILE ]
+.RI [ --debug ]
+.RI [ --quiet ]
+.SH DESCRIPTION
+.B lastfmsubmitd
+uses the Last.fm protocol to send information about played songs
+to a submission server. If network connectivity is lost or lastfmsubmitd is
+shut down, it saves any unsubmitted songs to a cache.
+.PP
+Song information is collected from one or more music players via a FIFO. All
+songs are submitted with the account information provided at startup.
+.PP
+.B lastfmsubmit
+is a helper program meant to be invoked by music players. It
+handles setting the timestamp, encoding data as UTF-8, serializing it to send
+to lastfmsubmitd, and locking.
+.SH OPTIONS
+.TP
+.B \-u, \-\-user
+Specify the Last.fm username.
+.TP
+.B \-p, \-\-password
+Specify the Last.fm password. This is not secure, and is provided for testing
+purposes only; please see ENVIRONMENT below.
+.TP
+.B \-d, \-\-debug
+Log debugging information.
+.TP
+.B \-n, \-\-no-daemon
+Do not fork into the background.
+.TP
+.B \-e, \-\-encoding
+Use a different encoding than the locale's default to read song information.
+.TP
+.B \-q, \-\-quiet
+Silence any logging information that would normally be printed to stderr.
+.TP
+.B \-a, \-\-artist
+Specify the song's artist name. Artist, title, and length are required for
+lastfmsubmitd to actually submit the song.
+.TP
+.B \-t, \-\-title
+Specify the song's title.
+.TP
+.B \-l, \-\-length
+Specify the song's length.
+.TP
+.B \-i, \-\-time
+Specify the time at which the song was played, formatted in UTC as '%Y-%m-%d
+%H:%M:%S' (see strptime(3)). If not given, defaults to the current time.
+.TP
+.B \-b, \-\-album
+Specify the song's album name.
+.TP
+.B \-m, \-\-mbid
+Specify the song's MusicBrainz track ID.
+.TP
+.B \-o, \-\-output
+Write the serialized song information to a different file.
+.SH ENVIRONMENT
+lastfmsubmitd will read a username and password from the environment variables
+LASTFM_USER and LASTFM_PASSWORD on startup. This is recommended for normal use,
+as command line options are usually readable with
+.IR ps (1).
+.SH FILES
+.TP
+.B /var/run/lastfm/fifo
+The named pipe (FIFO) where submissions are read.
+.TP
+.B /var/cache/lastfm/subs
+The file where unsent submissions are saved if lastfmsubmitd is stopped.
+.SH AUTHOR
+Decklin Foster <decklin@red-bean.com>.

@@ -1,0 +1,56 @@
+.TH lastfm 1
+.SH NAME
+lastmp, lastcd \- clients for lastfmsubmitd
+.SH SYNOPSIS
+.B lastmp
+.RI [ --host\ HOST ]
+.RI [ --password\ PASS ]
+.RI [ --port\ PORT ]
+.RI [ --debug ]
+.RI [ --no-daemon ]
+.br
+.B lastcd 
+.RI [ --debug ]
+.RI [ --output\ FILE ]
+.SH DESCRIPTION
+.B lastmp
+and
+.B lastcd
+are clients which send song information to lastfmsubmitd.
+lastmp connects to MPD and periodically checks for new songs and how long the
+current song has been played. When a song has been played for the appropriate
+amount of time, it invokes
+.IR lastfmsubmit (1).
+lastcd reads a serialized list of
+songs that were played on an offline CD player, such as a car or home stereo,
+and sends them with "best guess" timestamps directly to lastfmsubmitd. Such
+lists can be generated with
+.IR mbget (1).
+.SH OPTIONS
+.TP
+.B \-h, \-\-host
+Specify the MPD host to connect to.
+.TP
+.B \-p, \-\-password
+Specify the MPD password. This is not secure, and is provided for testing
+purposes only; please see ENVIRONMENT below.
+.TP
+.B \-o, \-\-port
+Specify the port used to connect to the MPD host.
+.TP
+.B \-d, \-\-debug
+Log debugging information.
+.TP
+.B \-n, \-\-no-daemon
+Do not fork into the background.
+.TP
+.B \-o, \-\-output
+Write the serialized song information to a different file.
+.SH ENVIRONMENT
+lastmp uses the environment variables MPD_HOST and MPD_PORT in the same way as
+.IR mpc (1).
+MPD_HOST may be a hostname or password followed by "@" and then the hostname.
+.SH SEE ALSO
+.IR mpd (1).
+.SH AUTHOR
+Decklin Foster <decklin@red-bean.com>.
