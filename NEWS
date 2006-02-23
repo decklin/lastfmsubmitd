@@ -1,3 +1,6 @@
+* Quote all string values when serializing, so as to be more compatible
+  with real YAML implementations.
+
 * If we crash for any reason, write it to the log. Make debug logging a
   bit more useful in general and regular logging perhaps a bit less
   annoying.

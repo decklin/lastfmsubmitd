@@ -6,6 +6,13 @@ def parse_length(length):
     parts = [int(p) for p in length.split(':')]; parts.reverse()
     return sum([p * u for p, u in zip(parts, (1, 60, 3600, 86400))])
 
+def parse_string(s):
+    s = s.decode('utf-8')
+    if s.startswith('"') and s.endswith('"'):
+        return s[1:-2].replace('\\"', '"')
+    else:
+        return s
+
 def dump(song):
     doc = ['---']
     for k, v in song.items():
@@ -14,7 +21,7 @@ def dump(song):
         elif k in ('length'):
             v = '%d:%02d' % divmod(v, 60)
         else:
-            v = unicode(v).encode('utf-8')
+            v = '"%s"' % v.replace('"', '\\"').encode('utf-8')
         doc.append(': '.join((k, v)))
     return '\n'.join(doc)
 
@@ -31,7 +38,7 @@ def load(doc):
             elif k in ('length'):
                 v = parse_length(v)
             else:
-                v = v.decode('utf-8')
+                v = parse_string(v)
             song[k] = v
     return song
 
