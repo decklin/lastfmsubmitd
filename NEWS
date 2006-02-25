@@ -1,3 +1,7 @@
+* Ignore songs with missing data properly. Checking for required data is
+  only done in lastfmsubmitd now as it's the only process that should
+  have to know anything about the network protocol.
+
 0.22 (2006-02-23):
 ==================
 
