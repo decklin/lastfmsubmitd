@@ -292,52 +292,13 @@ class LastFmSession:
             self.read_interval(response)
             time.sleep(self.interval)
 
-def main():
+def daemon():
     global log
-
-    shortopts = 'u:p:dn'
-    longopts = ['user=', 'password=', 'debug', 'no-daemon']
-
-    try:
-        opts, args = getopt.getopt(sys.argv[1:], shortopts, longopts)
-    except getopt.GetoptError, e:
-        print >>sys.stderr, 'getopt: %s' % e
-        sys.exit(1)
-
-    user = None
-    password = None
-    debug = False
-    fork = True
-
-    try: user = os.environ['LASTFM_USER']
-    except KeyError: pass
-    try: password = os.environ['LASTFM_PASSWORD']
-    except KeyError: pass
-
-    for opt, arg in opts:
-        if opt in ('--user', '-u'):
-            user = arg
-        elif opt in ('--password', '-p'):
-            password = arg
-        elif opt in ('--debug', '-d'):
-            debug = True
-        elif opt in ('--no-daemon', '-n'):
-            fork = False
-
-    if not (user and password):
-        print >>sys.stderr, 'account: need user and password'
-        sys.exit(1)
-
-    try:
-        log = lastfm.logger.getlog('lastfmsubmitd', lastfm.LOGFILE, debug)
-    except IOError, e:
-        print >>sys.stderr, 'log: %s' % e
-        sys.exit(1)
 
     if fork:
         try:
             pid = os.fork()
-            if pid != 0: os._exit(0)
+            if pid != 0: sys.exit(0)
         except OSError, e:
             print >>sys.stderr, 'fork: %s' % e
             sys.exit(1)
@@ -425,8 +386,49 @@ if __name__ == '__main__':
     global log
     os.umask(002)
 
+    shortopts = 'u:p:dn'
+    longopts = ['user=', 'password=', 'debug', 'no-daemon']
+
     try:
-        main()
+        opts, args = getopt.getopt(sys.argv[1:], shortopts, longopts)
+    except getopt.GetoptError, e:
+        print >>sys.stderr, 'getopt: %s' % e
+        sys.exit(1)
+
+    user = None
+    password = None
+    debug = False
+    fork = True
+
+    try: user = os.environ['LASTFM_USER']
+    except KeyError: pass
+    try: password = os.environ['LASTFM_PASSWORD']
+    except KeyError: pass
+
+    for opt, arg in opts:
+        if opt in ('--user', '-u'):
+            user = arg
+        elif opt in ('--password', '-p'):
+            password = arg
+        elif opt in ('--debug', '-d'):
+            debug = True
+        elif opt in ('--no-daemon', '-n'):
+            fork = False
+
+    if not (user and password):
+        print >>sys.stderr, 'account: need user and password'
+        sys.exit(1)
+
+    try:
+        log = lastfm.logger.getlog('lastfmsubmitd', lastfm.LOGFILE, debug)
+    except IOError, e:
+        print >>sys.stderr, 'log: %s' % e
+        sys.exit(1)
+
+    try:
+        daemon()
+    except SystemExit, e:
+        sys.exit(e.args[0])
     except:
         import traceback
         e = traceback.format_exception(*sys.exc_info())

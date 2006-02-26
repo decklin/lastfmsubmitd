@@ -10,8 +10,8 @@ import lastfm.logger
 import lastfm.queue
 import lastfm.marshaller
 
-def main():
-    global log
+if __name__ == '__main__':
+    os.umask(002)
 
     shortopts = 'o:d'
     longopts = ['output=', 'debug']
@@ -80,9 +80,3 @@ def main():
                 log.debug('Sent song: %s' % lastfm.logger.repr(s))
         except IOError, e:
             print >>sys.stderr, 'log: %s' % e
-
-if __name__ == '__main__':
-    global log
-    os.umask(002)
-
-    main()

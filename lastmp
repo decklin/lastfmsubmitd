@@ -229,50 +229,13 @@ class MpdObserver:
             log.error('File %s is missing artist or title or length' %
                 song.file)
 
-def main():
+def daemon():
     global log
-
-    shortopts = 's:h:p:o:dn'
-    longopts = ['sleep=', 'host=', 'password=', 'port=', 'debug', 'no-daemon']
-
-    try:
-        opts, args = getopt.getopt(sys.argv[1:], shortopts, longopts)
-    except getopt.GetoptError, e:
-        print >>sys.stderr, 'getopt: %s' % e
-        sys.exit(1)
-
-    sleep = DEF_SLEEP
-    mpd_args = {}
-    debug = False
-    fork = True
-
-    for opt, arg in opts:
-        if opt in ('--sleep', '-s'):
-            sleep = int(arg)
-            if sleep > lastfm.MIN_LEN / 2:
-                print >>sys.stderr, 'sleep: must be <= %d' lastfm.MIN_LEN / 2)
-                sys.exit(1)
-        elif opt in ('--host', '-h'):
-            mpd_args['host'] = arg
-        elif opt in ('--password', '-p'):
-            mpd_args['password'] = arg
-        elif opt in ('--port', '-o'):
-            mpd_args['port'] = arg
-        elif opt in ('--debug', '-d'):
-            debug = True
-        elif opt in ('--no-daemon', '-n'):
-            fork = False
-
-    try:
-        log = lastfm.logger.getlog('lastmp', lastfm.LOGFILE, debug)
-    except IOError, e:
-        print >>sys.stderr, 'log: %s' % e
-        sys.exit(1)
 
     if fork:
         try:
             pid = os.fork()
-            if pid != 0: os._exit(0)
+            if pid != 0: sys.exit(0)
         except OSError, e:
             print >>sys.stderr, 'fork: %s' % e
             sys.exit(1)
@@ -299,8 +262,47 @@ if __name__ == '__main__':
     global log
     os.umask(002)
 
+    shortopts = 's:h:p:o:dn'
+    longopts = ['sleep=', 'host=', 'password=', 'port=', 'debug', 'no-daemon']
+
     try:
-        main()
+        opts, args = getopt.getopt(sys.argv[1:], shortopts, longopts)
+    except getopt.GetoptError, e:
+        print >>sys.stderr, 'getopt: %s' % e
+        sys.exit(1)
+
+    sleep = DEF_SLEEP
+    mpd_args = {}
+    debug = False
+    fork = True
+
+    for opt, arg in opts:
+        if opt in ('--sleep', '-s'):
+            sleep = int(arg)
+            if sleep >= lastfm.MIN_LEN / 2:
+                print >>sys.stderr, 'sleep: %d is too big' % sleep
+                sys.exit(1)
+        elif opt in ('--host', '-h'):
+            mpd_args['host'] = arg
+        elif opt in ('--password', '-p'):
+            mpd_args['password'] = arg
+        elif opt in ('--port', '-o'):
+            mpd_args['port'] = arg
+        elif opt in ('--debug', '-d'):
+            debug = True
+        elif opt in ('--no-daemon', '-n'):
+            fork = False
+
+    try:
+        log = lastfm.logger.getlog('lastmp', lastfm.LOGFILE, debug)
+    except IOError, e:
+        print >>sys.stderr, 'log: %s' % e
+        sys.exit(1)
+
+    try:
+        daemon()
+    except SystemExit, e:
+        sys.exit(e.args[0])
     except:
         import traceback
         e = traceback.format_exception(*sys.exc_info())

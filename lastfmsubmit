@@ -15,8 +15,8 @@ import lastfm.marshaller
 generates a submission in lastfmsubmitd format, and sends it to the running
 lastfmsubmitd."""
 
-def main():
-    global log
+if __name__ == '__main__':
+    os.umask(002)
 
     shortopts = 'a:s:l:d:b:m:o:e:dq'
     longopts = [
@@ -58,53 +58,48 @@ def main():
         print >>sys.stderr, 'log: %s' % e
         sys.exit(1)
 
-    def try_decode(s):
+    def decode(s):
         try:
             return s.decode('utf-8')
         except UnicodeDecodeError:
             log.warning('Attempting to decode tag as %s' % encoding)
             return s.decode(encoding)
 
-    for opt, arg in opts:
-        try:
-            if opt in ('--artist', '-a'):
-                sub['artist'] = try_decode(arg)
-            elif opt in ('--title', '-t'):
-                sub['title'] = try_decode(arg)
-            elif opt in ('--length', '-l'):
-                sub['length'] = lastfm.marshaller.parse_length(arg)
-            elif opt in ('--time', '-i'):
-                sub['time'] = time.strptime(arg, lastfm.TIME_FMT)
-            elif opt in ('--album', '-b'):
-                sub['album'] = try_decode(arg)
-            elif opt in ('--mbid', '-m'):
-                sub['mbid'] = arg
-            elif opt in ('--output', '-o'):
-                outfile = arg
-        except UnicodeDecodeError:
-            log.error('Could not decode %s "%s"' % (opt, arg))
-            sys.exit(1)
-        except ValueError:
-            log.error('Could not parse %s "%s"' % (opt, arg))
-            sys.exit(1)
-
-    if outfile == '-':
-        print lastfm.marshaller.dump(sub)
-    else:
-        try:
-            writer = lastfm.queue.Writer(outfile, log)
-            print >>writer, lastfm.marshaller.dump(sub)
-            log.debug('Sent %s to daemon' % lastfm.logger.repr(sub))
-        except IOError:
-            log.error('Could not write to %s' % outfile)
-            sys.exit(1)
-
-if __name__ == '__main__':
-    global log
-    os.umask(002)
-
     try:
-        main()
+        for opt, arg in opts:
+            try:
+                if opt in ('--artist', '-a'):
+                    sub['artist'] = decode(arg)
+                elif opt in ('--title', '-t'):
+                    sub['title'] = decode(arg)
+                elif opt in ('--length', '-l'):
+                    sub['length'] = lastfm.marshaller.parse_length(arg)
+                elif opt in ('--time', '-i'):
+                    sub['time'] = time.strptime(arg, lastfm.TIME_FMT)
+                elif opt in ('--album', '-b'):
+                    sub['album'] = decode(arg)
+                elif opt in ('--mbid', '-m'):
+                    sub['mbid'] = arg
+                elif opt in ('--output', '-o'):
+                    outfile = arg
+            except UnicodeDecodeError:
+                log.error('Could not decode %s "%s"' % (opt, arg))
+                sys.exit(1)
+            except ValueError:
+                log.error('Could not parse %s "%s"' % (opt, arg))
+                sys.exit(1)
+        if outfile == '-':
+            print lastfm.marshaller.dump(sub)
+        else:
+            try:
+                writer = lastfm.queue.Writer(outfile, log)
+                print >>writer, lastfm.marshaller.dump(sub)
+                log.debug('Sent %s to daemon' % lastfm.logger.repr(sub))
+            except IOError:
+                log.error('Could not write to %s' % outfile)
+                sys.exit(1)
+    except SystemExit, e:
+        sys.exit(e.args[0])
     except:
         import traceback
         e = traceback.format_exception(*sys.exc_info())
