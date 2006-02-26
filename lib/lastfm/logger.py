@@ -24,6 +24,7 @@ def getlog(name, logfile, debug=False, stderr=False):
 
     return logger
 
+# XXX: This really shouldn't be here. It's a data thing, not a log thing.
 def repr(song):
     try:
         name = '%s - %s' % (song['artist'], song['title'])
@@ -34,4 +35,4 @@ def repr(song):
     except KeyError:
         time = '[None]'
 
-    return name + ' ' + time
+    return '%s %s' % (name, time)
