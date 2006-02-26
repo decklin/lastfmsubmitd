@@ -5,10 +5,9 @@
 * Clean up error messages and add some for import errors in the
   MusicBrainz stuff.
 
-* Ignore songs with missing data properly. Since lastfmsubmitd is the
-  only process that should have to know anything about the network
-  protocol, and the protocol specifies what is required when submitting,
-  all checking related to that is done there instead of in clients.
+* Ignore songs with missing data properly; this is the daemon's job now,
+  so you don't have to worry about throwing crap at it from your client.
+  (Your client should not know anything about the network protocol.)
 
 0.22 (2006-02-23):
 ==================
