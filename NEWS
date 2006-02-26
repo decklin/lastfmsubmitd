@@ -1,3 +1,6 @@
+0.23 (2006-02-26):
+==================
+
 * Make mbfind not print a template unless --template is specified;
   otherwise, it will fail, so that ``mbget || mbsubmit`` works as you
   would expect.
