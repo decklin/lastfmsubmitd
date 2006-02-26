@@ -301,10 +301,7 @@ def main():
     try:
         opts, args = getopt.getopt(sys.argv[1:], shortopts, longopts)
     except getopt.GetoptError, e:
-        print >>sys.stderr, 'error: %s' % e
-        sys.exit(1)
-    if args:
-        print >>sys.stderr, 'extra args: %s' % ' '.join(args)
+        print >>sys.stderr, 'getopt: %s' % e
         sys.exit(1)
 
     user = None
@@ -326,26 +323,23 @@ def main():
             debug = True
         elif opt in ('--no-daemon', '-n'):
             fork = False
-        else:
-            print >>sys.stderr, 'unknown option: %s', opt
-            sys.exit(1)
 
     if not (user and password):
-        print >>sys.stderr, 'error: user and password are required'
+        print >>sys.stderr, 'account: need user and password'
         sys.exit(1)
 
     try:
         log = lastfm.logger.getlog('lastfmsubmitd', lastfm.LOGFILE, debug)
     except IOError, e:
-        print >>sys.stderr, 'could not open log: %s' % e
+        print >>sys.stderr, 'log: %s' % e
         sys.exit(1)
 
     if fork:
         try:
             pid = os.fork()
             if pid != 0: os._exit(0)
-        except OSError:
-            print >>sys.stderr, 'could not fork daemon, aborting'
+        except OSError, e:
+            print >>sys.stderr, 'fork: %s' % e
             sys.exit(1)
 
     log.info('Last.fm Submission Daemon starting')

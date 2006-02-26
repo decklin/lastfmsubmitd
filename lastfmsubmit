@@ -35,14 +35,14 @@ def main():
     try:
         opts, args = getopt.getopt(sys.argv[1:], shortopts, longopts)
     except getopt.GetoptError, e:
-        print >>sys.stderr, 'error parsing options: %s' % e
+        print >>sys.stderr, 'getopt: %s' % e
         sys.exit(1)
 
     sub = { 'time': time.gmtime() }
     outfile = lastfm.FIFO
     encoding = locale.getpreferredencoding()
     debug = False
-    stderr = True
+    err = True
 
     for opt, arg in opts:
         if opt in ('--encoding', '-e'):
@@ -50,13 +50,12 @@ def main():
         if opt in ('--debug', '-d'):
             debug = True
         if opt in ('--quiet', '-q'):
-            stderr = False
+            err = False
 
     try:
-        log = lastfm.logger.getlog('lastfmsubmit', lastfm.LOGFILE, debug,
-            stderr)
+        log = lastfm.logger.getlog('lastfmsubmit', lastfm.LOGFILE, debug, err)
     except IOError, e:
-        print >>sys.stderr, 'could not open log: %s' % e
+        print >>sys.stderr, 'log: %s' % e
         sys.exit(1)
 
     def try_decode(s):

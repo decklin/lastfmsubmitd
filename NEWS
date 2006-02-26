@@ -2,8 +2,8 @@
   otherwise, it will fail, so that ``mbget || mbsubmit`` works as you
   would expect.
 
-* Improve the mb{get,find,submit} error messages and add some for import
-  errors.
+* Clean up error messages and add some for import errors in the
+  MusicBrainz stuff.
 
 * Ignore songs with missing data properly. Checking for required data is
   only done in lastfmsubmitd now as it's the only process that should

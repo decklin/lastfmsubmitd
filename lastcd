@@ -19,7 +19,7 @@ def main():
     try:
         opts, args = getopt.getopt(sys.argv[1:], shortopts, longopts)
     except getopt.GetoptError, e:
-        print >>sys.stderr, 'error: %s' % e
+        print >>sys.stderr, 'getopt: %s' % e
         sys.exit(1)
 
     debug = False
@@ -30,14 +30,11 @@ def main():
             outfile = arg
         elif opt in ('--debug', '-d'):
             debug = True
-        else:
-            print >>sys.stderr, 'unknown option: %s', opt
-            sys.exit(1)
 
     try:
         log = lastfm.logger.getlog('lastcdreplay', lastfm.LOGFILE, debug)
     except IOError, e:
-        print >>sys.stderr, 'could not open log: %s' % e
+        print >>sys.stderr, 'log: %s' % e
         sys.exit(1)
 
     songs = []
@@ -64,11 +61,11 @@ def main():
                 subs.append(s)
             pos = pos + l
         else:
-            print >>sys.stderr, 'all tracks must have a non-zero lgth'
+            print >>sys.stderr, 'input: track has zero length'
             sys.exit(1)
 
     if not subs:
-        print >>sys.stderr, 'no usable tracks found'
+        print >>sys.stderr, 'input: no usable tracks'
         sys.exit(1)
 
     if outfile == '-':
@@ -81,8 +78,8 @@ def main():
             for s in subs:
                 print >>writer, lastfm.marshaller.dump(s)
                 log.debug('Sent song: %s' % lastfm.logger.repr(s))
-        except IOError:
-            print >>sys.stderr, 'error: could not write to %s' % outfile
+        except IOError, e:
+            print >>sys.stderr, 'log: %s' % e
 
 if __name__ == '__main__':
     global log
