@@ -1,3 +1,10 @@
+* Make mbfind not print a template unless --template is specified;
+  otherwise, it will fail, so that ``mbget || mbsubmit`` works as you
+  would expect.
+
+* Improve the mb{get,find,submit} error messages and add some for import
+  errors.
+
 * Ignore songs with missing data properly. Checking for required data is
   only done in lastfmsubmitd now as it's the only process that should
   have to know anything about the network protocol.

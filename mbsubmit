@@ -2,10 +2,14 @@
 
 import sys
 import os
-import musicbrainz
 import webbrowser
+try:
+    import musicbrainz
+except ImportError, e:
+    print >>sys.stderr, 'import: %s' % e
+    sys.exit(1)
 
-if __name__ == "__main__":
+if __name__ == '__main__':
     mb = musicbrainz.mb()
 
     mb.Query(musicbrainz.MBQ_GetCDTOC)
@@ -17,8 +21,8 @@ if __name__ == "__main__":
         if url:
             webbrowser.open_new(url)
         else:
-            print >>sys.stderr, "no web submit url"
+            print >>sys.stderr, 'musicbrainz: no url received from server'
             sys.exit(1)
     else:
-        print >>sys.stderr, "discid is already entered"
+        print >>sys.stderr, 'musicbrainz: discid is already entered'
         sys.exit(2)
