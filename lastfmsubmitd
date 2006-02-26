@@ -54,7 +54,8 @@ class SessionThrottle:
     stuff. Only keeps track of how long it has slept, not the actual time
     elapsed. You can mess with time.slept to simulate a sleep."""
 
-    def __init__(self):
+    def __init__(self, log):
+        self.log = log
         self.reset()
 
     def reset(self):
@@ -65,15 +66,13 @@ class SessionThrottle:
         return self.slept >= self.sleep_until
 
     def backoff(self):
-        global log
-
         self.slept = 0
         if self.sleep_until < INITIAL_BACKOFF:
             self.sleep_until = INITIAL_BACKOFF
         else:
             if self.sleep_until < 6 * 3600:
                 self.sleep_until *= 2
-        log.info('Backing off, will retry in %d:%02d' %
+        self.log.info('Backing off, will retry in %d:%02d' %
             divmod(self.sleep_until, 60))
 
     def sleep(self, secs):
@@ -85,9 +84,8 @@ class SubCache:
     """Holds submissions while we are running, and saves them to persistent
     storage on exit."""
 
-    def __init__(self, filename):
-        global log
-
+    def __init__(self, log, filename):
+        self.log = log
         self.subs = []
         try:
             input = file(filename)
@@ -95,7 +93,7 @@ class SubCache:
                 try:
                     self.add(doc)
                 except ValueError, e:
-                    log.warning('Invalid cache, ignoring: %s' % e)
+                    self.log.warning('Invalid cache, ignoring: %s' % e)
         except IOError:
             pass
 
@@ -107,34 +105,29 @@ class SubCache:
             self.subs.append(sub)
 
     def dump(self, filename):
-        global log
-
         try:
-            log.info('Saving %d sub(s) to cache' % len(self.subs))
+            self.log.info('Saving %d sub(s) to cache' % len(self.subs))
             output = file(filename, 'w')
             lastfm.marshaller.dump_documents(self.subs, output)
             self.subs = []
         except IOError:
-            log.error('Cannot write to %s, discarding %d sub(s)' %
+            self.log.error('Cannot write to %s, discarding %d sub(s)' %
                 (filename, len(self.subs)))
 
 class SubFifo:
     """Reads one writer at a time from our fifo, making sure it actually
     exists first."""
 
-    def __init__(self, fifoname):
-        global log
-
+    def __init__(self, log, fifoname):
+        self.log = log
         self.fifoname = fifoname
         try:
             assert stat.S_ISFIFO(os.stat(fifoname).st_mode)
         except OSError, AssertionError:
-            log.debug('Creating %s' % self.fifoname)
+            self.log.debug('Creating %s' % self.fifoname)
             os.mkfifo(self.fifoname)
 
     def select(self, timeout):
-        global log
-
         fd = os.open(self.fifoname, os.O_NONBLOCK)
         rx, wx, ex = select.select([fd], [], [], timeout)
         data = []
@@ -142,7 +135,7 @@ class SubFifo:
             while True:
                 chunk = os.read(fd, 4096)
                 if chunk:
-                    log.debug('Read %d bytes' % len(chunk))
+                    self.log.debug('Read %d bytes' % len(chunk))
                     data.append(chunk)
                     rx, wx, ex = select.select([fd], [], [], timeout)
                 else:
@@ -151,7 +144,8 @@ class SubFifo:
         return ''.join(data)
 
 class LastFmSession:
-    def __init__(self, user, password):
+    def __init__(self, log, user, password):
+        self.log = log
         self.user = user
         self.password = password
         self.connected = False
@@ -171,29 +165,27 @@ class LastFmSession:
         return '?'.join([HANDSHAKE_URL_BASE, urllib.urlencode(args)])
 
     def handshake(self):
-        global log
-
-        log.debug('Handshake URL: %s' % self.handshake_url)
+        self.log.debug('Handshake URL: %s' % self.handshake_url)
 
         try:
             signal.alarm(HTTP_TIMEOUT)
             response = urllib.urlopen(self.handshake_url)
             status_line = response.readline().strip()
             signal.alarm(0)
+        # XXX: handshaketimeouterror?
         except IOError, e:
             signal.alarm(0)
             raise HandshakeError(e)
-        # XXX: handshaketimeouterror?
 
         if status_line == 'UPTODATE':
             self.read_submit_url(response)
         elif status_line.startswith('UPDATE'):
             try:
                 msg, url = status_line.split(' ', 1)
-                log.warning('Plugin is out of date: %s' % msg)
-                log.info('Please go to %s to upgrade' % url)
+                self.log.warning('Plugin is out of date: %s' % msg)
+                self.log.info('Please go to %s to upgrade' % url)
             except ValueError:
-                log.warning('Plugin is out of date')
+                self.log.warning('Plugin is out of date')
             self.read_submit_url(response)
         elif status_line == 'BADUSER':
             raise HandshakeError('bad username')
@@ -211,22 +203,20 @@ class LastFmSession:
         time.sleep(self.interval)
 
     def read_submit_url(self, response):
-        global log
-
         challenge = response.readline().strip()
         self.session_key = self.digest(challenge)
         self.submit_url = response.readline().strip()
-        log.info('Handshake sucessful')
-        log.debug('Submit URL: %s' % self.submit_url)
+        self.log.info('Handshake sucessful')
+        self.log.debug('Submit URL: %s' % self.submit_url)
 
     def read_interval(self, response):
         interval_line = response.readline().strip()
         if interval_line and interval_line.startswith('INTERVAL'):
             msg, secs = interval_line.split(' ', 1)
-            new_interval = int(secs)
-            if new_interval != self.interval:
-                log.debug('Session interval changed to %d' % new_interval)
-                self.interval = new_interval
+            interval = int(secs)
+            if interval != self.interval:
+                self.log.debug('Session interval changed to %d' % interval)
+                self.interval = interval
 
     def digest(self, challenge):
         pass_hash = md5.new(self.password)
@@ -234,11 +224,9 @@ class LastFmSession:
         return sess_hash.hexdigest()
 
     def submit(self, cache):
-        global log
-
         while cache.subs:
             chunk = cache.subs[:SUB_CHUNK_SIZE]
-            log.info('Submitting %d song(s)' % len(chunk))
+            self.log.info('Submitting %d song(s)' % len(chunk))
 
             args = { 'u': self.user, 's': self.session_key }
             post_data = [urllib.urlencode(args)]
@@ -256,11 +244,11 @@ class LastFmSession:
                     args['m[%d]' % i] = sub['mbid'].encode('utf-8')
                 except KeyError:
                     args['m[%d]' % i] = ''
-                log.debug('Submitting: %s' % lastfm.logger.repr(sub))
+                self.log.debug('Submitting: %s' % lastfm.logger.repr(sub))
                 post_data.append(urllib.urlencode(args))
 
             post_str = '&'.join(post_data)
-            log.debug('POST data: %s' % post_str)
+            self.log.debug('POST data: %s' % post_str)
             try:
                 signal.alarm(HTTP_TIMEOUT)
                 response = urllib.urlopen(self.submit_url, post_str)
@@ -273,7 +261,7 @@ class LastFmSession:
             status_line = response.readline().strip()
 
             if status_line == 'OK':
-                log.info('Submission(s) accepted')
+                self.log.info('Submission(s) accepted')
                 # Now, and only now, we do our side effect.
                 cache.subs = cache.subs[SUB_CHUNK_SIZE:]
             elif status_line == 'BADAUTH':
@@ -292,9 +280,7 @@ class LastFmSession:
             self.read_interval(response)
             time.sleep(self.interval)
 
-def daemon():
-    global log
-
+def daemon(log):
     if fork:
         try:
             pid = os.fork()
@@ -326,10 +312,11 @@ def daemon():
     signal.signal(signal.SIGHUP, reinit)
     signal.signal(signal.SIGALRM, alarm)
 
-    session = LastFmSession(user, password)
-    throttle = SessionThrottle()
-    fifo = SubFifo(lastfm.FIFO)
-    cache = SubCache(lastfm.CACHE)
+    session = LastFmSession(log, user, password)
+    throttle = SessionThrottle(log)
+    fifo = SubFifo(log, lastfm.FIFO)
+    cache = SubCache(log, lastfm.CACHE)
+
     if cache.subs:
         log.info('Read %d sub(s) from cache', len(cache.subs))
 
@@ -383,7 +370,6 @@ def daemon():
                     log.error('Invalid data, discarding: %s' % e)
 
 if __name__ == '__main__':
-    global log
     os.umask(002)
 
     shortopts = 'u:p:dn'
@@ -426,7 +412,7 @@ if __name__ == '__main__':
         sys.exit(1)
 
     try:
-        daemon()
+        daemon(log)
     except SystemExit, e:
         sys.exit(e.args[0])
     except:

@@ -73,19 +73,18 @@ class Song:
             divmod(int(self.time), 60))
 
 class MpdObserver:
-    def __init__(self, sleep, mpd_args, debug):
-        global log
-
+    def __init__(self, log, sleep, mpd_args, debug):
+        self.log = log
         self.sleep = sleep
         self.debug = debug
-        self.children = []
+        self.kids = []
 
         try:
             self.mpd = mpdclient2.connect(**mpd_args)
-            log.info('Connected to MPD')
+            self.log.info('Connected to MPD')
         except (EOFError, mpdclient2.socket.error):
             self.mpd = None
-            log.warning('Could not connect to MPD')
+            self.log.warning('Could not connect to MPD')
 
         self.prevstatus = None
         self.prevsong = None
@@ -95,31 +94,29 @@ class MpdObserver:
         self.played_enough = False
 
     def wake(self):
-        global log
-
         status = self.mpd.do.status()
         currentsong = Song(self.mpd.do.currentsong())
 
         if self.prevstatus is None or status.state != self.prevstatus.state:
             if status.state == 'stop':
-                log.debug('Changed state: stopped')
+                self.log.debug('Changed state: stopped')
             if status.state == 'play':
-                log.debug('Changed state: playing')
+                self.log.debug('Changed state: playing')
             if status.state == 'pause':
-                log.debug('Changed state: paused')
+                self.log.debug('Changed state: paused')
 
         if status.state in ('play', 'pause'):
             time, l = map(float, status.time.split(':'))
             if status.state == 'play':
                 if currentsong != self.prevsong or \
                         self.prevstatus.state == 'stop':
-                    log.info('New song: %s', currentsong)
+                    self.log.info('New song: %s', currentsong)
                     if (self.prevsong and time > self.sleep +
                             FUZZ + int(status.xfade)) or \
                             (self.prevsong is None and
                             time/l > lastfm.SUB_PERCENT or
                             time > lastfm.SUB_SECONDS):
-                        log.warning(
+                        self.log.warning(
                             'Started at %d, will not submit' % time)
                         self.skipped = True
                     else:
@@ -130,13 +127,13 @@ class MpdObserver:
                     if self.prevtime and time < self.sleep + FUZZ and \
                             (self.prevtime/l >= lastfm.SUB_PERCENT or \
                             self.prevtime >= lastfm.SUB_SECONDS):
-                        log.info('Restarted song')
+                        self.log.info('Restarted song')
                         self.skipped = False
                         self.submitted = False
                         self.played_enough = False
                     if self.prevtime and \
                             time > self.prevtime + self.sleep + FUZZ:
-                        log.warning(
+                        self.log.warning(
                             'Skipped from %d to %d' %
                             (self.prevtime, time))
                         self.skipped = True
@@ -144,13 +141,13 @@ class MpdObserver:
                             l >= lastfm.MIN_LEN and l <= lastfm.MAX_LEN and \
                             (time/l >= lastfm.SUB_PERCENT or \
                             time >= lastfm.SUB_SECONDS):
-                        log.debug('OK, %d of %d seconds played' % (time, l))
+                        self.log.debug('OK, %d/%d secs played' % (time, l))
                         self.played_enough = True
                     if not self.submitted and not self.skipped and \
                             self.played_enough:
                         pid = self.submit(currentsong)
                         if pid:
-                            self.children.append(pid)
+                            self.kids.append(pid)
                         self.submitted = True
         else:
             time = None
@@ -160,26 +157,24 @@ class MpdObserver:
         self.prevtime = time
 
     def observe(self):
-        global log
-
         """Loop forever, periodically checking MPD's state and
         submitting songs when necessary."""
         while True:
             if self.mpd is None:
                 try:
                     self.mpd = mpdclient2.connect()
-                    log.warning('(Re)connected to MPD')
+                    self.log.warning('Connected to MPD')
                 except (EOFError, mpdclient2.socket.error):
                     pass
             # OK, we're connected. Check this first...
-            for pid in self.children:
+            for pid in self.kids:
                 try:
                     pid, status = os.waitpid(pid, os.WNOHANG)
                     if pid:
                         if os.WEXITSTATUS(status) == 0:
-                            log.debug('child %d exited successfully' % pid)
+                            self.log.debug('Child %d exited' % pid)
                         else:
-                            log.warning('child %d failed with status %d' %
+                            self.log.warning('Child %d failed (%d)' %
                                 (pid, status))
                 except OSError:
                     pass
@@ -192,7 +187,7 @@ class MpdObserver:
                 try:
                     self.wake()
                 except (EOFError, mpdclient2.socket.error):
-                    log.warning('Lost connection to MPD')
+                    self.log.warning('Lost connection to MPD')
                     self.mpd = None
                     self.prevsong = None
                     self.prevstatus = None
@@ -200,10 +195,8 @@ class MpdObserver:
             time.sleep(self.sleep)
 
     def submit(self, song):
-        global log
-
         if song.artist and song.title and song.time:
-            log.info('Sending to daemon')
+            self.log.info('Sending to daemon')
             try:
                 pid = os.fork()
                 if pid == 0:
@@ -219,19 +212,17 @@ class MpdObserver:
                     #    args += ['--mbid', song.album]
                     if self.debug:
                         args += ['--debug']
-                    log.debug('Exec %s' % ' '.join(args))
+                    self.log.debug('Exec %s' % ' '.join(args))
                     os.execvp('lastfmsubmit', args)
                 else:
                     return pid
             except OSError:
-                log.warning('Could not fork')
+                self.log.warning('Could not fork')
         else:
-            log.error('File %s is missing artist or title or length' %
+            self.log.error('File %s is missing artist, title, or length' %
                 song.file)
 
-def daemon():
-    global log
-
+def daemon(log):
     if fork:
         try:
             pid = os.fork()
@@ -253,13 +244,13 @@ def daemon():
     signal.signal(signal.SIGTERM, shutdown)
     signal.signal(signal.SIGINT, shutdown)
 
-    mo = MpdObserver(sleep, mpd_args, debug)
+    mo = MpdObserver(log, sleep, mpd_args, debug)
+
     # Even if we couldn't connect, start the observe loop anyway.
     # Perhaps MPD failed at boot and the admin will fix it later.
     mo.observe()
 
 if __name__ == '__main__':
-    global log
     os.umask(002)
 
     shortopts = 's:h:p:o:dn'
@@ -300,7 +291,7 @@ if __name__ == '__main__':
         sys.exit(1)
 
     try:
-        daemon()
+        daemon(log)
     except SystemExit, e:
         sys.exit(e.args[0])
     except:
