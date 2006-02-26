@@ -30,28 +30,26 @@ PIDFILE = os.path.join(lastfm.PID_DIR, 'lastmp.pid')
 FUZZ = 1
 
 class Song:
-    def __init__(self, mpdclientsongobj):
-        # Warning: mpdclient2 is rather confused about whether these are
-        # attributes or keys or what. Hence the funny exceptions.
+    def __init__(self, sobj):
         try:
-            self.artist = mpdclientsongobj.artist
-        except (AttributeError, KeyError):
+            self.artist = sobj.artist
+        except AttributeError:
             self.artist = None
         try:
-            self.title = mpdclientsongobj.title
-        except (AttributeError, KeyError):
+            self.title = sobj.title
+        except AttributeError:
             self.title = None
         try:
-            self.album = mpdclientsongobj.album
-        except (AttributeError, KeyError):
+            self.album = sobj.album
+        except AttributeError:
             self.album = None
         try:
-            self.time = mpdclientsongobj.time
-        except (AttributeError, KeyError):
+            self.time = sobj.time
+        except AttributeError:
             self.time = None
         try:
-            self.file = mpdclientsongobj.file
-        except (AttributeError, KeyError):
+            self.file = sobj.file
+        except AttributeError:
             self.file = None
 
     def __eq__(self, other):
@@ -95,9 +93,9 @@ class MpdObserver:
 
     def wake(self):
         status = self.mpd.do.status()
-        currentsong = Song(self.mpd.do.currentsong())
+        song = Song(self.mpd.do.currentsong())
 
-        if self.prevstatus is None or status.state != self.prevstatus.state:
+        if not self.prevstatus or status.state != self.prevstatus.state:
             if status.state == 'stop':
                 self.log.debug('Changed state: stopped')
             if status.state == 'play':
@@ -108,9 +106,9 @@ class MpdObserver:
         if status.state in ('play', 'pause'):
             time, l = map(float, status.time.split(':'))
             if status.state == 'play':
-                if currentsong != self.prevsong or \
+                if song != self.prevsong or \
                         self.prevstatus.state == 'stop':
-                    self.log.info('New song: %s', currentsong)
+                    self.log.info('New song: %s', song)
                     if (self.prevsong and time > self.sleep +
                             FUZZ + int(status.xfade)) or \
                             (self.prevsong is None and
@@ -145,14 +143,14 @@ class MpdObserver:
                         self.played_enough = True
                     if not self.submitted and not self.skipped and \
                             self.played_enough:
-                        pid = self.submit(currentsong)
+                        pid = self.submit(song)
                         if pid:
                             self.kids.append(pid)
                         self.submitted = True
         else:
             time = None
 
-        self.prevsong = currentsong
+        self.prevsong = song
         self.prevstatus = status
         self.prevtime = time
 
