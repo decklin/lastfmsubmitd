@@ -1,3 +1,6 @@
+* When printing to a pipe in mbfind or mbget, encode with the locale's
+  default encoding instead of corrupting everything into ascii.
+
 0.23 (2006-02-26):
 ==================
 
