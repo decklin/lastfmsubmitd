@@ -32,7 +32,7 @@ if __name__ == '__main__':
             debug = True
 
     try:
-        log = lastfm.logger.getlog('lastcdreplay', lastfm.LOGFILE, debug)
+        log = lastfm.logger.getlog('lastcd', lastfm.LOGFILE, debug)
     except IOError, e:
         print >>sys.stderr, 'log: %s' % e
         sys.exit(1)
