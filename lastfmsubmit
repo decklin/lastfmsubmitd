@@ -102,6 +102,6 @@ if __name__ == '__main__':
         sys.exit(e.args[0])
     except:
         import traceback
-        e = traceback.format_exception(*sys.exc_info())
-        log.error('Aborting: %s' % e)
+        einfo = traceback.format_exception(*sys.exc_info())
+        log.error('Aborting: %s' % ''.join(einfo))
         sys.exit(1)
