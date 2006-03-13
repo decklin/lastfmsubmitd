@@ -1,6 +1,8 @@
 * When printing to a pipe in mbfind or mbget, encode with the locale's
   default encoding instead of corrupting everything into ascii.
 
+* Added a --no-network option to lastfmsubmitd for testing purposes.
+
 0.23 (2006-02-26):
 ==================
 
