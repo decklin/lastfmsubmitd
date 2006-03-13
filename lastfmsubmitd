@@ -280,7 +280,7 @@ class LastFmSession:
             self.read_interval(response)
             time.sleep(self.interval)
 
-def daemon(log, network):
+def daemon(log, fork, network):
     if fork:
         try:
             pid = os.fork()
@@ -415,7 +415,7 @@ if __name__ == '__main__':
         sys.exit(1)
 
     try:
-        daemon(log, network)
+        daemon(log, fork, network)
     except SystemExit, e:
         sys.exit(e.args[0])
     except:
