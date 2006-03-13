@@ -253,7 +253,10 @@ class LastFmSession:
                 signal.alarm(HTTP_TIMEOUT)
                 response = urllib.urlopen(self.submit_url, post_str)
                 signal.alarm(0)
-            except IOError, e:
+            except (IOError, AttributeError), e:
+                # The AttributeError is some bizarre urllib bug where
+                # http_error_default tries to make an addinfourl with an fp
+                # that's actually None. I have no idea. It should be IOError.
                 signal.alarm(0)
                 raise SubTimeoutError(e)
 
