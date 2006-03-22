@@ -2,10 +2,8 @@
 
 import sys
 import os
-import stat
 import time
 import getopt
-import select
 import socket
 import urllib
 import md5
@@ -14,6 +12,7 @@ import signal
 import lastfm
 import lastfm.logger
 import lastfm.marshaller
+import lastfm.queue
 
 SLEEP_TIME = 15
 FIFO_TIMEOUT = 5
@@ -79,69 +78,6 @@ class SessionThrottle:
         secs = min(secs, self.sleep_until - self.slept)
         time.sleep(secs)
         self.slept += secs
-
-class SubCache:
-    """Holds submissions while we are running, and saves them to persistent
-    storage on exit."""
-
-    def __init__(self, log, filename):
-        self.log = log
-        self.subs = []
-        try:
-            input = file(filename)
-            for doc in lastfm.marshaller.load_documents(input.read()):
-                try:
-                    self.add(doc)
-                except ValueError, e:
-                    self.log.warning('Invalid cache, ignoring: %s' % e)
-        except IOError:
-            pass
-
-    def add(self, sub):
-        for required in ('artist', 'title', 'length'):
-            if not sub.has_key(required) or not sub[required]:
-                raise ValueError('missing %s' % required)
-        else:
-            self.subs.append(sub)
-
-    def dump(self, filename):
-        try:
-            self.log.info('Saving %d sub(s) to cache' % len(self.subs))
-            output = file(filename, 'w')
-            lastfm.marshaller.dump_documents(self.subs, output)
-            self.subs = []
-        except IOError:
-            self.log.error('Cannot write to %s, discarding %d sub(s)' %
-                (filename, len(self.subs)))
-
-class SubFifo:
-    """Reads one writer at a time from our fifo, making sure it actually
-    exists first."""
-
-    def __init__(self, log, fifoname):
-        self.log = log
-        self.fifoname = fifoname
-        try:
-            assert stat.S_ISFIFO(os.stat(fifoname).st_mode)
-        except OSError, AssertionError:
-            self.log.debug('Creating %s' % self.fifoname)
-            os.mkfifo(self.fifoname)
-
-    def select(self, timeout):
-        fd = os.open(self.fifoname, os.O_NONBLOCK)
-        rx, wx, ex = select.select([fd], [], [], timeout)
-        data = []
-        if fd in rx:
-            while True:
-                chunk = os.read(fd, 4096)
-                if chunk:
-                    self.log.debug('Read %d bytes' % len(chunk))
-                    data.append(chunk)
-                    rx, wx, ex = select.select([fd], [], [], timeout)
-                else:
-                    break
-        os.close(fd)
-        return ''.join(data)
 
 class LastFmSession:
     def __init__(self, log, user, password):
@@ -283,7 +219,41 @@ class LastFmSession:
             self.read_interval(response)
             time.sleep(self.interval)
 
-def daemon(log, fork, network):
+class SubCache:
+    """Holds submissions while we are running, and saves them to persistent
+    storage on exit."""
+
+    def __init__(self, log, filename):
+        self.log = log
+        self.subs = []
+        try:
+            input = file(filename)
+            for doc in lastfm.marshaller.load_documents(input.read()):
+                try:
+                    self.add(doc)
+                except ValueError, e:
+                    self.log.warning('Invalid cache, ignoring: %s' % e)
+        except IOError:
+            pass
+
+    def add(self, sub):
+        for required in ('artist', 'title', 'length'):
+            if not sub.has_key(required) or not sub[required]:
+                raise ValueError('missing %s' % required)
+        else:
+            self.subs.append(sub)
+
+    def dump(self, filename):
+        try:
+            self.log.info('Saving %d sub(s) to cache' % len(self.subs))
+            output = file(filename, 'w')
+            lastfm.marshaller.dump_documents(self.subs, output)
+            self.subs = []
+        except IOError:
+            self.log.error('Cannot write to %s, discarding %d sub(s)' %
+                (filename, len(self.subs)))
+
+def daemon(log, fork, usenetwork):
     if fork:
         try:
             pid = os.fork()
@@ -317,14 +287,14 @@ def daemon(log, fork, network):
 
     session = LastFmSession(log, user, password)
     throttle = SessionThrottle(log)
-    fifo = SubFifo(log, lastfm.FIFO)
+    fifo = lastfm.queue.Reader(log)
     cache = SubCache(log, lastfm.CACHE)
 
     if cache.subs:
         log.info('Read %d sub(s) from cache', len(cache.subs))
 
     while True:
-        if network and not session.connected:
+        if usenetwork and not session.connected:
             if throttle.ready():
                 try:
                     session.handshake()
@@ -388,7 +358,7 @@ if __name__ == '__main__':
     password = None
     debug = False
     fork = True
-    network = True
+    usenetwork = True
 
     try: user = os.environ['LASTFM_USER']
     except KeyError: pass
@@ -405,7 +375,7 @@ if __name__ == '__main__':
         elif opt in ('--no-daemon', '-n'):
             fork = False
         elif opt in ('--no-network', '-l'):
-            network = False
+            usenetwork = False
 
     if not (user and password):
         print >>sys.stderr, 'account: need user and password'
@@ -418,7 +388,7 @@ if __name__ == '__main__':
         sys.exit(1)
 
     try:
-        daemon(log, fork, network)
+        daemon(log, fork, usenetwork)
     except SystemExit, e:
         sys.exit(e.args[0])
     except:

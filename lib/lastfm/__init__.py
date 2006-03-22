@@ -7,9 +7,10 @@ TIME_FMT = '%Y-%m-%d %H:%M:%S'
 LOG = '/var/log/lastfm/lastfm.log'
 
 # Our IPC mechanisms.
+PID_DIR = '/var/run/lastfm'
 CACHE = '/var/cache/lastfm/subs'
 FIFO = '/var/run/lastfm/fifo'
-PID_DIR = '/var/run/lastfm'
+LOCK = '/var/run/lastfm/lock'
 
 # A song under this length will not be submitted.
 MIN_LEN = 30

@@ -43,6 +43,7 @@ if __name__ == '__main__':
     encoding = locale.getpreferredencoding()
     debug = False
     err = True
+    uselock = True
 
     for opt, arg in opts:
         if opt in ('--encoding', '-e'):
@@ -82,6 +83,7 @@ if __name__ == '__main__':
                     sub['mbid'] = arg
                 elif opt in ('--output', '-o'):
                     outfile = arg
+                    uselock = False
             except UnicodeDecodeError:
                 log.error('Could not decode %s "%s"' % (opt, arg))
                 sys.exit(1)
@@ -92,7 +94,7 @@ if __name__ == '__main__':
             print lastfm.marshaller.dump(sub)
         else:
             try:
-                writer = lastfm.queue.Writer(outfile, log)
+                writer = lastfm.queue.Writer(log, outfile, usenetwork)
                 print >>writer, lastfm.marshaller.dump(sub)
                 log.debug('Sent %s to daemon' % lastfm.logger.repr(sub))
             except IOError:

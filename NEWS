@@ -1,3 +1,6 @@
+* Don't create lockfiles with --output; instead use /var/run/lastfm/lock
+  but only if we are writing to the fifo.
+
 0.24 (2006-03-13):
 ==================
 
