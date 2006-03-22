@@ -53,7 +53,7 @@ if __name__ == '__main__':
             err = False
 
     try:
-        log = lastfm.logger.getlog('lastfmsubmit', lastfm.LOGFILE, debug, err)
+        log = lastfm.logger.getlog('lastfmsubmit', lastfm.LOG, debug, err)
     except IOError, e:
         print >>sys.stderr, 'log: %s' % e
         sys.exit(1)

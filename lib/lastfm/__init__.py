@@ -4,7 +4,7 @@ __all__ = ['logger', 'marshaller', 'queue']
 TIME_FMT = '%Y-%m-%d %H:%M:%S'
 
 # Shared log.
-LOGFILE = '/var/log/lastfm/lastfm.log'
+LOG = '/var/log/lastfm/lastfm.log'
 
 # Our IPC mechanisms.
 CACHE = '/var/cache/lastfm/subs'

@@ -283,7 +283,7 @@ if __name__ == '__main__':
             fork = False
 
     try:
-        log = lastfm.logger.getlog('lastmp', lastfm.LOGFILE, debug)
+        log = lastfm.logger.getlog('lastmp', lastfm.LOG, debug)
     except IOError, e:
         print >>sys.stderr, 'log: %s' % e
         sys.exit(1)
