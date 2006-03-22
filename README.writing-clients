@@ -1,0 +1,44 @@
+HOWTO Write Client Plugins for lastfmsubmitd
+============================================
+
+Converting a player plugin from doing its own network to one that uses
+lastfmsubmitd is a straightforward process. Your plugin does whatever is
+needed to determine what songs have been played and when. When a song is
+ready to be submitted, it forks and pipes the song's information to the
+daemon. That's it! Any protcol and caching code can be removed.
+
+There are two ways to do the piping part: the easy way and the hard way.
+The easy way is to exec lastfmsubmit, which will take care of formatting
+your data, converting it to UTF-8, and locking. If your player plugin is
+written in Python, you can also do this by creating a lastfm.queue.Writer
+file-like object and formatting its input with lastfm.marshaller.dump.
+
+The important options to lastfmsubmit have the same names as the keys
+that must be used in a dictionary passed to the lastfm modules, namely,
+"artist", "title", "length", "album", and "mbid". (For lastfmsubmit,
+these would be used as e.g. --artist; single-letter versions are also
+available.)
+
+The hard way is to format the data yourself; this may be preferable for
+a C player plugin on a slow system, or something. Your plugin will need
+to lock /var/run/lastfm/lock, and then write data to
+/var/run/lastfm/fifo. A song looks like this::
+
+  | ---
+  | artist: "The Jam"
+  | title: "Fly"
+  | album: "All Mod Cons"
+  | length: 3:21
+
+Album and MusicBrainz ID are optional. The first line must contain three
+ASCII hyphens; further lines are "key: value". For the length key,
+either human-readable time format (mm:ss) or an integer (for our
+example, 201) may be used. All other values are strings; these should be
+quoted, and any quote marks within the string should be escaped with a
+backslash. All strings must be encoded in UTF-8.
+
+This format is intended to be mostly compatible with YAML_, although not
+everything is implemented. lastfmsubmitd will eventually use PySyck so
+that it can handle arbitrary YAML.
+
+.. _YAML: http://yaml.org/
