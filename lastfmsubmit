@@ -94,7 +94,7 @@ if __name__ == '__main__':
             print lastfm.marshaller.dump(sub)
         else:
             try:
-                writer = lastfm.queue.Writer(log, outfile, usenetwork)
+                writer = lastfm.queue.Writer(log, outfile, uselock)
                 print >>writer, lastfm.marshaller.dump(sub)
                 log.debug('Sent %s to daemon' % lastfm.logger.repr(sub))
             except IOError:
