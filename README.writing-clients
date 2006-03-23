@@ -26,7 +26,7 @@ to lock /var/run/lastfm/lock, and then write data to
 
   | ---
   | artist: "The Jam"
-  | title: "Fly"
+  | title: "\"A\" Bomb in Wardour Street"
   | album: "All Mod Cons"
   | length: 3:21
 
