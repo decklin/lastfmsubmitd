@@ -1,7 +1,9 @@
-* Added some documentation for plugin developers.
+* Added some documentation for plugin developers. Hoping to go 1.0 soon.
 
 * Don't create lockfiles with --output; instead use /var/run/lastfm/lock
-  but only if we are writing to the fifo.
+  but only if we are writing to the fifo. WARNING: I decided this was a
+  good excuse to change the lastfm.queue.Writer interface while I still
+  can, so if you are using that, please change your init args.
 
 0.24 (2006-03-13):
 ==================
