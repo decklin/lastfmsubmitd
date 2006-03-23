@@ -29,7 +29,7 @@ There are several ways to do this:
   string to the writer.
 
 - If you would prefer to do everything yourself, format your song
-  information as::
+  information like so::
 
     ---
     artist: "The Jam"
@@ -40,12 +40,14 @@ There are several ways to do this:
     time: !timestamp 2006-03-23 13:42:25
 
   This song is actually in MusicBrainz with single quotes, but I've
-  changed that to illustrate backslash-escaping. You could quote the
-  mbid as well, but it may not contain any "special" characters so this
-  is not required. The time (%Y-%m-%d %H:%M:%S) is in UTC; all the
-  strings must be UTF-8. As above, the length may be an integer instead
-  of hours/minutes/seconds. Once you have this string, lock
-  /var/run/lastfm/lock and print it to /var/run/lastfm/fifo.
+  changed that to illustrate backslash-escaping (if any string actually
+  contains a backslash, escape it as "\\"; no other escapes are
+  currently interpreted). You could also quote the mbid, but it may not
+  contain any "special" characters so this is not required. The time
+  (%Y-%m-%d %H:%M:%S) is in UTC; all the strings must be UTF-8. As
+  above, the length may be an integer instead of hours/minutes/seconds.
+  Once you have this string, lock /var/run/lastfm/lock and print it to
+  /var/run/lastfm/fifo.
 
 In all cases, the locking and writing steps will block, perhaps for a
 long time, so you will want to fork or use a separate thread. (If the
