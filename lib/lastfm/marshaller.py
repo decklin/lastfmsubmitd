@@ -9,9 +9,10 @@ def parse_length(length):
 def parse_string(s):
     s = s.decode('utf-8')
     if s.startswith('"') and s.endswith('"'):
-        return s[1:-1].replace('\\"', '"')
-    else:
-        return s
+        s = s[1:-1]
+        s = s.replace('\\\\', '\\')
+        s = s.replace('\\"', '"')
+    return s
 
 def dump(song):
     doc = ['---']
