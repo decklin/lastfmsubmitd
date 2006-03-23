@@ -1,44 +1,66 @@
 HOWTO Write Client Plugins for lastfmsubmitd
 ============================================
 
-Converting a player plugin from doing its own network to one that uses
-lastfmsubmitd is a straightforward process. Your plugin does whatever is
-needed to determine what songs have been played and when. When a song is
-ready to be submitted, it forks and pipes the song's information to the
-daemon. That's it! Any protcol and caching code can be removed.
+lastfmsubmitd is designed to handle the Last.fm protocol, and recover
+from network/server outages, so you don't have to. When your player
+plugin determines that a song has been played, it merely needs to fork
+and pipe the song's information to the daemon.
 
-There are two ways to do the piping part: the easy way and the hard way.
-The easy way is to exec lastfmsubmit, which will take care of formatting
-your data, converting it to UTF-8, and locking. If your player plugin is
-written in Python, you can also do this by creating a lastfm.queue.Writer
-file-like object and formatting its input with lastfm.marshaller.dump.
+There are several ways to do this:
 
-The important options to lastfmsubmit have the same names as the keys
-that must be used in a dictionary passed to the lastfm modules, namely,
-"artist", "title", "length", "album", and "mbid". (For lastfmsubmit,
-these would be used as e.g. --artist; single-letter versions are also
-available.)
+- Exec the helper program lastfmsubmit. The song information is passed
+  as command-line options: --artist, --title, and --length are required,
+  and --album and --mbid are optional. The --length may be formatted as
+  hours/minutes/seconds or as a ordinary integer. lastfmsubmit takes
+  care of the details for you, namely:
 
-The hard way is to format the data yourself; this may be preferable for
-a C player plugin on a slow system, or something. Your plugin will need
-to lock /var/run/lastfm/lock, and then write data to
-/var/run/lastfm/fifo. A song looks like this::
+  - Adding a timestamp
+  - Converting from any local encoding to UTF-8
+  - Serializing the information as text
+  - Requesting the lock
+  - Actually writing the serialized data to the pipe
 
-  | ---
-  | artist: "The Jam"
-  | title: "\"A\" Bomb in Wardour Street"
-  | album: "All Mod Cons"
-  | length: 3:21
+- If your plugin is written in Python, put your song information in a
+  dictionary with the keys "artist", "title", "length", "time", and
+  optionally "album" and/or "mbid". The "length" is an integer, and
+  "album" a UTC time tuple; the rest are (possibly unicode) strings.
+  Then, create a lastfm.queue.Writer file-like object, serialize the
+  dictionary as a string with lastfm.marshaller.dump, and print the
+  string to the writer.
 
-Album and MusicBrainz ID are optional. The first line must contain three
-ASCII hyphens; further lines are "key: value". For the length key,
-either human-readable time format (mm:ss) or an integer (for our
-example, 201) may be used. All other values are strings; these should be
-quoted, and any quote marks within the string should be escaped with a
-backslash. All strings must be encoded in UTF-8.
+- If you would prefer to do everything yourself, format your song
+  information as::
 
-This format is intended to be mostly compatible with YAML_, although not
-everything is implemented. lastfmsubmitd will eventually use PySyck so
-that it can handle arbitrary YAML.
+    ---
+    artist: "The Jam"
+    title: "\"A\" Bomb in Wardour Street"
+    album: "All Mod Cons"
+    length: 3:21
+    mbid: b7ec9e64-baa4-49bc-ad33-570919d01ba1
+    time: !timestamp 2006-03-23 13:42:25
+
+  This song is actually in MusicBrainz with single quotes, but I've
+  changed that to illustrate backslash-escaping. You could quote the
+  mbid as well, but it may not contain any "special" characters so this
+  is not required. The time (%Y-%m-%d %H:%M:%S) is in UTC; all the
+  strings must be UTF-8. As above, the length may be an integer instead
+  of hours/minutes/seconds. Once you have this string, lock
+  /var/run/lastfm/lock and print it to /var/run/lastfm/fifo.
+
+In all cases, the locking and writing steps will block, perhaps for a
+long time, so you will want to fork or use a separate thread. (If the
+daemon is not running, writing will block indefinitely, but succeed as
+soon as the daemon starts again.)
+
+If your plugin is for e.g. a portable music device, you will generally
+have a large number of songs to submit at the same time. If you are
+using one of the latter two methods, you can open the pipe, print all
+the songs to it one after another, and then close the pipe.
+
+The serialized format was chosen to be compatible with YAML_; however,
+lastfmsubmitd cannot parse everything that might be be valid according
+to the full specification (this will be changed when I fix PySyck). You
+don't need to worry about this unless you want to use Syck to serialize
+your output for you.
 
 .. _YAML: http://yaml.org/
