@@ -45,7 +45,7 @@ class Writer:
 
         if self.lockname:
             self.log.debug('Requesting lock on %s' % self.lock)
-            self.lock = file(self.lock, 'w')
+            self.lock = file(self.lockname, 'w')
             # If there is a pileup, locks will be requested in order.
             fcntl.flock(self.lock, fcntl.LOCK_EX)
         else:
