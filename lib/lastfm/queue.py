@@ -14,7 +14,7 @@ class Reader:
         try:
             assert stat.S_ISFIFO(os.stat(lastfm.FIFO).st_mode)
         except OSError, AssertionError:
-            self.log.debug('Creating %s' % self.fifoname)
+            self.log.debug('Creating %s' % lastfm.FIFO)
             os.mkfifo(lastfm.FIFO)
 
     def select(self, timeout):

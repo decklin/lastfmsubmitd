@@ -1,3 +1,5 @@
+* Fix logging error when creating fifo.
+
 0.25 (2006-03-24):
 ==================
 

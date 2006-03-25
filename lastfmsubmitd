@@ -162,8 +162,6 @@ class LastFmSession:
     def submit(self, cache):
         while cache.subs:
             chunk = cache.subs[:SUB_CHUNK_SIZE]
-            self.log.info('Submitting %d song(s)' % len(chunk))
-
             args = { 'u': self.user, 's': self.session_key }
             post_data = [urllib.urlencode(args)]
             for i, sub in enumerate(chunk):
@@ -180,7 +178,7 @@ class LastFmSession:
                     args['m[%d]' % i] = sub['mbid'].encode('utf-8')
                 except KeyError:
                     args['m[%d]' % i] = ''
-                self.log.debug('Submitting: %s' % lastfm.logger.repr(sub))
+                self.log.info('Submitting: %s' % lastfm.logger.repr(sub))
                 post_data.append(urllib.urlencode(args))
 
             post_str = '&'.join(post_data)
