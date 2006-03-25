@@ -3,8 +3,6 @@ import stat
 import select
 import fcntl
 
-import lastfm
-
 class Reader:
     """Reads one writer at a time from our fifo, making sure it actually
     exists first."""
