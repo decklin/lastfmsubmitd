@@ -64,4 +64,4 @@ class Writer:
             self.log.debug('Released lock')
 
     def write(self, s):
-        self.out.write(s)
+        self.f.write(s)
