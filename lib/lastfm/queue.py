@@ -9,16 +9,20 @@ class Reader:
     """Reads one writer at a time from our fifo, making sure it actually
     exists first."""
 
-    def __init__(self, log):
+    def __init__(self, log, f):
         self.log = log
+        self.f = f
         try:
-            assert stat.S_ISFIFO(os.stat(lastfm.FIFO).st_mode)
-        except OSError, AssertionError:
-            self.log.debug('Creating %s' % lastfm.FIFO)
-            os.mkfifo(lastfm.FIFO)
+            if stat.S_ISFIFO(os.stat(self.f).st_mode): return
+        except OSError, e:
+            try:
+                os.mkfifo(self.f)
+            except OSError, e:
+                self.log.error('Failed to create %s: %s' % (f, e))
+                raise
 
     def select(self, timeout):
-        fd = os.open(lastfm.FIFO, os.O_NONBLOCK)
+        fd = os.open(self.f, os.O_NONBLOCK)
         rx, wx, ex = select.select([fd], [], [], timeout)
         data = []
         if fd in rx:
@@ -36,14 +40,14 @@ class Reader:
 class Writer:
     """Writes data to the fifo, or just a plain file."""
 
-    def __init__(self, log, f, uselock):
+    def __init__(self, log, f, l):
         self.log = log
         self.outfile = f
-        self.uselock = uselock
+        self.lock = l
 
-        if self.uselock:
-            self.log.debug('Requesting lock on %s' % lastfm.LOCK)
-            self.lock = file(lastfm.LOCK, 'w')
+        if self.lock:
+            self.log.debug('Requesting lock on %s' % self.lock)
+            self.lock = file(self.lock, 'w')
 
         # If there is a pileup, locks will be requested in order.
         fcntl.flock(self.lock, fcntl.LOCK_EX)
@@ -52,10 +56,9 @@ class Writer:
         self.out = file(self.outfile, 'w')
 
     def __del__(self):
-        if self.uselock:
+        if self.lock:
             # We must flush and get out of the way first.
             self.out.close()
-
             fcntl.flock(self.lock, fcntl.LOCK_UN)
             self.lock.close()
             self.log.debug('Released lock')

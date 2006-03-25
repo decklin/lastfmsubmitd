@@ -24,12 +24,12 @@ if __name__ == '__main__':
 
     debug = False
     outfile = lastfm.FIFO
-    uselock = True
+    lock = lastfm.LOCK
 
     for opt, arg in opts:
         if opt in ('--output', '-o'):
             outfile = arg
-            uselock = False
+            lock = None
         elif opt in ('--debug', '-d'):
             debug = True
 
@@ -75,7 +75,7 @@ if __name__ == '__main__':
             print lastfm.marshaller.dump(s)
     else:
         try:
-            writer = lastfm.queue.Writer(log, outfile, uselock)
+            writer = lastfm.queue.Writer(log, outfile, lock)
             log.info('Sending %s songs to daemon' % len(subs))
             for s in subs:
                 print >>writer, lastfm.marshaller.dump(s)

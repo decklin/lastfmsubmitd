@@ -285,8 +285,13 @@ def daemon(log, fork, usenetwork):
 
     session = LastFmSession(log, user, password)
     throttle = SessionThrottle(log)
-    fifo = lastfm.queue.Reader(log)
     cache = SubCache(log, lastfm.CACHE)
+
+    try:
+        fifo = lastfm.queue.Reader(log, lastfm.FIFO)
+    except OSError, e:
+        print >>sys.stderr, 'fifo: %s' % e
+        sys.exit(1)
 
     if cache.subs:
         log.info('Read %d sub(s) from cache', len(cache.subs))
