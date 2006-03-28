@@ -46,4 +46,7 @@ def load(doc):
 def load_documents(docs):
     for doc in map(str.strip, docs.split('---\n')):
         if doc:
-            yield load(doc)
+            try:
+                yield load(doc)
+            except ValueError:
+                pass
