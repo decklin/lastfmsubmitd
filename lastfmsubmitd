@@ -227,7 +227,10 @@ class SubCache:
         try:
             input = file(filename)
             for doc in lastfm.marshaller.load_documents(input.read()):
-                self.add(doc)
+                try:
+                    self.add(doc)
+                except ValueError, e:
+                    self.log.warning('Invalid cache, ignoring: %s' % e)
         except IOError:
             pass
 
@@ -336,8 +339,11 @@ def daemon(log, fork, usenetwork):
             throttle.slept += FIFO_TIMEOUT
         if read:
             for doc in lastfm.marshaller.load_documents(''.join(read)):
-                cache.add(doc)
-                log.debug('Added %s' % lastfm.logger.repr(doc))
+                try:
+                    cache.add(doc)
+                    log.debug('Added %s' % lastfm.logger.repr(doc))
+                except ValueError, e:
+                    log.error('Invalid data, discarding: %s' % e)
 
 if __name__ == '__main__':
     os.umask(002)
