@@ -75,10 +75,10 @@ if __name__ == '__main__':
             print lastfm.marshaller.dump(s)
     else:
         try:
-            writer = lastfm.queue.Writer(log, outfile, lock)
+            out = lastfm.queue.Writer(log, outfile, lock)
             log.info('Sending %s songs to daemon' % len(subs))
             for s in subs:
-                print >>writer, lastfm.marshaller.dump(s)
+                print >>out, lastfm.marshaller.dump(s)
                 log.debug('Sent song: %s' % lastfm.logger.repr(s))
         except IOError, e:
             print >>sys.stderr, 'log: %s' % e
