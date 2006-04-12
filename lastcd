@@ -76,7 +76,7 @@ if __name__ == '__main__':
     else:
         try:
             out = lastfm.queue.Writer(log, outfile, lock)
-            log.info('Sending %s songs to daemon' % len(subs))
+            log.info('Sending %s song(s) to daemon' % len(subs))
             for s in subs:
                 print >>out, lastfm.marshaller.dump(s)
                 log.debug('Sent song: %s' % lastfm.logger.repr(s))
