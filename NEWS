@@ -1,8 +1,10 @@
+0.27 (2006-04-12):
+==================
+
 * Skip bad data rather than attempting to log it and causing errors.
 
-* Install lastfmsubmit in /usr/lib/lastfmsubmitd.
-
-* Use the Python queue-writer interface in lastmp instead.
+* Install lastfmsubmit in /usr/lib/lastfmsubmitd, and use the Python
+  queue-writer interface in lastmp instead.
 
 * Check for a supplied submission time in lastfmsubmitd.
 
