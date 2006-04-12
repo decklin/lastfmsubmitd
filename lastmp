@@ -73,9 +73,14 @@ class Song:
 
     def dict(self):
         d = {'time': time.gmtime()}
-        for k in ('artist', 'title', 'length', 'album'):
+        for k in ('artist', 'title', 'length'):
             v = getattr(self, k)
-            if v: d[k] = v
+            if v:
+                d[k] = v
+            else:
+                raise ValueError('%s has no %s' % (self.file, k))
+        if self.album:
+            d['album'] = self.album
         return d
 
 class MpdObserver:
