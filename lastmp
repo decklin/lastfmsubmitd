@@ -203,11 +203,12 @@ class MpdObserver:
 
     def submit(self, song):
         try:
-            self.log.info('Sending to daemon')
+            sub = song.dict()
             pid = os.fork()
             if pid == 0:
+                self.log.info('Sending to daemon')
                 fifo = lastfm.queue.Writer(self.log, lastfm.FIFO, lastfm.LOCK)
-                print >>fifo, lastfm.marshaller.dump(song.dict())
+                print >>fifo, lastfm.marshaller.dump(sub)
                 sys.exit(0)
             else:
                 return pid
