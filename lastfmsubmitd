@@ -235,7 +235,7 @@ class SubCache:
             pass
 
     def add(self, sub):
-        for required in ('artist', 'title', 'length'):
+        for required in ('artist', 'title', 'length', 'time'):
             if not sub.has_key(required) or not sub[required]:
                 raise ValueError('missing %s' % required)
         else:

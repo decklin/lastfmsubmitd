@@ -14,6 +14,8 @@ import signal
 import mpdclient2
 import lastfm
 import lastfm.logger
+import lastfm.queue
+import lastfm.marshaller
 
 """This program connects to MPD and runs in the background. When a valid
 song is played (valid = must be tagged, played w/o skipping for the
@@ -44,9 +46,9 @@ class Song:
         except AttributeError:
             self.album = None
         try:
-            self.time = sobj.time
+            self.length = int(sobj.time)
         except AttributeError:
-            self.time = None
+            self.length = None
         try:
             self.file = sobj.file
         except AttributeError:
@@ -56,19 +58,25 @@ class Song:
         if other == None:
             return False
         else:
-            return self.file == other.file or (
-                self.artist == other.artist and self.title == other.title and
-                self.album == other.album and self.time == other.time)
+            return self.file == other.file or \
+                (self.artist == other.artist and self.title == other.title and
+                self.album == other.album and self.length == other.length)
 
     # O RLY?
     def __ne__(self, other):
         # YA RLY!
         return not self == other
 
-    # NO WAI!!!
     def __str__(self):
         return '%s - %s [%d:%02d]' % ((self.artist, self.title) +
-            divmod(int(self.time), 60))
+            divmod(self.length, 60))
+
+    def dict(self):
+        d = {'time': time.gmtime()}
+        for k in ('artist', 'title', 'length', 'album'):
+            v = getattr(self, k)
+            if v: d[k] = v
+        return d
 
 class MpdObserver:
     def __init__(self, log, sleep, mpd_args, debug):
@@ -86,7 +94,7 @@ class MpdObserver:
 
         self.prevstatus = None
         self.prevsong = None
-        self.prevtime = None
+        self.prevpos = None
         self.skipped = False
         self.submitted = False
         self.played_enough = False
@@ -96,50 +104,46 @@ class MpdObserver:
         song = Song(self.mpd.do.currentsong())
 
         if not self.prevstatus or status.state != self.prevstatus.state:
-            if status.state == 'stop':
-                self.log.debug('Changed state: stopped')
-            if status.state == 'play':
-                self.log.debug('Changed state: playing')
-            if status.state == 'pause':
-                self.log.debug('Changed state: paused')
+            self.log.debug('Changed state: %s' % status.state)
 
         if status.state in ('play', 'pause'):
-            time, l = map(float, status.time.split(':'))
+            pos, length = map(float, status.time.split(':'))
             if status.state == 'play':
                 if song != self.prevsong or \
                         self.prevstatus.state == 'stop':
                     self.log.info('New song: %s', song)
-                    if (self.prevsong and time > self.sleep +
+                    if (self.prevsong and pos > self.sleep +
                             FUZZ + int(status.xfade)) or \
                             (self.prevsong is None and
-                            time/l > lastfm.SUB_PERCENT or
-                            time > lastfm.SUB_SECONDS):
+                            pos/length > lastfm.SUB_PERCENT or
+                            pos > lastfm.SUB_SECONDS):
                         self.log.warning(
-                            'Started at %d, will not submit' % time)
+                            'Started at %d, will not submit' % pos)
                         self.skipped = True
                     else:
                         self.skipped = False
                         self.submitted = False
                         self.played_enough = False
                 else:
-                    if self.prevtime and time < self.sleep + FUZZ and \
-                            (self.prevtime/l >= lastfm.SUB_PERCENT or \
-                            self.prevtime >= lastfm.SUB_SECONDS):
+                    if self.prevpos and pos < self.sleep + FUZZ and \
+                            (self.prevpos/length >= lastfm.SUB_PERCENT or \
+                            self.prevpos >= lastfm.SUB_SECONDS):
                         self.log.info('Restarted song')
                         self.skipped = False
                         self.submitted = False
                         self.played_enough = False
-                    if self.prevtime and \
-                            time > self.prevtime + self.sleep + FUZZ:
+                    if self.prevpos and \
+                            pos > self.prevpos + self.sleep + FUZZ:
                         self.log.warning(
                             'Skipped from %d to %d' %
-                            (self.prevtime, time))
+                            (self.prevpos, pos))
                         self.skipped = True
                     if not self.skipped and not self.played_enough and \
-                            l >= lastfm.MIN_LEN and l <= lastfm.MAX_LEN and \
-                            (time/l >= lastfm.SUB_PERCENT or \
-                            time >= lastfm.SUB_SECONDS):
-                        self.log.debug('OK, %d/%d secs played' % (time, l))
+                            length >= lastfm.MIN_LEN and \
+                            length <= lastfm.MAX_LEN and \
+                            (pos >= lastfm.SUB_SECONDS or \
+                            pos/length >= lastfm.SUB_PERCENT):
+                        self.log.debug('OK, %d/%d played' % (pos, length))
                         self.played_enough = True
                     if not self.submitted and not self.skipped and \
                             self.played_enough:
@@ -148,11 +152,11 @@ class MpdObserver:
                             self.kids.append(pid)
                         self.submitted = True
         else:
-            time = None
+            pos = None
 
         self.prevsong = song
         self.prevstatus = status
-        self.prevtime = time
+        self.prevpos = pos
 
     def observe(self):
         """Loop forever, periodically checking MPD's state and
@@ -189,36 +193,23 @@ class MpdObserver:
                     self.mpd = None
                     self.prevsong = None
                     self.prevstatus = None
-                    self.prevtime = None
+                    self.prevpos = None
             time.sleep(self.sleep)
 
     def submit(self, song):
-        if song.artist and song.title and song.time:
+        try:
             self.log.info('Sending to daemon')
-            try:
-                pid = os.fork()
-                if pid == 0:
-                    args = [
-                        'lastfmsubmit', '--quiet',
-                        '--artist', song.artist,
-                        '--title', song.title,
-                        '--length', song.time
-                        ]
-                    if song.album:
-                        args += ['--album', song.album]
-                    #if song.mbid:
-                    #    args += ['--mbid', song.album]
-                    if self.debug:
-                        args += ['--debug']
-                    self.log.debug('Exec %s' % ' '.join(args))
-                    os.execvp('lastfmsubmit', args)
-                else:
-                    return pid
-            except OSError:
-                self.log.warning('Could not fork')
-        else:
-            self.log.error('File %s is missing artist, title, or length' %
-                song.file)
+            pid = os.fork()
+            if pid == 0:
+                fifo = lastfm.queue.Writer(self.log, lastfm.FIFO, lastfm.LOCK)
+                print >>fifo, lastfm.marshaller.dump(song.dict())
+                sys.exit(0)
+            else:
+                return pid
+        except ValueError, e:
+            self.log.error('Missing tags: %s' % e)
+        except OSError:
+            self.log.error('Could not fork')
 
 def daemon(log, fork):
     if fork:
