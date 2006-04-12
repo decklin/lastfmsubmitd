@@ -16,37 +16,42 @@ def parse_string(s):
 
 def dump(song):
     doc = ['---']
-    for k, v in song.items():
-        if k in ('time'):
-            v = '!timestamp %s' % time.strftime(lastfm.TIME_FMT, v)
-        elif k in ('length'):
-            v = '%d:%02d' % divmod(v, 60)
-        else:
-            v = '"%s"' % unicode(v).replace('"', '\\"').encode('utf-8')
-        doc.append(': '.join((k, v)))
+    for k, v in song.iteritems():
+        try:
+            if k == 'length':
+                v = '%d:%02d' % divmod(v, 60)
+            else:
+                v = '%d' % v
+        except TypeError:
+            try:
+                v = '!timestamp %s' % time.strftime(lastfm.TIME_FMT, v)
+            except TypeError:
+                v = '"%s"' % unicode(v).replace('"', '\\"').encode('utf-8')
+        doc.append(': '.join([k, v]))
     return '\n'.join(doc)
 
 def dump_documents(docs, out):
     out.write('\n'.join([dump(d) for d in docs]))
 
 def load(doc):
+    lines = filter(None, doc.split('\n'))
     song = {}
-    for line in doc.split('\n'):
-        if line:
-            k, v = line.split(': ', 1)
-            if k in ('time'):
-                v = time.strptime(v, '!timestamp %s' % lastfm.TIME_FMT)
-            elif k in ('length'):
+    for line in lines:
+        k, v = line.split(': ', 1)
+        if v.startswith('!timestamp '):
+            v = time.strptime(v[11:], lastfm.TIME_FMT)
+        else:
+            try:
                 v = parse_length(v)
-            else:
+            except ValueError:
                 v = parse_string(v)
-            song[k] = v
+        song[k] = v
     return song
 
-def load_documents(docs):
-    for doc in map(str.strip, docs.split('---\n')):
-        if doc:
-            try:
-                yield load(doc)
-            except ValueError:
-                pass
+def load_documents(stream):
+    docs = filter(None, [d.strip() for d in stream.split('---\n')])
+    for d in docs:
+        try:
+            yield load(d)
+        except ValueError:
+            pass
