@@ -1,3 +1,6 @@
+0.28 (2006-04-18):
+==================
+
 * Recover correctly if a lastmp forked proccess fails.
 
 * Log untagged files with the filename instead of None, and make a guess
