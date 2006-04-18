@@ -1,6 +1,15 @@
 import time
 import lastfm
 
+def guess(s, enc):
+    try: return s.decode(enc)
+    except UnicodeDecodeError: pass
+    try: return s.decode('utf-8')
+    except UnicodeDecodeError: pass
+    try: return s.decode('latin-1')
+    except UnicodeDecodeError:
+        return s.decode('ascii', 'replace')
+
 def parse_length(length):
     # Just think, if we had Python 2.4, this could all be one line.
     parts = [int(p) for p in length.split(':')]; parts.reverse()

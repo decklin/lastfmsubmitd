@@ -1,5 +1,9 @@
 * Recover correctly if a lastmp forked proccess fails.
 
+* Log untagged files with the filename instead of None, and make a guess
+  at the encoding if MPD breaks it somehow. This should fix a crash with
+  certain files.
+
 0.27 (2006-04-12):
 ==================
 

@@ -59,18 +59,11 @@ if __name__ == '__main__':
         print >>sys.stderr, 'log: %s' % e
         sys.exit(1)
 
-    def decode(s):
-        try:
-            return s.decode('utf-8')
-        except UnicodeDecodeError:
-            log.warning('Attempting to decode tag as %s' % encoding)
-            return s.decode(encoding)
-
     try:
         for opt, arg in opts:
             try:
                 if opt in ('--artist', '-a'):
-                    sub['artist'] = decode(arg)
+                    sub['artist'] = lastfm.marshaller.guess(arg, encoding)
                 elif opt in ('--title', '-t'):
                     sub['title'] = decode(arg)
                 elif opt in ('--length', '-l'):
