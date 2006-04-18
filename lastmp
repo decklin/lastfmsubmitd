@@ -203,19 +203,23 @@ class MpdObserver:
 
     def submit(self, song):
         try:
+            self.log.info('Sending to daemon')
             sub = song.dict()
             pid = os.fork()
-            if pid == 0:
-                self.log.info('Sending to daemon')
-                fifo = lastfm.queue.Writer(self.log, lastfm.FIFO, lastfm.LOCK)
-                print >>fifo, lastfm.marshaller.dump(sub)
-                sys.exit(0)
-            else:
-                return pid
-        except ValueError, e:
-            self.log.error('Missing tags: %s' % e)
         except OSError:
             self.log.error('Could not fork')
+        if pid:
+            return pid
+        try:
+            fifo = lastfm.queue.Writer(self.log, lastfm.FIFO, lastfm.LOCK)
+            print >>fifo, lastfm.marshaller.dump(sub)
+            sys.exit(0)
+        except ValueError, e:
+            self.log.error('Missing tags: %s' % e)
+            sys.exit(1)
+        except Exception, e:
+            self.log.error('Child proccess failed: %s' % e)
+            sys.exit(1)
 
 def daemon(log, fork):
     if fork:

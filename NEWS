@@ -1,3 +1,5 @@
+* Recover correctly if a lastmp forked proccess fails.
+
 0.27 (2006-04-12):
 ==================
 
