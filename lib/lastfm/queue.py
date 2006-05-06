@@ -42,14 +42,14 @@ class Writer:
         self.log = log
         self.fname = fname
         self.lockname = lockname
+        self.f = None
+        self.lock = None
 
         if self.lockname:
             self.log.debug('Requesting lock on %s' % self.lockname)
             self.lock = file(self.lockname, 'w')
             # If there is a pileup, locks will be requested in order.
             fcntl.flock(self.lock, fcntl.LOCK_EX)
-        else:
-            self.lock = None
 
         # This will also block, until we have a reader.
         self.log.debug('Opening %s' % self.fname)
@@ -57,7 +57,8 @@ class Writer:
 
     def __del__(self):
         # We must flush and get out of the way first.
-        self.f.close()
+        if self.f:
+            self.f.close()
         if self.lock:
             fcntl.flock(self.lock, fcntl.LOCK_UN)
             self.lock.close()

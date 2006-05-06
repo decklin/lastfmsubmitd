@@ -1,3 +1,6 @@
+* Fixed pesky GC error message that would appear when cleaning up after
+  a failed attempt to grab the lock.
+
 * Added a bunch of --help, and improved error messages.
 
 * Fix some decoding calls in lastfmsubmit that weren't updated when
