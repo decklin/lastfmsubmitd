@@ -1,7 +1,7 @@
 import time
 import lastfm
 
-def guess(s, enc):
+def guess_enc(s, enc):
     try: return s.decode(enc)
     except UnicodeDecodeError: pass
     try: return s.decode('utf-8')

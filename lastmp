@@ -62,12 +62,12 @@ class Song:
     def dict(self):
         d = {
             'time': time.gmtime(),
-            'artist': lastfm.marshaller.guess(self.artist, 'utf-8'),
-            'title': lastfm.marshaller.guess(self.title, 'utf-8'),
+            'artist': lastfm.marshaller.guess_enc(self.artist, 'utf-8'),
+            'title': lastfm.marshaller.guess_enc(self.title, 'utf-8'),
             'length': self.length,
             }
         if self.album:
-            d['album'] = lastfm.marshaller.guess(self.album, 'utf-8')
+            d['album'] = lastfm.marshaller.guess_enc(self.album, 'utf-8')
         for reqd in ('artist', 'title', 'length'):
             if not d[reqd]:
                 raise ValueError('%s is missing %s' % (self.file, reqd))
