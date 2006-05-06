@@ -10,16 +10,24 @@ import lastfm.logger
 import lastfm.queue
 import lastfm.marshaller
 
+USAGE = """\
+usage: lastcd [--output FILE] [--debug] [--help]"""
+
 if __name__ == '__main__':
     os.umask(002)
 
-    shortopts = 'o:d'
-    longopts = ['output=', 'debug']
+    shortopts = 'o:dh'
+    longopts = [
+        'output=',
+        'debug',
+        'help',
+        ]
 
     try:
         opts, args = getopt.getopt(sys.argv[1:], shortopts, longopts)
     except getopt.GetoptError, e:
-        print >>sys.stderr, 'getopt: %s' % e
+        print >>sys.stderr, 'lastcd: %s' % e
+        print >>sys.stderr, USAGE
         sys.exit(1)
 
     debug = False
@@ -32,11 +40,14 @@ if __name__ == '__main__':
             lock = None
         elif opt in ('--debug', '-d'):
             debug = True
+        elif opt in ('--help', '-h'):
+            print USAGE
+            sys.exit(0)
 
     try:
         log = lastfm.logger.getlog('lastcd', lastfm.LOG, debug)
     except IOError, e:
-        print >>sys.stderr, 'log: %s' % e
+        print >>sys.stderr, 'lastcd: error opening log: %s' % e
         sys.exit(1)
 
     songs = []
@@ -63,11 +74,11 @@ if __name__ == '__main__':
                 subs.append(s)
             pos = pos + l
         else:
-            print >>sys.stderr, 'input: track has zero length'
+            print >>sys.stderr, 'lastcd: track has zero length'
             sys.exit(1)
 
     if not subs:
-        print >>sys.stderr, 'input: no usable tracks'
+        print >>sys.stderr, 'lastcd: no usable tracks found'
         sys.exit(1)
 
     if outfile == '-':
@@ -81,4 +92,4 @@ if __name__ == '__main__':
                 print >>out, lastfm.marshaller.dump(s)
                 log.debug('Sent song: %s' % lastfm.logger.repr(s))
         except IOError, e:
-            print >>sys.stderr, 'log: %s' % e
+            print >>sys.stderr, 'lastcd: error writing: %s' % e

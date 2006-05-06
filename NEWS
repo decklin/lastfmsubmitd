@@ -1,3 +1,5 @@
+* Added a bunch of --help, and improved error messages.
+
 * Fix some decoding calls in lastfmsubmit that weren't updated when
   things were reorganized.
 

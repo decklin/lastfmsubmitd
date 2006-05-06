@@ -11,14 +11,15 @@ import lastfm.logger
 import lastfm.queue
 import lastfm.marshaller
 
-"""This program accepts information about a played song on the commandline,
-generates a submission in lastfmsubmitd format, and sends it to the running
-lastfmsubmitd."""
+USAGE = """\
+usage: lastfmsubmitd [--encoding ENC] [--artist ARTIST] [--title TITLE]
+    [--length LEN] [--time STAMP] [--album ALBUM] [--mbid TRACKID]
+    [--output FILE] [--debug] [--quiet] [--help]"""
 
 if __name__ == '__main__':
     os.umask(002)
 
-    shortopts = 'a:s:l:d:b:m:o:e:dq'
+    shortopts = 'a:s:l:d:b:m:o:e:dqh'
     longopts = [
         'artist=',
         'title=',
@@ -30,15 +31,17 @@ if __name__ == '__main__':
         'encoding=',
         'debug',
         'quiet',
+        'help',
         ]
 
     try:
         opts, args = getopt.getopt(sys.argv[1:], shortopts, longopts)
     except getopt.GetoptError, e:
-        print >>sys.stderr, 'getopt: %s' % e
+        print >>sys.stderr, 'lastfmsubmit: %s' % e
+        print >>sys.stderr, USAGE
         sys.exit(1)
 
-    sub = { 'time': time.gmtime() }
+    sub = {}
     outfile = lastfm.FIFO
     encoding = locale.getpreferredencoding()
     debug = False
@@ -56,7 +59,7 @@ if __name__ == '__main__':
     try:
         log = lastfm.logger.getlog('lastfmsubmit', lastfm.LOG, debug, err)
     except IOError, e:
-        print >>sys.stderr, 'log: %s' % e
+        print >>sys.stderr, 'lastfmsubmit: error opening log: %s' % e
         sys.exit(1)
 
     try:
@@ -77,9 +80,20 @@ if __name__ == '__main__':
                 elif opt in ('--output', '-o'):
                     outfile = arg
                     lock = None
+                elif opt in ('--help', '-h'):
+                    print USAGE
+                    sys.exit(0)
             except ValueError:
-                log.error('Could not parse %s "%s"' % (opt, arg))
+                print >>sys.stderr, 'lastfmsubmit: could not parse %s' % opt
                 sys.exit(1)
+
+        if len(sub) == 0:
+            print >>sys.stderr, "lastfmsubmit: nothing specified"
+            print >>sys.stderr, USAGE
+            sys.exit(1)
+        if not sub.has_key('time'):
+            sub['time'] = time.gmtime()
+
         if outfile == '-':
             print lastfm.marshaller.dump(sub)
         else:
@@ -90,6 +104,7 @@ if __name__ == '__main__':
             except IOError:
                 log.error('Could not write to %s' % outfile)
                 sys.exit(1)
+
     except SystemExit, e:
         sys.exit(e.args[0])
     except:

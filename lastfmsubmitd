@@ -14,6 +14,10 @@ import lastfm.logger
 import lastfm.marshaller
 import lastfm.queue
 
+USAGE = """\
+usage: lastfmsubmitd [--user USER] [--password PASS] [--debug] [--no-daemon]
+    [--help]"""
+
 SLEEP_TIME = 15
 FIFO_TIMEOUT = 5
 PIDFILE = os.path.join(lastfm.PID_DIR, 'lastfmsubmitd.pid')
@@ -257,7 +261,7 @@ def daemon(log, fork, usenetwork):
             pid = os.fork()
             if pid != 0: sys.exit(0)
         except OSError, e:
-            print >>sys.stderr, 'fork: %s' % e
+            print >>sys.stderr, "lastfmsubmitd: can't fork: %s" % e
             sys.exit(1)
 
     log.info('Last.fm Submission Daemon starting')
@@ -290,7 +294,7 @@ def daemon(log, fork, usenetwork):
     try:
         fifo = lastfm.queue.Reader(log, lastfm.FIFO)
     except OSError, e:
-        print >>sys.stderr, 'fifo: %s' % e
+        print >>sys.stderr, "lastfmsubmitd: can't open fifo: %s" % e
         sys.exit(1)
 
     if cache.subs:
@@ -348,13 +352,21 @@ def daemon(log, fork, usenetwork):
 if __name__ == '__main__':
     os.umask(002)
 
-    shortopts = 'u:p:dnl'
-    longopts = ['user=', 'password=', 'debug', 'no-daemon', 'no-network']
+    shortopts = 'u:p:dnlh'
+    longopts = [
+        'user=',
+        'password=',
+        'debug',
+        'no-daemon',
+        'no-network',
+        'help',
+        ]
 
     try:
         opts, args = getopt.getopt(sys.argv[1:], shortopts, longopts)
     except getopt.GetoptError, e:
-        print >>sys.stderr, 'getopt: %s' % e
+        print >>sys.stderr, 'lastfmsubmitd: %s' % e
+        print USAGE
         sys.exit(1)
 
     user = None
@@ -379,15 +391,18 @@ if __name__ == '__main__':
             fork = False
         elif opt in ('--no-network', '-l'):
             usenetwork = False
+        elif opt in ('--help', '-h'):
+            print USAGE
+            sys.exit(0)
 
     if not (user and password):
-        print >>sys.stderr, 'account: need user and password'
+        print >>sys.stderr, 'lastfmsubmitd: user and password not specified'
         sys.exit(1)
 
     try:
         log = lastfm.logger.getlog('lastfmsubmitd', lastfm.LOG, debug)
     except IOError, e:
-        print >>sys.stderr, 'log: %s' % e
+        print >>sys.stderr, 'lastfmsubmitd: error opening log: %s' % e
         sys.exit(1)
 
     try:

@@ -1,10 +1,5 @@
 #!/usr/bin/python
 
-# TODO:
-
-# * mpdclient doesn't expose MBIDs if we've got 'em. Should fix that, as soon
-#   as MPD 0.12 is out.
-
 import sys
 import os
 import time
@@ -17,10 +12,9 @@ import lastfm.logger
 import lastfm.queue
 import lastfm.marshaller
 
-"""This program connects to MPD and runs in the background. When a valid
-song is played (valid = must be tagged, played w/o skipping for the
-first 50% or 240s), it invokes lastfmsubmit, which will submit the song
-to Last.fm."""
+USAGE = """\
+usage: lastmp [--host HOST] [--password PASS] [--port PORT] [--debug]
+    [--no-daemon] [--help]"""
 
 DEF_SLEEP = 5
 PIDFILE = os.path.join(lastfm.PID_DIR, 'lastmp.pid')
@@ -206,6 +200,9 @@ class MpdObserver:
             self.log.error('Missing tags: %s' % e)
         except OSError:
             self.log.error('Could not fork')
+        except IOError:
+            log.error('Could not write to %s' % lastfm.FIFO)
+            sys.exit(1)
 
 def daemon(log, fork):
     if fork:
@@ -213,7 +210,7 @@ def daemon(log, fork):
             pid = os.fork()
             if pid != 0: sys.exit(0)
         except OSError, e:
-            print >>sys.stderr, 'fork: %s' % e
+            print >>sys.stderr, "lastmp: can't fork: %s" % e
             sys.exit(1)
 
     log.info('LastMP starting')
@@ -238,13 +235,22 @@ def daemon(log, fork):
 if __name__ == '__main__':
     os.umask(002)
 
-    shortopts = 's:h:p:o:dn'
-    longopts = ['sleep=', 'host=', 'password=', 'port=', 'debug', 'no-daemon']
+    shortopts = 's:h:p:o:dnh'
+    longopts = [
+        'sleep=',
+        'host=',
+        'password=',
+        'port=',
+        'debug',
+        'no-daemon',
+        'help',
+        ]
 
     try:
         opts, args = getopt.getopt(sys.argv[1:], shortopts, longopts)
     except getopt.GetoptError, e:
-        print >>sys.stderr, 'getopt: %s' % e
+        print >>sys.stderr, 'lastmp: %s' % e
+        print >>sys.stderr, USAGE
         sys.exit(1)
 
     sleep = DEF_SLEEP
@@ -256,7 +262,8 @@ if __name__ == '__main__':
         if opt in ('--sleep', '-s'):
             sleep = int(arg)
             if sleep >= lastfm.MIN_LEN / 2:
-                print >>sys.stderr, 'sleep: %d is too big' % sleep
+                print >>sys.stderr, 'lastmp: --sleep must be < %d' % \
+                    (lastfm.MIN_LEN / 2)
                 sys.exit(1)
         elif opt in ('--host', '-h'):
             mpd_args['host'] = arg
@@ -268,11 +275,14 @@ if __name__ == '__main__':
             debug = True
         elif opt in ('--no-daemon', '-n'):
             fork = False
+        elif opt in ('--help', '-h'):
+            print USAGE
+            sys.exit(0)
 
     try:
         log = lastfm.logger.getlog('lastmp', lastfm.LOG, debug)
     except IOError, e:
-        print >>sys.stderr, 'log: %s' % e
+        print >>sys.stderr, 'lastmp: error opening log: %s' % e
         sys.exit(1)
 
     try:
