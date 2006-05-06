@@ -84,7 +84,7 @@ if __name__ == '__main__':
                     print USAGE
                     sys.exit(0)
             except ValueError:
-                print >>sys.stderr, 'lastfmsubmit: could not parse %s' % opt
+                print >>sys.stderr, "lastfmsubmit: can't parse %s" % opt
                 sys.exit(1)
 
         if len(sub) == 0:
@@ -102,7 +102,7 @@ if __name__ == '__main__':
                 print >>out, lastfm.marshaller.dump(sub)
                 log.debug('Sent %s to daemon' % lastfm.logger.repr(sub))
             except IOError:
-                log.error('Could not write to %s' % outfile)
+                log.error("Can't write to %s" % outfile)
                 sys.exit(1)
 
     except SystemExit, e:

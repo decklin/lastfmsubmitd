@@ -20,7 +20,7 @@ class Abby(musicbrainz.mb):
             self.Query(musicbrainz.MBQ_GetCDTOC)
             return self.GetResultData(musicbrainz.MBE_TOCGetCDIndexId)
         except musicbrainz.MusicBrainzError:
-            print >>sys.stderr, ('cdrom: could not read TOC from disc')
+            print >>sys.stderr, ("cdrom: can't read TOC from disc")
             sys.exit(1)
 
     def query(self, discid=None, albumid=None):

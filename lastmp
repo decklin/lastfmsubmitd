@@ -80,7 +80,7 @@ class MpdObserver:
             self.log.info('Connected to MPD')
         except (EOFError, mpdclient2.socket.error):
             self.mpd = None
-            self.log.warning('Could not connect to MPD')
+            self.log.warning("Can't connect to MPD")
 
         self.prevstatus = None
         self.prevsong = None
@@ -199,9 +199,9 @@ class MpdObserver:
         except ValueError, e:
             self.log.error('Missing tags: %s' % e)
         except OSError:
-            self.log.error('Could not fork')
+            self.log.error("Can't fork")
         except IOError:
-            log.error('Could not write to %s' % lastfm.FIFO)
+            log.error("Can't write to %s" % lastfm.FIFO)
             sys.exit(1)
 
 def daemon(log, fork):

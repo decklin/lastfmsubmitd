@@ -136,7 +136,7 @@ class LastFmSession:
                 reason = 'unknown: "%s"' % status_line
             raise HandshakeError(reason)
         else:
-            raise HandshakeError('could not parse response: %s' % status_line)
+            raise HandshakeError("can't parse response: %s" % status_line)
 
         self.connected = True
         self.read_interval(response)
@@ -215,7 +215,7 @@ class LastFmSession:
                     reason = 'unknown: "%s"' % status_line
                 raise InvalidSubError(reason)
             else:
-                raise InvalidSubError('could not parse response: %s' %
+                raise InvalidSubError("can't parse response: %s" %
                     status_line)
 
             self.read_interval(response)
