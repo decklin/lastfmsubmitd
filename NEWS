@@ -1,3 +1,6 @@
+0.29 (2006-05-06):
+==================
+
 * Fixed pesky GC error message that would appear when cleaning up after
   a failed attempt to grab the lock.
 
