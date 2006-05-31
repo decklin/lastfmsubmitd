@@ -4,6 +4,8 @@
 
 * Replaced all --output options with --stdout.
 
+* Updated a bunch of documentation.
+
 0.29 (2006-05-06):
 ==================
 
