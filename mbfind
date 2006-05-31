@@ -62,7 +62,7 @@ if __name__ == '__main__':
     if albumspec:
         try:
             mb.QueryWithArgs(musicbrainz.MBQ_FindAlbumByName, [albumspec])
-        except musicbrainz.MusicBrainzError:
+        except musicbrainz.MusicBrainzError, e:
             print >>sys.stderr, 'musicbrainz: %s' % e
             sys.exit(1)
         if verbose:
@@ -75,7 +75,7 @@ if __name__ == '__main__':
     elif artistspec:
         try:
             mb.QueryWithArgs(musicbrainz.MBQ_FindArtistByName, [artistspec])
-        except musicbrainz.MusicBrainzError:
+        except musicbrainz.MusicBrainzError, e:
             print >>sys.stderr, 'musicbrainz: %s' % e
             sys.exit(1)
         if verbose:
