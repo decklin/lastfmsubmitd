@@ -76,7 +76,7 @@ class Spool:
         for f in self.files:
             os.unlink(f)
         if self.subs:
-            newfile = write(self.subs)
+            newfile = lastfm.submit(self.subs)
             self.files = [newfile]
         else:
             self.files = []
