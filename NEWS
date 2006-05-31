@@ -1,6 +1,12 @@
-* Use a spool directory instead of all the messy locking and select
-  stuff. Python writer interface is slightly different; others should
-  use mkstemp and print as usual (nothing will ever block).
+* Use a spool directory for both the "cache" and reading new subs from
+  plugins; no more locks, blocking, or possibly losing stuck submissions
+  when restarting the daemon. If you are upgrading, you must move
+  /var/cache/lastfm to /var/spool/lastfm.
+
+* Removed lastfm.queue and lastfm.logger modules; everything is in
+  lastfm (with simpler function names) or lastfm.marshaller. Non-Python
+  writers should use mkstemp and print normally; there is no more need
+  to fork.
 
 * Replaced all --output options with --stdout.
 
