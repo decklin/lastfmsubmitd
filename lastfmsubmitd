@@ -221,7 +221,7 @@ class LastFmSession:
             self.read_interval(response)
             time.sleep(self.interval)
 
-def daemon():
+def daemon(fork, usenetwork, user, password):
     if fork:
         try:
             pid = os.fork()
@@ -234,6 +234,10 @@ def daemon():
     pidfile = open(PIDFILE, 'w')
     print >>pidfile, os.getpid()
     pidfile.close()
+
+    session = LastFmSession(log, user, password)
+    throttle = SessionThrottle(log)
+    spool = lastfm.queue.Spool(log)
 
     def shutdown(signum, frame):
         log.info('Caught signal %d, exiting' % signum)
@@ -252,10 +256,6 @@ def daemon():
     signal.signal(signal.SIGINT, shutdown)
     signal.signal(signal.SIGHUP, reinit)
     signal.signal(signal.SIGALRM, alarm)
-
-    session = LastFmSession(log, user, password)
-    throttle = SessionThrottle(log)
-    spool = lastfm.queue.Spool(log)
 
     while True:
         if not throttle.ready():
@@ -342,7 +342,7 @@ if __name__ == '__main__':
         sys.exit(1)
 
     try:
-        daemon()
+        daemon(fork, usenetwork, user, password)
     except SystemExit, e:
         sys.exit(e.args[0])
     except:
