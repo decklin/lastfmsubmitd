@@ -8,7 +8,7 @@ Installation
 
    * ``/var/log/lastfm``
    * ``/var/run/lastfm``
-   * ``/var/cache/lastfm``
+   * ``/var/spool/lastfm``
 
    Make them writable by whatever user is going to be running the
    daemon(s). ``install-example.sh`` shows how this should be done on most

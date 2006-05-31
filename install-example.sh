@@ -5,7 +5,7 @@
 groupadd lastfm
 useradd -g lastfm lastfm
 
-for d in /var/log /var/run /var/cache; do
+for d in /var/log /var/run /var/spool; do
     mkdir $d/lastfm
     chown lastfm:lastfm $d/lastfm
     chmod 775 $d/lastfm
