@@ -1,9 +1,7 @@
 __all__ = ['logger', 'marshaller', 'queue']
 
-# Shared log.
+# Shared stuff.
 LOG = '/var/log/lastfm/lastfm.log'
-
-# Our IPC mechanisms.
 PID_DIR = '/var/run/lastfm'
 SPOOL_DIR = '/var/spool/lastfm'
 
