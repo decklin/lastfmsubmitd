@@ -18,8 +18,7 @@ USAGE = """\
 usage: lastfmsubmitd [--user USER] [--password PASS] [--debug] [--no-daemon]
     [--help]"""
 
-SLEEP_TIME = 15
-FIFO_TIMEOUT = 5
+SLEEP_TIME = 5
 PIDFILE = os.path.join(lastfm.PID_DIR, 'lastfmsubmitd.pid')
 
 CLIENT_ID = 'lsd'
@@ -78,7 +77,6 @@ class SessionThrottle:
             divmod(self.sleep_until, 60))
 
     def sleep(self, secs):
-        secs = min(secs, self.sleep_until - self.slept)
         time.sleep(secs)
         self.slept += secs
 
@@ -258,36 +256,35 @@ def daemon(fork, usenetwork, user, password):
     signal.signal(signal.SIGALRM, alarm)
 
     while True:
-        if not throttle.ready():
-            throttle.sleep(SLEEP_TIME)
-            continue
+        if throttle.ready():
+            n = spool.poll()
+            if n: log.debug('Read %d sub(s)' % n)
 
-        n = spool.poll()
-        if n: log.debug('Read %d sub(s)' % n)
+            if usenetwork and not session.connected:
+                try:
+                    session.handshake()
+                    throttle.reset()
+                except HandshakeError, e:
+                    log.error('Handshake failed: %s' % e)
+                    throttle.backoff()
 
-        if usenetwork and not session.connected:
-            try:
-                session.handshake()
-                throttle.reset()
-            except HandshakeError, e:
-                log.error('Handshake failed: %s' % e)
-                throttle.backoff()
+            if session.connected and spool.subs:
+                try:
+                    log.debug('Doing submit, %d sub(s)' % len(spool.subs))
+                    session.submit(spool)
+                    log.debug('Done, %d remain in cache' % len(spool.subs))
+                    throttle.reset()
+                except SessionError, e:
+                    log.error('Session failed: %s' % e)
+                    throttle.backoff()
+                except InvalidSubError, e:
+                    log.error('Submission failed: %s' % e)
+                    throttle.backoff()
+                except SubTimeoutError:
+                    log.error('Submission timed out')
+                    throttle.backoff()
 
-        if session.connected and spool.subs:
-            try:
-                log.debug('Attempting submit, %d sub(s)' % len(spool.subs))
-                session.submit(spool)
-                log.debug('Done, %d remain in cache' % len(spool.subs))
-                throttle.reset()
-            except SessionError, e:
-                log.error('Session failed: %s' % e)
-                throttle.backoff()
-            except InvalidSubError, e:
-                log.error('Submission failed: %s' % e)
-                throttle.backoff()
-            except SubTimeoutError:
-                log.error('Submission timed out')
-                throttle.backoff()
+        throttle.sleep(SLEEP_TIME)
 
 if __name__ == '__main__':
     shortopts = 'u:p:dnlh'
