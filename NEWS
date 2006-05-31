@@ -1,3 +1,9 @@
+* Use a spool directory instead of all the messy locking and select
+  stuff. Python writer interface is slightly different; others should
+  use mkstemp and print as usual (nothing will ever block).
+
+* Replaced all --output options with --stdout.
+
 0.29 (2006-05-06):
 ==================
 

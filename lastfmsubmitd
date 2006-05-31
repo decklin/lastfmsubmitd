@@ -72,9 +72,8 @@ class SessionThrottle:
         self.slept = 0
         if self.sleep_until < INITIAL_BACKOFF:
             self.sleep_until = INITIAL_BACKOFF
-        else:
-            if self.sleep_until < 6 * 3600:
-                self.sleep_until *= 2
+        elif self.sleep_until < 6 * 3600:
+            self.sleep_until *= 2
         self.log.info('Backing off, will retry in %d:%02d' %
             divmod(self.sleep_until, 60))
 
@@ -163,9 +162,9 @@ class LastFmSession:
         sess_hash = md5.new(pass_hash.hexdigest() + challenge)
         return sess_hash.hexdigest()
 
-    def submit(self, cache):
-        while cache.subs:
-            chunk = cache.subs[:SUB_CHUNK_SIZE]
+    def submit(self, spool):
+        while spool.subs:
+            chunk = spool.subs[:SUB_CHUNK_SIZE]
             args = { 'u': self.user, 's': self.session_key }
             post_data = [urllib.urlencode(args)]
             for i, sub in enumerate(chunk):
@@ -204,7 +203,8 @@ class LastFmSession:
             if status_line == 'OK':
                 self.log.info('Submission(s) accepted')
                 # Now, and only now, we do our side effect.
-                cache.subs = cache.subs[SUB_CHUNK_SIZE:]
+                spool.subs = spool.subs[SUB_CHUNK_SIZE:]
+                spool.sync()
             elif status_line == 'BADAUTH':
                 self.connected = False
                 raise SessionError('incorrect password')
@@ -221,41 +221,7 @@ class LastFmSession:
             self.read_interval(response)
             time.sleep(self.interval)
 
-class SubCache:
-    """Holds submissions while we are running, and saves them to persistent
-    storage on exit."""
-
-    def __init__(self, log, filename):
-        self.log = log
-        self.subs = []
-        try:
-            input = file(filename)
-            for doc in lastfm.marshaller.load_documents(input.read()):
-                try:
-                    self.add(doc)
-                except ValueError, e:
-                    self.log.warning('Invalid cache, ignoring: %s' % e)
-        except IOError:
-            pass
-
-    def add(self, sub):
-        for required in ('artist', 'title', 'length', 'time'):
-            if not sub.has_key(required) or not sub[required]:
-                raise ValueError('missing %s' % required)
-        else:
-            self.subs.append(sub)
-
-    def dump(self, filename):
-        try:
-            self.log.info('Saving %d sub(s) to cache' % len(self.subs))
-            output = file(filename, 'w')
-            lastfm.marshaller.dump_documents(self.subs, output)
-            self.subs = []
-        except IOError:
-            self.log.error('Cannot write to %s, discarding %d sub(s)' %
-                (filename, len(self.subs)))
-
-def daemon(log, fork, usenetwork):
+def daemon():
     if fork:
         try:
             pid = os.fork()
@@ -271,12 +237,12 @@ def daemon(log, fork, usenetwork):
 
     def shutdown(signum, frame):
         log.info('Caught signal %d, exiting' % signum)
-        cache.dump(lastfm.CACHE)
+        spool.sync()
         os.remove(PIDFILE)
         os._exit(0)
 
     def alarm(signum, frame):
-        log.info('Caught signal %d, resuming' % signum)
+        log.debug('Caught signal %d, resuming' % signum)
 
     def reinit(signum, frame):
         # XXX: reread config, reopen log, reset throttle, rehandshake
@@ -289,65 +255,39 @@ def daemon(log, fork, usenetwork):
 
     session = LastFmSession(log, user, password)
     throttle = SessionThrottle(log)
-    cache = SubCache(log, lastfm.CACHE)
-
-    try:
-        fifo = lastfm.queue.Reader(log, lastfm.FIFO)
-    except OSError, e:
-        print >>sys.stderr, "lastfmsubmitd: can't open fifo: %s" % e
-        sys.exit(1)
-
-    if cache.subs:
-        log.info('Read %d sub(s) from cache', len(cache.subs))
+    spool = lastfm.queue.Spool(log)
 
     while True:
+        if not throttle.ready():
+            throttle.sleep(SLEEP_TIME)
+            continue
+
+        n = spool.poll()
+        if n: log.debug('Read %d sub(s)' % n)
+
         if usenetwork and not session.connected:
-            if throttle.ready():
-                try:
-                    session.handshake()
-                    throttle.reset()
-                except HandshakeError, e:
-                    log.error('Handshake failed: %s' % e)
-                    throttle.backoff()
-            else:
-                throttle.sleep(SLEEP_TIME)
+            try:
+                session.handshake()
+                throttle.reset()
+            except HandshakeError, e:
+                log.error('Handshake failed: %s' % e)
+                throttle.backoff()
 
-        if session.connected and cache.subs:
-            if throttle.ready():
-                try:
-                    log.debug('Attempting submit, %d sub(s)' %
-                        len(cache.subs))
-                    session.submit(cache)
-                    log.debug('Done, %d remain in cache' % len(cache.subs))
-                    throttle.reset()
-                except SessionError, e:
-                    log.error('Session failed: %s' % e)
-                    throttle.backoff()
-                except InvalidSubError, e:
-                    log.error('Submission failed: %s' % e)
-                    throttle.backoff()
-                except SubTimeoutError:
-                    log.error('Submission timed out')
-                    throttle.backoff()
-            else:
-                throttle.sleep(SLEEP_TIME)
-
-        read = []
-        data = fifo.select(FIFO_TIMEOUT)
-        while data:
-            # We may have timed out for a few seconds, but whatever.
-            read.append(data)
-            data = fifo.select(FIFO_TIMEOUT)
-        else:
-            # We did time out, so adjust the throttle accordingly.
-            throttle.slept += FIFO_TIMEOUT
-        if read:
-            for doc in lastfm.marshaller.load_documents(''.join(read)):
-                try:
-                    cache.add(doc)
-                    log.debug('Added %s' % lastfm.logger.repr(doc))
-                except ValueError, e:
-                    log.error('Invalid data, discarding: %s' % e)
+        if session.connected and spool.subs:
+            try:
+                log.debug('Attempting submit, %d sub(s)' % len(spool.subs))
+                session.submit(spool)
+                log.debug('Done, %d remain in cache' % len(spool.subs))
+                throttle.reset()
+            except SessionError, e:
+                log.error('Session failed: %s' % e)
+                throttle.backoff()
+            except InvalidSubError, e:
+                log.error('Submission failed: %s' % e)
+                throttle.backoff()
+            except SubTimeoutError:
+                log.error('Submission timed out')
+                throttle.backoff()
 
 if __name__ == '__main__':
     os.umask(002)
@@ -366,7 +306,7 @@ if __name__ == '__main__':
         opts, args = getopt.getopt(sys.argv[1:], shortopts, longopts)
     except getopt.GetoptError, e:
         print >>sys.stderr, 'lastfmsubmitd: %s' % e
-        print USAGE
+        print >>sys.stderr, USAGE
         sys.exit(1)
 
     user = None
@@ -375,10 +315,8 @@ if __name__ == '__main__':
     fork = True
     usenetwork = True
 
-    try: user = os.environ['LASTFM_USER']
-    except KeyError: pass
-    try: password = os.environ['LASTFM_PASSWORD']
-    except KeyError: pass
+    user = os.environ.get('LASTFM_USER')
+    password = os.environ.get('LASTFM_PASSWORD')
 
     for opt, arg in opts:
         if opt in ('--user', '-u'):
@@ -400,13 +338,13 @@ if __name__ == '__main__':
         sys.exit(1)
 
     try:
-        log = lastfm.logger.getlog('lastfmsubmitd', lastfm.LOG, debug)
+        log = lastfm.logger.getlog('lastfmsubmitd', debug)
     except IOError, e:
         print >>sys.stderr, 'lastfmsubmitd: error opening log: %s' % e
         sys.exit(1)
 
     try:
-        daemon(log, fork, usenetwork)
+        daemon()
     except SystemExit, e:
         sys.exit(e.args[0])
     except:

@@ -1,68 +1,45 @@
 import os
-import stat
-import select
-import fcntl
+import tempfile
 
-class Reader:
-    """Reads one writer at a time from our fifo, making sure it actually
-    exists first."""
+import lastfm
 
-    def __init__(self, log, fname):
+class Spool:
+    """Represents uncommitted submissions on disk. May be extended by writing
+    a new file in the spool directory."""
+
+    def __init__(self, log):
         self.log = log
-        self.fname = fname
-        try:
-            if stat.S_ISFIFO(os.stat(self.fname).st_mode): return
-        except OSError, e:
-            try:
-                os.mkfifo(self.fname)
-            except OSError, e:
-                self.log.error('Failed to create %s: %s' % (f, e))
-                raise
+        self.files = []
+        self.subs = []
 
-    def select(self, timeout):
-        fd = os.open(self.fname, os.O_NONBLOCK)
-        rx, wx, ex = select.select([fd], [], [], timeout)
-        data = []
-        if fd in rx:
-            while True:
-                chunk = os.read(fd, 4096)
-                if chunk:
-                    self.log.debug('Read %d bytes' % len(chunk))
-                    data.append(chunk)
-                    rx, wx, ex = select.select([fd], [], [], timeout)
-                else:
-                    break
-        os.close(fd)
-        return ''.join(data)
+    def poll(self):
+        n = 0
+        for f in os.listdir(lastfm.SPOOL_DIR):
+            path = os.path.join(lastfm.SPOOL_DIR, f)
+            if path not in self.files:
+                self.files.append(path)
+                data = file(path)
+                for doc in lastfm.marshaller.load_documents(data.read()):
+                    try:
+                        self.subs.append(doc)
+                        n += 1
+                    except ValueError, e:
+                        self.log.warning('Invalid data, ignoring: %s' % e)
+        return n
 
-class Writer:
-    """Writes data to the fifo, or just a plain file."""
+    def sync(self):
+        newfile = write(self.subs)
+        for f in self.files:
+            os.unlink(f)
+        self.files = [newfile]
 
-    def __init__(self, log, fname, lockname):
-        self.log = log
-        self.fname = fname
-        self.lockname = lockname
-        self.f = None
-        self.lock = None
+def write(subs):
+    """Creates a uniquely named file in the spool directory containing the
+    given subs."""
 
-        if self.lockname:
-            self.log.debug('Requesting lock on %s' % self.lockname)
-            self.lock = file(self.lockname, 'w')
-            # If there is a pileup, locks will be requested in order.
-            fcntl.flock(self.lock, fcntl.LOCK_EX)
+    fd, path = tempfile.mkstemp(dir=lastfm.SPOOL_DIR)
+    os.close(fd)
 
-        # This will also block, until we have a reader.
-        self.log.debug('Opening %s' % self.fname)
-        self.f = file(self.fname, 'w')
-
-    def __del__(self):
-        # We must flush and get out of the way first.
-        if self.f:
-            self.f.close()
-        if self.lock:
-            fcntl.flock(self.lock, fcntl.LOCK_UN)
-            self.lock.close()
-            self.log.debug('Released lock')
-
-    def write(self, s):
-        self.f.write(s)
+    data = file(path, 'w+')
+    lastfm.marshaller.dump_documents(subs, data)
+    return path

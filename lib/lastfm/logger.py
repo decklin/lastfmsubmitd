@@ -2,7 +2,9 @@ import os
 import sys
 import logging
 
-def getlog(name, logfile, debug=False, stderr=False):
+import lastfm
+
+def getlog(name, debug=False, stderr=False):
     if debug: level = logging.DEBUG
     else: level = logging.INFO
 
@@ -10,7 +12,7 @@ def getlog(name, logfile, debug=False, stderr=False):
     logger.setLevel(level)
 
     filefmt = '%(asctime)s %(name)s[%(process)s] %(levelname)s: %(message)s'
-    filehandler = logging.FileHandler(logfile)
+    filehandler = logging.FileHandler(lastfm.LOG)
     filehandler.setLevel(level)
     filehandler.setFormatter(logging.Formatter(filefmt))
     logger.addHandler(filehandler)

@@ -14,12 +14,12 @@ import lastfm.marshaller
 USAGE = """\
 usage: lastfmsubmitd [--encoding ENC] [--artist ARTIST] [--title TITLE]
     [--length LEN] [--time STAMP] [--album ALBUM] [--mbid TRACKID]
-    [--output FILE] [--debug] [--quiet] [--help]"""
+    [--encoding ENC] [--stdout] [--debug] [--quiet] [--help]"""
 
 if __name__ == '__main__':
     os.umask(002)
 
-    shortopts = 'a:s:l:d:b:m:o:e:dqh'
+    shortopts = 'a:s:l:d:b:m:e:sdqh'
     longopts = [
         'artist=',
         'title=',
@@ -27,8 +27,8 @@ if __name__ == '__main__':
         'time=',
         'album=',
         'mbid=',
-        'output=',
         'encoding=',
+        'stdout',
         'debug',
         'quiet',
         'help',
@@ -42,11 +42,10 @@ if __name__ == '__main__':
         sys.exit(1)
 
     sub = {}
-    outfile = lastfm.FIFO
     encoding = locale.getpreferredencoding()
+    stdout = False
     debug = False
     err = True
-    lock = lastfm.FIFO
 
     for opt, arg in opts:
         if opt in ('--encoding', '-e'):
@@ -57,7 +56,7 @@ if __name__ == '__main__':
             err = False
 
     try:
-        log = lastfm.logger.getlog('lastfmsubmit', lastfm.LOG, debug, err)
+        log = lastfm.logger.getlog('lastfmsubmit', debug, err)
     except IOError, e:
         print >>sys.stderr, 'lastfmsubmit: error opening log: %s' % e
         sys.exit(1)
@@ -77,9 +76,8 @@ if __name__ == '__main__':
                     sub['album'] = lastfm.marshaller.guess_enc(arg, encoding)
                 elif opt in ('--mbid', '-m'):
                     sub['mbid'] = arg
-                elif opt in ('--output', '-o'):
-                    outfile = arg
-                    lock = None
+                elif opt in ('--stdout', '-s'):
+                    stdout = True
                 elif opt in ('--help', '-h'):
                     print USAGE
                     sys.exit(0)
@@ -94,15 +92,14 @@ if __name__ == '__main__':
         if not sub.has_key('time'):
             sub['time'] = time.gmtime()
 
-        if outfile == '-':
+        if stdout:
             print lastfm.marshaller.dump(sub)
         else:
             try:
-                out = lastfm.queue.Writer(log, outfile, lock)
-                print >>out, lastfm.marshaller.dump(sub)
-                log.debug('Sent %s to daemon' % lastfm.logger.repr(sub))
+                log.debug('Sending %s to daemon' % lastfm.logger.repr(sub))
+                lastfm.queue.write([sub])
             except IOError:
-                log.error("Can't write to %s" % outfile)
+                log.error("Can't write sub: %s" % e)
                 sys.exit(1)
 
     except SystemExit, e:

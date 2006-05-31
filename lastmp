@@ -188,23 +188,14 @@ class MpdObserver:
     def submit(self, song):
         try:
             sub = song.dict()
-            pid = os.fork()
-            if pid == 0:
-                self.log.info('Sending to daemon')
-                fifo = lastfm.queue.Writer(self.log, lastfm.FIFO, lastfm.LOCK)
-                print >>fifo, lastfm.marshaller.dump(sub)
-                sys.exit(0)
-            else:
-                return pid
+            self.log.info('Sending to daemon')
+            lastfm.queue.write([sub])
         except ValueError, e:
             self.log.error('Missing tags: %s' % e)
-        except OSError:
-            self.log.error("Can't fork")
         except IOError:
-            log.error("Can't write to %s" % lastfm.FIFO)
-            sys.exit(1)
+            log.error("Can't write sub: %s" % e)
 
-def daemon(log, fork):
+def daemon():
     if fork:
         try:
             pid = os.fork()
@@ -280,13 +271,13 @@ if __name__ == '__main__':
             sys.exit(0)
 
     try:
-        log = lastfm.logger.getlog('lastmp', lastfm.LOG, debug)
+        log = lastfm.logger.getlog('lastmp', debug)
     except IOError, e:
         print >>sys.stderr, 'lastmp: error opening log: %s' % e
         sys.exit(1)
 
     try:
-        daemon(log, fork)
+        daemon()
     except SystemExit, e:
         sys.exit(e.args[0])
     except:

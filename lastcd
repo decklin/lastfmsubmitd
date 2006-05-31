@@ -11,14 +11,14 @@ import lastfm.queue
 import lastfm.marshaller
 
 USAGE = """\
-usage: lastcd [--output FILE] [--debug] [--help]"""
+usage: lastcd [--stdout] [--debug] [--help]"""
 
 if __name__ == '__main__':
     os.umask(002)
 
-    shortopts = 'o:dh'
+    shortopts = 'sdh'
     longopts = [
-        'output=',
+        'stdout',
         'debug',
         'help',
         ]
@@ -31,13 +31,11 @@ if __name__ == '__main__':
         sys.exit(1)
 
     debug = False
-    outfile = lastfm.FIFO
-    lock = lastfm.LOCK
+    stdout = False
 
     for opt, arg in opts:
-        if opt in ('--output', '-o'):
-            outfile = arg
-            lock = None
+        if opt in ('--stdout', '-s'):
+            stdout = True
         elif opt in ('--debug', '-d'):
             debug = True
         elif opt in ('--help', '-h'):
@@ -45,7 +43,7 @@ if __name__ == '__main__':
             sys.exit(0)
 
     try:
-        log = lastfm.logger.getlog('lastcd', lastfm.LOG, debug)
+        log = lastfm.logger.getlog('lastcd', debug)
     except IOError, e:
         print >>sys.stderr, 'lastcd: error opening log: %s' % e
         sys.exit(1)
@@ -81,15 +79,12 @@ if __name__ == '__main__':
         print >>sys.stderr, 'lastcd: no usable tracks found'
         sys.exit(1)
 
-    if outfile == '-':
+    if stdout:
         for s in subs:
             print lastfm.marshaller.dump(s)
     else:
         try:
-            out = lastfm.queue.Writer(log, outfile, lock)
             log.info('Sending %s song(s) to daemon' % len(subs))
-            for s in subs:
-                print >>out, lastfm.marshaller.dump(s)
-                log.debug('Sent song: %s' % lastfm.logger.repr(s))
+            lastfm.queue.write(subs)
         except IOError, e:
             print >>sys.stderr, 'lastcd: error writing: %s' % e

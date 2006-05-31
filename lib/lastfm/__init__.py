@@ -1,16 +1,14 @@
 __all__ = ['logger', 'marshaller', 'queue']
 
-# XXX: put all this in lastfm.protocol?
-TIME_FMT = '%Y-%m-%d %H:%M:%S'
-
 # Shared log.
 LOG = '/var/log/lastfm/lastfm.log'
 
 # Our IPC mechanisms.
 PID_DIR = '/var/run/lastfm'
-CACHE = '/var/cache/lastfm/subs'
-FIFO = '/var/run/lastfm/fifo'
-LOCK = '/var/run/lastfm/lock'
+SPOOL_DIR = '/var/spool/lastfm'
+
+# XXX: put all this in lastfm.protocol?
+TIME_FMT = '%Y-%m-%d %H:%M:%S'
 
 # A song under this length will not be submitted.
 MIN_LEN = 30
