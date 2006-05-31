@@ -1,49 +1,49 @@
+lastfmsubmitd
+=============
+
+lastfmsubmitd connects to Last.fm with the user and password specified
+with --user and --password (as this option the exposes password to ps,
+it is recommended you use it for testing only), or in the environment
+variables LASTFM_USER and LASTFM_PASSWORD. It then reads YAML-formatted
+submissions from its spool and submits them, or caches them if
+submission is not possible due to network or server errors.
+
 LastMP and lastfmsubmitd
 ========================
 
 LastMP is an MPD client that will detect when you play a song that is
 valid to submit to Last.fm. It will poll every 5 seconds by default. To
 change this, use the --sleep option. Upon detecting a valid song, it
-will invoke lastfmsubmit.
+will write it to the lastfmsubmitd spool.
 
 lastfmsubmit will take the song specified on the command line with
 --artist, --title, --length, and optionally --album and --mbid, and
-encode it in UTF-8 (pseudo-)YAML. Then, it will write it to
-lastfmsubmitd's FIFO or the file specified by --output. The primary
-purpose of this program is to abstract character encoding and
-(pseudo-)YAML document creation; all your player plugin needs to do is
-detect a song and invoke lastfmsubmit. Of course, you can also run it
+encode it in UTF-8 YAML. Then, it will write it to lastfmsubmitd's spool
+or stdout. The primary purpose of this program is to abstract character
+encoding and YAML document creation; all your player plugin needs to do
+is detect a song and invoke lastfmsubmit. Of course, you can also run it
 manually should something go wonky.
-
-lastfmsubmitd connects to Last.fm with the user and password specified
-with --user and --password (as this option the exposes password to ps,
-it is recommended you use it for testing only), or in the environment
-variables LASTFM_USER and LASTFM_PASSWORD. It then reads
-(pseudo-)YAML-formatted submissions from its FIFO and submits them, or
-caches them if submission is not possible due to network or server
-errors. Handling of network errors is relatively flakey at the moment,
-so keep an eye on your log file.
 
 Replaying tracks from a CD
 ==========================
 
 If you frequently play music on a home or car stereo system that is not
 connected to your computer, you may still wish to submit these songs to
-Last.fm. lastcd will read the CD in your computer's CD-ROM drive, query
-MusicBrainz for its album information, and output it in (pseudo-)YAML.
-This format is like the one lastfmsubmitd uses, but it does not contain
-the time of submission. Instead of reading from the CD-ROM drive, you
-can also specify an album with --discid or --albumid. If a list of track
+Last.fm. mbget will read the CD in your computer's CD-ROM drive, query
+MusicBrainz for its album information, and output it in YAML. This
+format is like the one lastfmsubmitd uses, but it does not contain the
+time of submission. Instead of reading from the CD-ROM drive, you can
+also specify an album with --discid or --albumid. If a list of track
 numbers is also specified, only those tracks will be printed.
 
 If you are really lazy and don't want to put the CD in, you can use
-mbfindalbum, specify the album name with --album, and choose the album's
-MBID from that. (You can also try specifying --artist, but at the moment
-it does not really work and cannot be used in combination with --album.)
+mbfind, specify the album name with --album, and choose the album's MBID
+from that. (You can also try specifying --artist, but at the moment it
+does not really work and cannot be used in combination with --album.)
 
-lastcdreplay will take a list of songs encoded in this format, add
-submission times to them as if they had all just been played in order,
-and write them to lastfmsubit's FIFO or the file specified by --output.
+lastcd will take a list of songs encoded in this format, add submission
+times to them as if they had all just been played in order, and write
+them to lastfmsubmitd's spool or stdout.
 
 Requirements
 ============
@@ -51,15 +51,8 @@ Requirements
 LastMP requires py-libmpdclient2, available from
 http://incise.org/index.cgi/py-libmpdclient2.
 
-Caveats
-=======
-
-The pseudo-YAML format most of these programs use may deviate from the
-published spec, as I simply whipped up some prototype code myself. I
-plan to switch to the Python bindings for Syck as soon as I get a chance
-to port the documentation into a Python-friendly format. At that point
-any other program will be able to use a conformant YAML implementation
-to generate input for lastfmsubmitd.
+The MusicBrainz tools require python-musicbrainz, available from
+http://musicbrainz.org/doc/PythonMusicbrainz.
 
 Author and License
 ==================
