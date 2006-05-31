@@ -14,8 +14,6 @@ USAGE = """\
 usage: lastcd [--stdout] [--debug] [--help]"""
 
 if __name__ == '__main__':
-    os.umask(002)
-
     shortopts = 'sdh'
     longopts = [
         'stdout',

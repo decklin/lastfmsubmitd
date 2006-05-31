@@ -17,8 +17,6 @@ usage: lastfmsubmitd [--encoding ENC] [--artist ARTIST] [--title TITLE]
     [--encoding ENC] [--stdout] [--debug] [--quiet] [--help]"""
 
 if __name__ == '__main__':
-    os.umask(002)
-
     shortopts = 'a:s:l:d:b:m:e:sdqh'
     longopts = [
         'artist=',

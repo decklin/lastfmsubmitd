@@ -224,8 +224,6 @@ def daemon():
     mo.observe()
 
 if __name__ == '__main__':
-    os.umask(002)
-
     shortopts = 's:h:p:o:dnh'
     longopts = [
         'sleep=',

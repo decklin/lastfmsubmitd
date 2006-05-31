@@ -290,8 +290,6 @@ def daemon():
                 throttle.backoff()
 
 if __name__ == '__main__':
-    os.umask(002)
-
     shortopts = 'u:p:dnlh'
     longopts = [
         'user=',
