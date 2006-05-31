@@ -33,6 +33,8 @@ class Spool:
         if self.subs:
             newfile = write(self.subs)
             self.files = [newfile]
+        else:
+            self.files = []
 
 def write(subs):
     """Creates a uniquely named file in the spool directory containing the
