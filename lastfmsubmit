@@ -7,8 +7,6 @@ import getopt
 import locale
 
 import lastfm
-import lastfm.logger
-import lastfm.queue
 import lastfm.marshaller
 
 USAGE = """\
@@ -54,7 +52,7 @@ if __name__ == '__main__':
             err = False
 
     try:
-        log = lastfm.logger.getlog('lastfmsubmit', debug, err)
+        log = lastfm.logger('lastfmsubmit', debug, err)
     except IOError, e:
         print >>sys.stderr, 'lastfmsubmit: error opening log: %s' % e
         sys.exit(1)
@@ -94,8 +92,8 @@ if __name__ == '__main__':
             print lastfm.marshaller.dump(sub)
         else:
             try:
-                log.debug('Sending %s to daemon' % lastfm.logger.repr(sub))
-                lastfm.queue.write([sub])
+                log.debug('Sending %s to daemon' % lastfm.repr(sub))
+                lastfm.submit([sub])
             except IOError:
                 log.error("Can't write sub: %s" % e)
                 sys.exit(1)

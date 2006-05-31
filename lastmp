@@ -8,8 +8,6 @@ import signal
 
 import mpdclient2
 import lastfm
-import lastfm.logger
-import lastfm.queue
 import lastfm.marshaller
 
 USAGE = """\
@@ -189,7 +187,7 @@ class MpdObserver:
         try:
             sub = song.dict()
             self.log.info('Sending to daemon')
-            lastfm.queue.write([sub])
+            lastfm.submit([sub])
         except ValueError, e:
             self.log.error('Missing tags: %s' % e)
         except IOError:
@@ -269,7 +267,7 @@ if __name__ == '__main__':
             sys.exit(0)
 
     try:
-        log = lastfm.logger.getlog('lastmp', debug)
+        log = lastfm.logger('lastmp', debug)
     except IOError, e:
         print >>sys.stderr, 'lastmp: error opening log: %s' % e
         sys.exit(1)

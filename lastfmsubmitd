@@ -10,9 +10,7 @@ import md5
 import signal
 
 import lastfm
-import lastfm.logger
 import lastfm.marshaller
-import lastfm.queue
 
 USAGE = """\
 usage: lastfmsubmitd [--user USER] [--password PASS] [--debug] [--no-daemon]
@@ -49,6 +47,39 @@ class HandshakeError(Exception): pass
 class SubTimeoutError(Exception): pass
 class SessionError(Exception): pass
 class InvalidSubError(Exception): pass
+
+class Spool:
+    """Represents uncommitted submissions on disk. May be extended by writing
+    a new file in the spool directory."""
+
+    def __init__(self, log):
+        self.log = log
+        self.files = []
+        self.subs = []
+
+    def poll(self):
+        n = 0
+        for f in os.listdir(lastfm.SPOOL_DIR):
+            path = os.path.join(lastfm.SPOOL_DIR, f)
+            if path not in self.files:
+                self.files.append(path)
+                data = file(path)
+                for doc in lastfm.marshaller.load_documents(data.read()):
+                    try:
+                        self.subs.append(doc)
+                        n += 1
+                    except ValueError, e:
+                        self.log.warning('Invalid data, ignoring: %s' % e)
+        return n
+
+    def sync(self):
+        for f in self.files:
+            os.unlink(f)
+        if self.subs:
+            newfile = write(self.subs)
+            self.files = [newfile]
+        else:
+            self.files = []
 
 class SessionThrottle:
     """Very simple throttler that ensures we sleep long enough between network
@@ -179,7 +210,7 @@ class LastFmSession:
                     args['m[%d]' % i] = sub['mbid'].encode('utf-8')
                 except KeyError:
                     args['m[%d]' % i] = ''
-                self.log.info('Submitting: %s' % lastfm.logger.repr(sub))
+                self.log.info('Submitting: %s' % lastfm.repr(sub))
                 post_data.append(urllib.urlencode(args))
 
             post_str = '&'.join(post_data)
@@ -235,7 +266,7 @@ def daemon(fork, usenetwork, user, password):
 
     session = LastFmSession(log, user, password)
     throttle = SessionThrottle(log)
-    spool = lastfm.queue.Spool(log)
+    spool = Spool(log)
 
     def shutdown(signum, frame):
         log.info('Caught signal %d, exiting' % signum)
@@ -272,7 +303,7 @@ def daemon(fork, usenetwork, user, password):
                 try:
                     log.debug('Doing submit, %d sub(s)' % len(spool.subs))
                     session.submit(spool)
-                    log.debug('Done, %d remain in cache' % len(spool.subs))
+                    log.debug('Done, %d remain in spool' % len(spool.subs))
                     throttle.reset()
                 except SessionError, e:
                     log.error('Session failed: %s' % e)
@@ -333,7 +364,7 @@ if __name__ == '__main__':
         sys.exit(1)
 
     try:
-        log = lastfm.logger.getlog('lastfmsubmitd', debug)
+        log = lastfm.logger('lastfmsubmitd', debug)
     except IOError, e:
         print >>sys.stderr, 'lastfmsubmitd: error opening log: %s' % e
         sys.exit(1)

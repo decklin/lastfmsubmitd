@@ -12,13 +12,13 @@ as a ordinary integer.
 
 You can also write multiple submissions at once, in the same file (e.g.
 if you want to make a plugin to parse your portable music player's log
-file). If your plugin is written in Python, call lastfm.queue.write()
-with a list of dictionaries representing submissions. These dictionaries
-should have the keys "artist", "title", "length", "time", and optionally
+file). If your plugin is written in Python, call lastfm.submit() with a
+list of dictionaries representing submissions. These dictionaries should
+have the keys "artist", "title", "length", "time", and optionally
 "album" or "mbid". "length" is an integer, and "time" a UTC time tuple;
 the rest are (possibly unicode) strings.
 
-Behind the scenes, write() creates a uniquely named temporary file and
+Behind the scenes, submit() creates a uniquely named temporary file and
 then serializes the given submissions as YAML_ documents. If your plugin
 is written in another language, you can do this yourself. The temporary
 file should be created with mkstemp or equivalent. The data can be

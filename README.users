@@ -5,8 +5,8 @@ lastfmsubmitd connects to Last.fm with the user and password specified
 with --user and --password (as this option the exposes password to ps,
 it is recommended you use it for testing only), or in the environment
 variables LASTFM_USER and LASTFM_PASSWORD. It then reads YAML-formatted
-submissions from its spool and submits them, or caches them if
-submission is not possible due to network or server errors.
+submissions from its spool and submits them, or saves them if submission
+is not possible due to network or server errors.
 
 LastMP and lastfmsubmitd
 ========================

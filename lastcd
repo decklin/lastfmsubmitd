@@ -6,8 +6,6 @@ import time
 import getopt
 
 import lastfm
-import lastfm.logger
-import lastfm.queue
 import lastfm.marshaller
 
 USAGE = """\
@@ -41,7 +39,7 @@ if __name__ == '__main__':
             sys.exit(0)
 
     try:
-        log = lastfm.logger.getlog('lastcd', debug)
+        log = lastfm.logger('lastcd', debug)
     except IOError, e:
         print >>sys.stderr, 'lastcd: error opening log: %s' % e
         sys.exit(1)
@@ -83,6 +81,6 @@ if __name__ == '__main__':
     else:
         try:
             log.info('Sending %s song(s) to daemon' % len(subs))
-            lastfm.queue.write(subs)
+            lastfm.submit(subs)
         except IOError, e:
             print >>sys.stderr, 'lastcd: error writing: %s' % e
