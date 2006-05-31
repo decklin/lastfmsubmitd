@@ -28,10 +28,11 @@ class Spool:
         return n
 
     def sync(self):
-        newfile = write(self.subs)
         for f in self.files:
             os.unlink(f)
-        self.files = [newfile]
+        if self.subs:
+            newfile = write(self.subs)
+            self.files = [newfile]
 
 def write(subs):
     """Creates a uniquely named file in the spool directory containing the
