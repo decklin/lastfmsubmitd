@@ -1,3 +1,6 @@
+0.30 (2006-05-31):
+==================
+
 * Use a spool directory for both the "cache" and reading new subs from
   plugins; no more locks, blocking, or possibly losing stuck submissions
   when restarting the daemon. If you are upgrading, you must move
