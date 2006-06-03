@@ -57,10 +57,9 @@ def submit(subs):
     given subs."""
 
     fd, path = tempfile.mkstemp(dir=SPOOL_DIR)
-    os.close(fd)
-
-    data = file(path, 'w+')
+    data = os.fdopen(fd, 'w+')
     lastfm.marshaller.dump_documents(subs, data)
+    os.chmod(path, 0664)
     return path
 
 def repr(song):
