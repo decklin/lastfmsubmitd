@@ -28,6 +28,8 @@ SUB_PERCENT = 0.5
 SUB_SECONDS = 240
 
 def logger(name, debug=False, stderr=False):
+    oldmask = os.umask(002)
+
     if debug: level = logging.DEBUG
     else: level = logging.INFO
 
@@ -47,6 +49,7 @@ def logger(name, debug=False, stderr=False):
         stderrhandler.setFormatter(logging.Formatter(stderrfmt))
         logger.addHandler(stderrhandler)
 
+    os.umask(oldmask)
     return logger
 
 def submit(subs):
