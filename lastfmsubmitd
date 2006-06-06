@@ -8,6 +8,7 @@ import socket
 import urllib
 import md5
 import signal
+import ConfigParser
 
 import lastfm
 import lastfm.marshaller
@@ -16,8 +17,10 @@ USAGE = """\
 usage: lastfmsubmitd [--user USER] [--password PASS] [--debug] [--no-daemon]
     [--help]"""
 
+USER_CONF = '~/.lastfmsubmitd.conf'
+SYS_CONF = '/etc/lastfmsubmitd.conf'
+
 SLEEP_TIME = 5
-PIDFILE = os.path.join(lastfm.PID_DIR, 'lastfmsubmitd.pid')
 
 CLIENT_ID = 'lsd'
 CLIENT_VERSION = '0.30'
@@ -52,15 +55,15 @@ class Spool:
     """Represents uncommitted submissions on disk. May be extended by writing
     a new file in the spool directory."""
 
-    def __init__(self, log):
+    def __init__(self, log, spool_dir=lastfm.SPOOL_DIR):
         self.log = log
         self.files = []
         self.subs = []
 
     def poll(self):
         n = 0
-        for f in os.listdir(lastfm.SPOOL_DIR):
-            path = os.path.join(lastfm.SPOOL_DIR, f)
+        for f in os.listdir(spool_dir):
+            path = '%s/%s' % (spool_dir, f)
             if path not in self.files:
                 self.files.append(path)
                 data = file(path)
@@ -250,7 +253,7 @@ class LastFmSession:
             self.read_interval(response)
             time.sleep(self.interval)
 
-def daemon(fork, usenetwork, user, password):
+def daemon(fork, usenetwork, user, password, pid_dir, spool_dir):
     if fork:
         try:
             pid = os.fork()
@@ -260,18 +263,19 @@ def daemon(fork, usenetwork, user, password):
             sys.exit(1)
 
     log.info('Last.fm Submission Daemon starting')
-    pidfile = open(PIDFILE, 'w')
+    pidpath = '%s/%s' % (pid_dir, 'lastfmsubmitd.pid')
+    pidfile = open(pidpath, 'w')
     print >>pidfile, os.getpid()
     pidfile.close()
 
     session = LastFmSession(log, user, password)
     throttle = SessionThrottle(log)
-    spool = Spool(log)
+    spool = Spool(log, spool_dir)
 
     def shutdown(signum, frame):
         log.info('Caught signal %d, exiting' % signum)
         spool.sync()
-        os.remove(PIDFILE)
+        os.remove(pidpath)
         os._exit(0)
 
     def alarm(signum, frame):
@@ -318,15 +322,8 @@ def daemon(fork, usenetwork, user, password):
         throttle.sleep(SLEEP_TIME)
 
 if __name__ == '__main__':
-    shortopts = 'u:p:dnlh'
-    longopts = [
-        'user=',
-        'password=',
-        'debug',
-        'no-daemon',
-        'no-network',
-        'help',
-        ]
+    shortopts = 'c:dnlh'
+    longopts = ['config=', 'debug', 'no-daemon', 'no-network', 'help']
 
     try:
         opts, args = getopt.getopt(sys.argv[1:], shortopts, longopts)
@@ -335,20 +332,14 @@ if __name__ == '__main__':
         print >>sys.stderr, USAGE
         sys.exit(1)
 
-    user = None
-    password = None
+    configs = [USER_CONF, SYS_CONF]
     debug = False
     fork = True
     usenetwork = True
 
-    user = os.environ.get('LASTFM_USER')
-    password = os.environ.get('LASTFM_PASSWORD')
-
     for opt, arg in opts:
-        if opt in ('--user', '-u'):
-            user = arg
-        elif opt in ('--password', '-p'):
-            password = arg
+        if opt in ('--config', '-c'):
+            configs.insert(0, arg)
         elif opt in ('--debug', '-d'):
             debug = True
         elif opt in ('--no-daemon', '-n'):
@@ -359,18 +350,39 @@ if __name__ == '__main__':
             print USAGE
             sys.exit(0)
 
-    if not (user and password):
-        print >>sys.stderr, 'lastfmsubmitd: user and password not specified'
+    conf = lastfm.find_config(configs)
+    if not conf:
+        print >>sys.stderr, 'lastfmsubmitd: could not find config'
         sys.exit(1)
 
     try:
-        log = lastfm.logger('lastfmsubmitd', debug)
+        user = conf.get('account', 'user')
+        password = conf.get('account', 'password')
+    except (ConfigParser.NoSectionError, ConfigParser.NoOptionError):
+        print >>sys.stderr, 'lastfmsubmitd: no account info specified'
+        sys.exit(1)
+
+    try:
+        log_file = conf.get('paths', 'log_file')
+    except (ConfigParser.NoSectionError, ConfigParser.NoOptionError):
+        log_file = lastfm.LOG_FILE
+    try:
+        pid_dir = conf.get('paths', 'pid_dir')
+    except (ConfigParser.NoSectionError, ConfigParser.NoOptionError):
+        pid_dir = lastfm.PID_DIR
+    try:
+        spool_dir = conf.get('paths', 'spool_dir')
+    except (ConfigParser.NoSectionError, ConfigParser.NoOptionError):
+        spool_dir = lastfm.SPOOL_DIR
+
+    try:
+        log = lastfm.logger('lastfmsubmitd', log_file, debug)
     except IOError, e:
         print >>sys.stderr, 'lastfmsubmitd: error opening log: %s' % e
         sys.exit(1)
 
     try:
-        daemon(fork, usenetwork, user, password)
+        daemon(fork, usenetwork, user, password, pid_dir, spool_dir)
     except SystemExit, e:
         sys.exit(e.args[0])
     except:

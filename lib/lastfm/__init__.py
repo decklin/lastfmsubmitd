@@ -4,11 +4,12 @@ import os
 import sys
 import logging
 import tempfile
+import ConfigParser
 
 import lastfm.marshaller
 
 # Shared stuff.
-LOG = '/var/log/lastfm/lastfm.log'
+LOG_FILE = '/var/log/lastfm/lastfm.log'
 PID_DIR = '/var/run/lastfm'
 SPOOL_DIR = '/var/spool/lastfm'
 
@@ -27,7 +28,7 @@ SUB_PERCENT = 0.5
 # ...or if it has been played for this many seconds.
 SUB_SECONDS = 240
 
-def logger(name, debug=False, stderr=False):
+def logger(name, path=LOG_FILE, debug=False, stderr=False):
     oldmask = os.umask(002)
 
     if debug: level = logging.DEBUG
@@ -37,7 +38,7 @@ def logger(name, debug=False, stderr=False):
     logger.setLevel(level)
 
     filefmt = '%(asctime)s %(name)s[%(process)s] %(levelname)s: %(message)s'
-    filehandler = logging.FileHandler(LOG)
+    filehandler = logging.FileHandler(path)
     filehandler.setLevel(level)
     filehandler.setFormatter(logging.Formatter(filefmt))
     logger.addHandler(filehandler)
@@ -73,3 +74,13 @@ def repr(song):
         time = '[None]'
 
     return '%s %s' % (name, time)
+
+def find_config(configs):
+    conf = ConfigParser.ConfigParser()
+    for path in configs:
+        try:
+            f = file(path)
+            conf.readfp(f)
+            return conf
+        except IOError:
+            pass
