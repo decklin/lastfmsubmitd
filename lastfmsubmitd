@@ -253,20 +253,8 @@ class LastFmSession:
             self.read_interval(response)
             time.sleep(self.interval)
 
-def daemon(fork, usenetwork, user, password, pid_dir, spool_dir):
-    if fork:
-        try:
-            pid = os.fork()
-            if pid != 0: sys.exit(0)
-        except OSError, e:
-            print >>sys.stderr, "lastfmsubmitd: can't fork: %s" % e
-            sys.exit(1)
-
+def daemon(user, password, online, spool_dir):
     log.info('Last.fm Submission Daemon starting')
-    pidpath = '%s/%s' % (pid_dir, 'lastfmsubmitd.pid')
-    pidfile = open(pidpath, 'w')
-    print >>pidfile, os.getpid()
-    pidfile.close()
 
     session = LastFmSession(log, user, password)
     throttle = SessionThrottle(log)
@@ -295,7 +283,7 @@ def daemon(fork, usenetwork, user, password, pid_dir, spool_dir):
             n = spool.poll()
             if n: log.debug('Read %d sub(s)' % n)
 
-            if usenetwork and not session.connected:
+            if online and not session.connected:
                 try:
                     session.handshake()
                     throttle.reset()
@@ -307,7 +295,7 @@ def daemon(fork, usenetwork, user, password, pid_dir, spool_dir):
                 try:
                     log.debug('Doing submit, %d sub(s)' % len(spool.subs))
                     session.submit(spool)
-                    log.debug('Done, %d remain in spool' % len(spool.subs))
+                    log.debug('Done, %d in spool' % len(spool.subs))
                     throttle.reset()
                 except SessionError, e:
                     log.error('Session failed: %s' % e)
@@ -335,7 +323,7 @@ if __name__ == '__main__':
     configs = [USER_CONF, SYS_CONF]
     debug = False
     fork = True
-    usenetwork = True
+    online = True
 
     for opt, arg in opts:
         if opt in ('--config', '-c'):
@@ -345,7 +333,7 @@ if __name__ == '__main__':
         elif opt in ('--no-daemon', '-n'):
             fork = False
         elif opt in ('--no-network', '-l'):
-            usenetwork = False
+            online = False
         elif opt in ('--help', '-h'):
             print USAGE
             sys.exit(0)
@@ -353,13 +341,6 @@ if __name__ == '__main__':
     conf = lastfm.find_config(configs)
     if not conf:
         print >>sys.stderr, 'lastfmsubmitd: could not find config'
-        sys.exit(1)
-
-    try:
-        user = conf.get('account', 'user')
-        password = conf.get('account', 'password')
-    except (ConfigParser.NoSectionError, ConfigParser.NoOptionError):
-        print >>sys.stderr, 'lastfmsubmitd: no account info specified'
         sys.exit(1)
 
     try:
@@ -374,6 +355,25 @@ if __name__ == '__main__':
         spool_dir = conf.get('paths', 'spool_dir')
     except (ConfigParser.NoSectionError, ConfigParser.NoOptionError):
         spool_dir = lastfm.SPOOL_DIR
+    try:
+        user = conf.get('account', 'user')
+        password = conf.get('account', 'password')
+    except (ConfigParser.NoSectionError, ConfigParser.NoOptionError):
+        print >>sys.stderr, 'lastfmsubmitd: no account info specified'
+        sys.exit(1)
+
+    if fork:
+        try:
+            pid = os.fork()
+            if pid != 0: sys.exit(0)
+        except OSError, e:
+            print >>sys.stderr, "lastfmsubmitd: can't fork: %s" % e
+            sys.exit(1)
+
+    pidpath = '%s/%s' % (pid_dir, 'lastfmsubmitd.pid')
+    pidfile = open(pidpath, 'w')
+    print >>pidfile, os.getpid()
+    pidfile.close()
 
     try:
         log = lastfm.logger('lastfmsubmitd', log_file, debug)
@@ -382,7 +382,7 @@ if __name__ == '__main__':
         sys.exit(1)
 
     try:
-        daemon(fork, usenetwork, user, password, pid_dir, spool_dir)
+        daemon(user, password, online, spool_dir)
     except SystemExit, e:
         sys.exit(e.args[0])
     except:
