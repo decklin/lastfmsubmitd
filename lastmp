@@ -231,6 +231,7 @@ if __name__ == '__main__':
     mpd_args = {}
     debug = False
     fork = True
+    stderr = False
 
     for opt, arg in opts:
         if opt in ('--sleep', '-s'):
@@ -249,6 +250,7 @@ if __name__ == '__main__':
             debug = True
         elif opt in ('--no-daemon', '-n'):
             fork = False
+            stderr = True
         elif opt in ('--help', '-h'):
             print USAGE
             sys.exit(0)
@@ -266,7 +268,7 @@ if __name__ == '__main__':
     pidfile.close()
 
     try:
-        log = lastfm.logger('lastmp', debug)
+        log = lastfm.logger('lastmp', log_file, debug, stderr)
     except IOError, e:
         print >>sys.stderr, 'lastmp: error opening log: %s' % e
         sys.exit(1)
