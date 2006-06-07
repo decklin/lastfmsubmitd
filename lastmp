@@ -67,10 +67,9 @@ class Song:
             return d
 
 class MpdObserver:
-    def __init__(self, log, sleep, mpd_args, debug):
+    def __init__(self, log, sleep, mpd_args):
         self.log = log
         self.sleep = sleep
-        self.debug = debug
         self.kids = []
 
         try:
@@ -193,19 +192,8 @@ class MpdObserver:
         except IOError:
             log.error("Can't write sub: %s" % e)
 
-def daemon():
-    if fork:
-        try:
-            pid = os.fork()
-            if pid != 0: sys.exit(0)
-        except OSError, e:
-            print >>sys.stderr, "lastmp: can't fork: %s" % e
-            sys.exit(1)
-
+def daemon(log, sleep, mpd_args):
     log.info('LastMP starting')
-    pidfile = open(PIDFILE, 'w')
-    print >>pidfile, os.getpid()
-    pidfile.close()
 
     def shutdown(signum, frame):
         log.info('Caught signal %d, exiting' % signum)
@@ -215,8 +203,7 @@ def daemon():
     signal.signal(signal.SIGTERM, shutdown)
     signal.signal(signal.SIGINT, shutdown)
 
-    mo = MpdObserver(log, sleep, mpd_args, debug)
-
+    mo = MpdObserver(log, sleep, mpd_args)
     # Even if we couldn't connect, start the observe loop anyway.
     # Perhaps MPD failed at boot and the admin will fix it later.
     mo.observe()
@@ -266,6 +253,18 @@ if __name__ == '__main__':
             print USAGE
             sys.exit(0)
 
+    if fork:
+        try:
+            pid = os.fork()
+            if pid != 0: sys.exit(0)
+        except OSError, e:
+            print >>sys.stderr, "lastmp: can't fork: %s" % e
+            sys.exit(1)
+
+    pidfile = open(PIDFILE, 'w')
+    print >>pidfile, os.getpid()
+    pidfile.close()
+
     try:
         log = lastfm.logger('lastmp', debug)
     except IOError, e:
@@ -273,7 +272,7 @@ if __name__ == '__main__':
         sys.exit(1)
 
     try:
-        daemon()
+        daemon(log, sleep, mpd_args)
     except SystemExit, e:
         sys.exit(e.args[0])
     except:
