@@ -41,7 +41,7 @@ if __name__ == '__main__':
     encoding = locale.getpreferredencoding()
     stdout = False
     debug = False
-    err = True
+    stderr = True
 
     for opt, arg in opts:
         if opt in ('--encoding', '-e'):
@@ -49,10 +49,10 @@ if __name__ == '__main__':
         if opt in ('--debug', '-d'):
             debug = True
         if opt in ('--quiet', '-q'):
-            err = False
+            stderr = False
 
     try:
-        log = lastfm.logger('lastfmsubmit', debug, err)
+        log = lastfm.logger('lastfmsubmit', debug=debug, stderr=stderr)
     except IOError, e:
         print >>sys.stderr, 'lastfmsubmit: error opening log: %s' % e
         sys.exit(1)

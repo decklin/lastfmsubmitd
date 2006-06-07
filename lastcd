@@ -39,7 +39,7 @@ if __name__ == '__main__':
             sys.exit(0)
 
     try:
-        log = lastfm.logger('lastcd', debug)
+        log = lastfm.logger('lastcd', debug=debug)
     except IOError, e:
         print >>sys.stderr, 'lastcd: error opening log: %s' % e
         sys.exit(1)
