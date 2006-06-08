@@ -8,27 +8,22 @@ import socket
 import urllib
 import md5
 import signal
-import ConfigParser
 
 import lastfm
+import lastfm.config
 import lastfm.marshaller
+from lastfm.config import NoConfError
 
 USAGE = """\
-usage: lastfmsubmitd [--user USER] [--password PASS] [--debug] [--no-daemon]
-    [--help]"""
-
-USER_CONF = '~/.lastfmsubmitd.conf'
-SYS_CONF = '/etc/lastfmsubmitd.conf'
-
-SLEEP_TIME = 5
-
-CLIENT_ID = 'lsd'
-CLIENT_VERSION = '0.30'
+usage: lastfmsubmitd [--debug] [--no-daemon] [--no-network] [--help]"""
 
 PROTOCOL_VERSION = '1.1'
 HANDSHAKE_URL_BASE = 'http://post.audioscrobbler.com/'
-DEF_INTERVAL = 1
 SUB_CHUNK_SIZE = 10
+DEF_INTERVAL = 1
+
+CLIENT_ID = 'lsd'
+CLIENT_VERSION = '0.30'
 
 # This should be something small, because the server times out quickly. If
 # there is any congestion at either end of the network, it will give up and
@@ -50,41 +45,9 @@ class HandshakeError(Exception): pass
 class SubTimeoutError(Exception): pass
 class SessionError(Exception): pass
 class InvalidSubError(Exception): pass
+class NoAccountError(Exception): pass
 
-class Spool:
-    """Represents uncommitted submissions on disk. May be extended by writing
-    a new file in the spool directory."""
-
-    def __init__(self, log, spool_dir=lastfm.SPOOL_DIR):
-        self.log = log
-        self.files = []
-        self.subs = []
-
-    def poll(self):
-        n = 0
-        for f in os.listdir(spool_dir):
-            path = '%s/%s' % (spool_dir, f)
-            if path not in self.files:
-                self.files.append(path)
-                data = file(path)
-                for doc in lastfm.marshaller.load_documents(data.read()):
-                    try:
-                        self.subs.append(doc)
-                        n += 1
-                    except ValueError, e:
-                        self.log.warning('Invalid data, ignoring: %s' % e)
-        return n
-
-    def sync(self):
-        for f in self.files:
-            os.unlink(f)
-        if self.subs:
-            newfile = lastfm.submit(self.subs)
-            self.files = [newfile]
-        else:
-            self.files = []
-
-class SessionThrottle:
+class Throttle:
     """Very simple throttler that ensures we sleep long enough between network
     requests, but lets you sleep a little at a time and then wake to do other
     stuff. Only keeps track of how long it has slept, not the actual time
@@ -113,6 +76,40 @@ class SessionThrottle:
     def sleep(self, secs):
         time.sleep(secs)
         self.slept += secs
+
+class Spool:
+    """Represents uncommitted submissions on disk. May be extended by writing
+    a new file in the spool directory."""
+
+    def __init__(self, log, spool_path):
+        self.log = log
+        self.spool_path = spool_path
+        self.files = []
+        self.subs = []
+
+    def poll(self):
+        n = 0
+        for f in os.listdir(self.spool_path):
+            path = '%s/%s' % (self.spool_path, f)
+            if path not in self.files:
+                self.files.append(path)
+                data = file(path)
+                for doc in lastfm.marshaller.load_documents(data.read()):
+                    try:
+                        self.subs.append(doc)
+                        n += 1
+                    except ValueError, e:
+                        self.log.warning('Invalid data, ignoring: %s' % e)
+        return n
+
+    def sync(self):
+        for f in self.files:
+            os.unlink(f)
+        if self.subs:
+            newfile = lastfm.submit(self.subs)
+            self.files = [newfile]
+        else:
+            self.files = []
 
 class LastFmSession:
     def __init__(self, log, user, password):
@@ -253,21 +250,27 @@ class LastFmSession:
             self.read_interval(response)
             time.sleep(self.interval)
 
-def daemon(user, password, online, spool_dir):
-    log.info('Last.fm Submission Daemon starting')
+class LastFmConfig(lastfm.config.Config):
+    def __init__(self, name):
+        lastfm.config.Config.__init__(self, name)
+        try:
+            self.user = self.cp.get('account', 'user')
+            self.password = self.cp.get('account', 'password')
+        except:
+            raise NoAccountError
 
-    session = LastFmSession(log, user, password)
-    throttle = SessionThrottle(log)
-    spool = Spool(log, spool_dir)
+def daemon(log, conf, online):
+    throttle = Throttle(log)
+    spool = Spool(log, conf.spool_path)
+    session = LastFmSession(log, conf.user, conf.password)
 
     def shutdown(signum, frame):
-        log.info('Caught signal %d, exiting' % signum)
         spool.sync()
-        os.remove(pidpath)
-        os._exit(0)
+        conf.remove_pidfile()
+        sys.exit(0)
 
     def alarm(signum, frame):
-        log.debug('Caught signal %d, resuming' % signum)
+        log.debug('Resuming on alarm' % signum)
 
     def reinit(signum, frame):
         # XXX: reread config, reopen log, reset throttle, rehandshake
@@ -307,11 +310,11 @@ def daemon(user, password, online, spool_dir):
                     log.error('Submission timed out')
                     throttle.backoff()
 
-        throttle.sleep(SLEEP_TIME)
+        throttle.sleep(conf.sleep_time)
 
 if __name__ == '__main__':
-    shortopts = 'c:dnlh'
-    longopts = ['config=', 'debug', 'no-daemon', 'no-network', 'help']
+    shortopts = 'dnlh'
+    longopts = ['debug', 'no-daemon', 'no-network', 'help']
 
     try:
         opts, args = getopt.getopt(sys.argv[1:], shortopts, longopts)
@@ -320,16 +323,13 @@ if __name__ == '__main__':
         print >>sys.stderr, USAGE
         sys.exit(1)
 
-    configs = [USER_CONF, SYS_CONF]
     debug = False
     fork = True
     stderr = False
     online = True
 
     for opt, arg in opts:
-        if opt in ('--config', '-c'):
-            configs.insert(0, arg)
-        elif opt in ('--debug', '-d'):
+        if opt in ('--debug', '-d'):
             debug = True
         elif opt in ('--no-daemon', '-n'):
             fork = False
@@ -340,52 +340,33 @@ if __name__ == '__main__':
             print USAGE
             sys.exit(0)
 
-    conf = lastfm.find_config(configs)
-    if not conf:
+    try:
+        conf = LastFmConfig('lastfmsubmitd')
+    except NoConfError:
         print >>sys.stderr, 'lastfmsubmitd: could not find config'
         sys.exit(1)
-
-    try:
-        log_file = conf.get('paths', 'log_file')
-    except (ConfigParser.NoSectionError, ConfigParser.NoOptionError):
-        log_file = lastfm.LOG_FILE
-    try:
-        pid_dir = conf.get('paths', 'pid_dir')
-    except (ConfigParser.NoSectionError, ConfigParser.NoOptionError):
-        pid_dir = lastfm.PID_DIR
-    try:
-        spool_dir = conf.get('paths', 'spool_dir')
-    except (ConfigParser.NoSectionError, ConfigParser.NoOptionError):
-        spool_dir = lastfm.SPOOL_DIR
-    try:
-        user = conf.get('account', 'user')
-        password = conf.get('account', 'password')
-    except (ConfigParser.NoSectionError, ConfigParser.NoOptionError):
+    except NoAccountError:
         print >>sys.stderr, 'lastfmsubmitd: no account info specified'
         sys.exit(1)
 
     if fork:
         try:
             pid = os.fork()
-            if pid != 0: sys.exit(0)
+            if pid:
+                sys.exit(0)
+            else:
+                conf.write_pidfile()
         except OSError, e:
             print >>sys.stderr, "lastfmsubmitd: can't fork: %s" % e
             sys.exit(1)
 
-    pidpath = '%s/%s' % (pid_dir, 'lastfmsubmitd.pid')
-    pidfile = open(pidpath, 'w')
-    print >>pidfile, os.getpid()
-    pidfile.close()
+    log = lastfm.logger('lastfmsubmitd', conf.log_path, debug, stderr)
 
     try:
-        log = lastfm.logger('lastfmsubmitd', log_file, debug, stderr)
-    except IOError, e:
-        print >>sys.stderr, 'lastfmsubmitd: error opening log: %s' % e
-        sys.exit(1)
-
-    try:
-        daemon(user, password, online, spool_dir)
+        log.info('Starting')
+        daemon(log, conf, online)
     except SystemExit, e:
+        log.info('exiting')
         sys.exit(e.args[0])
     except:
         import traceback

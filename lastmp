@@ -8,20 +8,19 @@ import signal
 
 import mpdclient2
 import lastfm
+import lastfm.config
 import lastfm.marshaller
+from lastfm.config import NoConfError
 
-USAGE = """\
-usage: lastmp [--host HOST] [--password PASS] [--port PORT] [--debug]
-    [--no-daemon] [--help]"""
-
-DEF_SLEEP = 5
-PIDFILE = os.path.join(lastfm.PID_DIR, 'lastmp.pid')
+USAGE = """usage: lastmp [--debug] [--no-daemon] [--help]"""
 
 # If the system load is high, we may not wake again until slightly
 # longer than we slept. This should really be like 0.1, but
 # unfortunately MPD only reports times with a resolution of 1 second.
 
 FUZZ = 1
+
+class NoHostError(Exception): pass
 
 class Song:
     def __init__(self, sobj):
@@ -66,12 +65,13 @@ class Song:
         else:
             return d
 
-class MpdObserver:
-    def __init__(self, log, sleep, mpd_args):
+class MPDMonitor:
+    def __init__(self, log, sleep, host, port, password):
         self.log = log
         self.sleep = sleep
         self.kids = []
 
+        mpd_args = {'host': host, 'port': port, 'password': password}
         try:
             self.mpd = mpdclient2.connect(**mpd_args)
             self.log.info('Connected to MPD')
@@ -192,33 +192,39 @@ class MpdObserver:
         except IOError:
             log.error("Can't write sub: %s" % e)
 
-def daemon(log, sleep, mpd_args):
-    log.info('LastMP starting')
+class MPDConfig(lastfm.config.Config):
+    def __init__(self, name):
+        lastfm.config.Config.__init__(self, name)
+        try:
+            self.host = self.cp.get('mpd', 'host')
+        except:
+            raise NoHostError
+        try:
+            self.port = self.cp.getint('mpd', 'port')
+        except:
+            self.port = 6600
+        try:
+            self.password = self.cp.get('mpd', 'password')
+        except:
+            self.password = None
+
+def daemon(log, conf):
+    mo = MPDMonitor(log, conf.sleep_time, conf.host, conf.port, conf.password)
 
     def shutdown(signum, frame):
-        log.info('Caught signal %d, exiting' % signum)
-        os.remove(PIDFILE)
-        os._exit(0)
+        conf.remove_pidfile()
+        sys.exit(0)
 
     signal.signal(signal.SIGTERM, shutdown)
     signal.signal(signal.SIGINT, shutdown)
 
-    mo = MpdObserver(log, sleep, mpd_args)
     # Even if we couldn't connect, start the observe loop anyway.
     # Perhaps MPD failed at boot and the admin will fix it later.
     mo.observe()
 
 if __name__ == '__main__':
-    shortopts = 's:h:p:o:dnh'
-    longopts = [
-        'sleep=',
-        'host=',
-        'password=',
-        'port=',
-        'debug',
-        'no-daemon',
-        'help',
-        ]
+    shortopts = 'dnh'
+    longopts = ['debug', 'no-daemon', 'help']
 
     try:
         opts, args = getopt.getopt(sys.argv[1:], shortopts, longopts)
@@ -227,26 +233,12 @@ if __name__ == '__main__':
         print >>sys.stderr, USAGE
         sys.exit(1)
 
-    sleep = DEF_SLEEP
-    mpd_args = {}
     debug = False
     fork = True
     stderr = False
 
     for opt, arg in opts:
-        if opt in ('--sleep', '-s'):
-            sleep = int(arg)
-            if sleep >= lastfm.MIN_LEN / 2:
-                print >>sys.stderr, 'lastmp: --sleep must be < %d' % \
-                    (lastfm.MIN_LEN / 2)
-                sys.exit(1)
-        elif opt in ('--host', '-h'):
-            mpd_args['host'] = arg
-        elif opt in ('--password', '-p'):
-            mpd_args['password'] = arg
-        elif opt in ('--port', '-o'):
-            mpd_args['port'] = arg
-        elif opt in ('--debug', '-d'):
+        if opt in ('--debug', '-d'):
             debug = True
         elif opt in ('--no-daemon', '-n'):
             fork = False
@@ -255,27 +247,33 @@ if __name__ == '__main__':
             print USAGE
             sys.exit(0)
 
+    try:
+        conf = MPDConfig('lastmp')
+    except NoConfError:
+        print >>sys.stderr, 'lastmp: could not find config'
+        sys.exit(1)
+    except NoHostError:
+        print >>sys.stderr, 'lastmp: no MPD host specified'
+        sys.exit(1)
+
     if fork:
         try:
             pid = os.fork()
-            if pid != 0: sys.exit(0)
+            if pid:
+                sys.exit(0)
+            else:
+                conf.write_pidfile()
         except OSError, e:
             print >>sys.stderr, "lastmp: can't fork: %s" % e
             sys.exit(1)
 
-    pidfile = open(PIDFILE, 'w')
-    print >>pidfile, os.getpid()
-    pidfile.close()
+    log = lastfm.logger('lastmp', conf.log_path, debug, stderr)
 
     try:
-        log = lastfm.logger('lastmp', log_file, debug, stderr)
-    except IOError, e:
-        print >>sys.stderr, 'lastmp: error opening log: %s' % e
-        sys.exit(1)
-
-    try:
-        daemon(log, sleep, mpd_args)
+        log.info('Starting')
+        daemon(log, conf)
     except SystemExit, e:
+        log.info('Exiting')
         sys.exit(e.args[0])
     except:
         import traceback
