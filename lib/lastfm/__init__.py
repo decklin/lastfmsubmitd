@@ -21,7 +21,7 @@ MAX_LEN = 3600
 SUB_PERCENT = 0.5
 
 # ...or if it has been played for this many seconds.
-SUB_SECONDS = 24
+SUB_SECONDS = 240
 
 def logger(name='unknown', path=LOG_PATH, debug=False, stderr=False):
     if debug:
