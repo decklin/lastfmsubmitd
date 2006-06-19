@@ -270,7 +270,7 @@ def daemon(log, conf, online):
         sys.exit(0)
 
     def alarm(signum, frame):
-        log.debug('Resuming on alarm' % signum)
+        log.debug('Resuming on alarm')
 
     def reinit(signum, frame):
         # XXX: reread config, reopen log, reset throttle, rehandshake
