@@ -1,5 +1,7 @@
 * Make logs group-writable again.
 
+* Fix a timeout crash in lastfmsubmitd.
+
 0.30 (2006-05-31):
 ==================
 
