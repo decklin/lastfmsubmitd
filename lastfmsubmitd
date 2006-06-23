@@ -23,7 +23,7 @@ SUB_CHUNK_SIZE = 10
 DEF_INTERVAL = 1
 
 CLIENT_ID = 'lsd'
-CLIENT_VERSION = '0.30'
+CLIENT_VERSION = '0.31'
 
 # This should be something small, because the server times out quickly. If
 # there is any congestion at either end of the network, it will give up and
