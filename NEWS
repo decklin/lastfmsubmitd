@@ -1,3 +1,5 @@
+* Replace the environment/option nonsense with a config file.
+
 * Make logs group-writable again.
 
 * Fix a timeout crash in lastfmsubmitd.

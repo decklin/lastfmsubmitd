@@ -15,15 +15,15 @@ usage: lastfmsubmitd [--encoding ENC] [--artist ARTIST] [--title TITLE]
     [--encoding ENC] [--stdout] [--debug] [--quiet] [--help]"""
 
 if __name__ == '__main__':
-    shortopts = 'a:s:l:d:b:m:e:sdqh'
+    shortopts = 'e:a:s:l:d:b:m:sdqh'
     longopts = [
+        'encoding=',
         'artist=',
         'title=',
         'length=',
         'time=',
         'album=',
         'mbid=',
-        'encoding=',
         'stdout',
         'debug',
         'quiet',

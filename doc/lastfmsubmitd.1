@@ -3,10 +3,10 @@
 lastfmsubmitd, lastfmsubmit \- Last.fm submission daemon and helper
 .SH SYNOPSIS
 .B lastfmsubmitd
-.RI [ --user\ USER ]
-.RI [ --password\ PASS ]
 .RI [ --debug ]
 .RI [ --no-daemon ]
+.RI [ --no-network ]
+.RI [ --help ]
 .br
 .B lastfmsubmit
 .RI [ --encoding\ ENC ]
@@ -16,17 +16,19 @@ lastfmsubmitd, lastfmsubmit \- Last.fm submission daemon and helper
 .RI [ --time\ STAMP ]
 .RI [ --album\ ALBUM ]
 .RI [ --mbid\ TRACKID ]
-.RI [ --output\ FILE ]
+.RI [ --stdout ]
 .RI [ --debug ]
 .RI [ --quiet ]
+.RI [ --help ]
 .SH DESCRIPTION
 .B lastfmsubmitd
 uses the Last.fm protocol to send information about played songs
 to a submission server. If network connectivity is lost or lastfmsubmitd is
-shut down, it saves any unsubmitted songs to a cache.
+shut down, any unsubmitted songs will be saved to disk.
 .PP
-Song information is collected from one or more music players via a FIFO. All
-songs are submitted with the account information provided at startup.
+Song information is collected from one or more music players via a spool
+directory. All songs are submitted with the account information provided in
+the configuration file.
 .PP
 .B lastfmsubmit
 is a helper program meant to be invoked by music players. It
@@ -34,18 +36,14 @@ handles setting the timestamp, encoding data as UTF-8, serializing it to send
 to lastfmsubmitd, and locking.
 .SH OPTIONS
 .TP
-.B \-u, \-\-user
-Specify the Last.fm username.
-.TP
-.B \-p, \-\-password
-Specify the Last.fm password. This is not secure, and is provided for testing
-purposes only; please see ENVIRONMENT below.
-.TP
 .B \-d, \-\-debug
 Log debugging information.
 .TP
 .B \-n, \-\-no-daemon
 Do not fork into the background.
+.TP
+.B \-n, \-\-no-network
+Do not attempt to connect to a server, but process submissions anyway.
 .TP
 .B \-e, \-\-encoding
 Use a different encoding than the locale's default to read song information.
@@ -73,19 +71,16 @@ Specify the song's album name.
 .B \-m, \-\-mbid
 Specify the song's MusicBrainz track ID.
 .TP
-.B \-o, \-\-output
-Write the serialized song information to a different file.
-.SH ENVIRONMENT
-lastfmsubmitd will read a username and password from the environment variables
-LASTFM_USER and LASTFM_PASSWORD on startup. This is recommended for normal use,
-as command line options are usually readable with
-.IR ps (1).
+.B \-o, \-\-stdout
+Write the serialized song information to standard output instead of the
+spool.
 .SH FILES
 .TP
-.B /var/run/lastfm/fifo
-The named pipe (FIFO) where submissions are read.
+.B /var/spool/lastfm
+The directory where music players should write song information to be
+submitted by lastfmsubmitd.
 .TP
-.B /var/cache/lastfm/subs
-The file where unsent submissions are saved if lastfmsubmitd is stopped.
+.B /etc/lastfmsubmitd.conf
+The configuration file.
 .SH AUTHOR
 Decklin Foster <decklin@red-bean.com>.
