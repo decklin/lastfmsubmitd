@@ -23,7 +23,7 @@ rip_cmds = {
     'cdparanoia': 'cdparanoia -r %s -d "%s" "%s" -'
     }
 
-sox_cmd = 'sox -blah "%s" -' # XXX
+sox_cmd = 'sox "%s" -t raw -r 44100 -s -w -c 2 -'
 
 class SaneConfParser(ConfigParser.RawConfigParser):
     def get(self, section, option, default):
@@ -75,7 +75,7 @@ if __name__ == '__main__':
         if device:
             rip_cmd = rip_cmds[ripper] % (rip_opts, device, s['number'])
         else:
-            rip_cmd = sox_cmd % ('track%02d.wav' % s['number'])
+            rip_cmd = sox_cmd % ('track%02d.cdda.wav' % s['number'])
         rip = os.popen(rip_cmd)
 
         path = path_tmpl % s
