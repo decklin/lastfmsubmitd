@@ -80,8 +80,8 @@ if __name__ == '__main__':
 
         path = path_tmpl % s
         dir = os.path.dirname(path)
-        if not os.path.isdir(dir):
-            os.mkdir(dir)
+        if dir and not os.path.isdir(dir):
+            os.makedirs(dir)
         enc_cmd = enc_cmds[encoder] % (enc_opts, tag_opts[encoder] % s, path)
         enc = os.popen(enc_cmd, 'w')
 
