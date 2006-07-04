@@ -96,8 +96,12 @@ class Spool:
                 data = file(path)
                 for doc in lastfm.marshaller.load_documents(data.read()):
                     try:
-                        self.subs.append(doc)
-                        n += 1
+                        for reqd in ('artist', 'title', 'length', 'time'):
+                            if not doc.has_key(reqd):
+                                raise ValueError('missing %s' % reqd)
+                        else:
+                            self.subs.append(doc)
+                            n += 1
                     except ValueError, e:
                         self.log.warning('Invalid data, ignoring: %s' % e)
         return n
