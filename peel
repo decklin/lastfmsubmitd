@@ -10,7 +10,7 @@ import lastfm.marshaller
 
 enc_cmds = {
     'oggenc': 'oggenc -Q -r %s %s -o "%s.ogg" -',
-    'lame': 'lame -q -rx %s %s - "%s.mp3"'
+    'lame': 'lame --quiet -rx %s %s - "%s.mp3"'
     }
 tag_opts = {
     'oggenc': '-a "%(artist)s" -t "%(title)s" -l "%(album)s" -N "%(number)s" \
