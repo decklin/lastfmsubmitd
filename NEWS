@@ -1,3 +1,7 @@
+* Added peel, a simple CD ripper for use with mbget which pipes audio
+  data to another command (e.g. bfp) and submits played tracks while
+  encoding in the background.
+
 * Re-added some lost data validation in lastfmsubmitd.
 
 0.31 (2006-06-23):

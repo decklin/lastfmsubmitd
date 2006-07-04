@@ -1,0 +1,101 @@
+#!/usr/bin/python
+
+import os
+import sys
+import time
+import ConfigParser
+import getopt
+
+import lastfm.marshaller
+
+enc_cmds = {
+    'oggenc': 'oggenc -Q -r %s %s -o "%s.ogg" -',
+    'lame': 'lame -q -rx %s %s - "%s.mp3"'
+    }
+tag_opts = {
+    'oggenc': '-a "%(artist)s" -t "%(title)s" -l "%(album)s" -N "%(number)s" \
+        -c "musicbrainz_trackid=%(mbid)s"',
+    'lame': '--ta "%(artist)s" --tt "%(title)s" --tl "%(album)s" \
+        --tn "%(number)s"',
+    }
+
+rip_cmds = {
+    'cdparanoia': 'cdparanoia -r %s -d "%s" "%s" -'
+    }
+
+sox_cmd = 'sox -blah "%s" -' # XXX
+
+class SaneConfParser(ConfigParser.RawConfigParser):
+    def get(self, section, option, default):
+        try:
+            return ConfigParser.RawConfigParser.get(self, section, option)
+        except (ConfigParser.NoSectionError, ConfigParser.NoOptionError):
+            return default
+
+if __name__ == '__main__':
+    cp = SaneConfParser()
+    cp.read(os.path.expanduser('~/.peelrc'))
+
+    ripper = cp.get('rip', 'using', 'cdparanoia')
+    rip_opts = cp.get('options', ripper, '')
+    play_cmd = cp.get('play', 'commands', 'bfp')
+    encoder = cp.get('encode', 'using', 'oggenc')
+    enc_opts = cp.get('options', encoder, '')
+    path_tmpl = cp.get('encode', 'path', '%(artist)s - %(title)s')
+
+    shortopts = 'dpr'
+    longopts = ['device=', 'play', 'resume']
+
+    try:
+        opts, args = getopt.getopt(sys.argv[1:], shortopts, longopts)
+    except getopt.GetoptError, e:
+        print >>sys.stderr, 'peel: %s' % e
+        sys.exit(1)
+
+    device = '/dev/cdrom'
+    play = False
+
+    for opt, arg in opts:
+        if opt in ('--device', '-d'):
+            device = arg
+        elif opt in ('--play', '-p'):
+            play = True
+        elif opt in ('--resume', '-r'):
+            device = None
+
+    if play:
+        pcm = os.popen(play_cmd, 'w')
+        log = lastfm.logger('flip')
+
+    songs = lastfm.marshaller.load_documents(sys.stdin.read())
+
+    for s in songs:
+        print "Track %(number)s: %(title)s..." % s
+
+        if device:
+            rip_cmd = rip_cmds[ripper] % (rip_opts, device, s['number'])
+        else:
+            rip_cmd = sox_cmd % ('track%02d.wav' % s['number'])
+        rip = os.popen(rip_cmd)
+
+        path = path_tmpl % s
+        dir = os.path.dirname(path)
+        if not os.path.isdir(dir):
+            os.mkdir(dir)
+        enc_cmd = enc_cmds[encoder] % (enc_opts, tag_opts[encoder] % s, path)
+        enc = os.popen(enc_cmd, 'w')
+
+        while True:
+            buf = rip.read(4096)
+            if buf:
+                enc.write(buf)
+                if play:
+                    pcm.write(buf)
+            else:
+                break
+
+        if play:
+            if s['length'] >= 30:
+                s['time'] = time.gmtime()
+                lastfm.submit([s])
+                log.info('Sent %s to daemon' % lastfm.repr(s))
