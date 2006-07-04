@@ -2,6 +2,10 @@
   data to another command (e.g. bfp) and submits played tracks while
   encoding in the background.
 
+* Added a --print-discid option to mbget so that CDs that have been
+  extracted somewhere without network access can be tagged and encoded
+  by peel later.
+
 * Re-added some lost data validation in lastfmsubmitd.
 
 0.31 (2006-06-23):

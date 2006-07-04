@@ -134,8 +134,8 @@ def freedb_dump(albumartist, album, discid, tracks):
     print '.'
 
 if __name__ == '__main__':
-    shortopts = 'd:i:a:ft'
-    longopts = ['device=', 'discid=', 'albumid=', 'freedb', 'template']
+    shortopts = 'd:pi:a:ft'
+    longopts = ['device=', 'print-discid', 'discid=', 'albumid=', 'freedb', 'template']
 
     try:
         opts, args = getopt.getopt(sys.argv[1:], shortopts, longopts)
@@ -154,6 +154,9 @@ if __name__ == '__main__':
     for opt, arg in opts:
         if opt in ('--device', '-d'):
             discid = abby.readdisc(arg)
+        elif opt in ('--print-discid', '-p'):
+            print abby.readdisc(arg)
+            sys.exit(0)
         elif opt in ('--discid', '-i'):
             discid = arg
         elif opt in ('--albumid', '-a'):
