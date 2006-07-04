@@ -43,8 +43,8 @@ if __name__ == '__main__':
     enc_opts = cp.get('options', encoder, '')
     path_tmpl = cp.get('encode', 'path', '%(artist)s - %(title)s')
 
-    shortopts = 'dpr'
-    longopts = ['device=', 'play', 'resume']
+    shortopts = 'dqc'
+    longopts = ['device=', 'quiet', 'continue']
 
     try:
         opts, args = getopt.getopt(sys.argv[1:], shortopts, longopts)
@@ -53,18 +53,18 @@ if __name__ == '__main__':
         sys.exit(1)
 
     device = '/dev/cdrom'
-    play = False
+    quiet = False
 
     for opt, arg in opts:
         if opt in ('--device', '-d'):
             device = arg
-        elif opt in ('--play', '-p'):
-            play = True
-        elif opt in ('--resume', '-r'):
+        elif opt in ('--quiet', '-q'):
+            quiet = True
+        elif opt in ('--continue', '-c'):
             device = None
 
-    if play:
-        pcm = os.popen(play_cmd, 'w')
+    if not quiet:
+        play = os.popen(play_cmd, 'w')
         log = lastfm.logger('flip')
 
     songs = lastfm.marshaller.load_documents(sys.stdin.read())
@@ -89,12 +89,11 @@ if __name__ == '__main__':
             buf = rip.read(4096)
             if buf:
                 enc.write(buf)
-                if play:
-                    pcm.write(buf)
+                if not quiet: play.write(buf)
             else:
                 break
 
-        if play:
+        if not quiet:
             if s['length'] >= 30:
                 s['time'] = time.gmtime()
                 lastfm.submit([s])
