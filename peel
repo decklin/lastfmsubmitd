@@ -8,6 +8,16 @@ import getopt
 
 import lastfm.marshaller
 
+sox_cmd = 'sox "%s" -t raw -r 44100 -s -w -c 2 -'
+rip_cmds = {
+    'cdparanoia': 'cdparanoia -r %s -d "%s" "%s" -'
+    }
+
+play_cmds = {
+    'aplay': 'aplay -q -t raw -c 2 -r 44100 -f S16_LE %s',
+    'bfp': 'bfp %s',
+}
+
 enc_cmds = {
     'oggenc': 'oggenc -Q -r %s %s -o "%s.ogg" -',
     'lame': 'lame --quiet -rx %s %s - "%s.mp3"'
@@ -18,12 +28,6 @@ tag_opts = {
     'lame': '--ta "%(artist)s" --tt "%(title)s" --tl "%(album)s" \
         --tn "%(number)s"',
     }
-
-rip_cmds = {
-    'cdparanoia': 'cdparanoia -r %s -d "%s" "%s" -'
-    }
-
-sox_cmd = 'sox "%s" -t raw -r 44100 -s -w -c 2 -'
 
 class SaneConfParser(ConfigParser.RawConfigParser):
     def get(self, section, option, default):
@@ -36,12 +40,15 @@ if __name__ == '__main__':
     cp = SaneConfParser()
     cp.read(os.path.expanduser('~/.peelrc'))
 
-    ripper = cp.get('rip', 'using', 'cdparanoia')
+    ripper = cp.get('commands', 'rip', 'cdparanoia')
+    player = cp.get('commands', 'play', 'aplay')
+    encoder = cp.get('commands', 'encode', 'oggenc')
+
     rip_opts = cp.get('options', ripper, '')
-    play_cmd = cp.get('play', 'commands', 'bfp')
-    encoder = cp.get('encode', 'using', 'oggenc')
+    play_opts = cp.get('options', player, '')
     enc_opts = cp.get('options', encoder, '')
-    path_tmpl = cp.get('encode', 'path', '%(artist)s - %(title)s')
+
+    path_tmpl = cp.get('output', 'path', '%(artist)s - %(title)s')
 
     shortopts = 'dqc'
     longopts = ['device=', 'quiet', 'continue']
@@ -64,6 +71,7 @@ if __name__ == '__main__':
             device = None
 
     if not quiet:
+        play_cmd = play_cmds[player] % (play_opts)
         play = os.popen(play_cmd, 'w')
         log = lastfm.logger('flip')
 
