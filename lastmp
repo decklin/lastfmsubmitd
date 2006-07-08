@@ -231,6 +231,9 @@ if __name__ == '__main__':
         print >>sys.stderr, 'lastmp: no MPD host specified'
         sys.exit(1)
 
+    if conf.debug:
+        debug = True
+
     if fork:
         try:
             pid = os.fork()

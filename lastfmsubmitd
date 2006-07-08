@@ -353,6 +353,9 @@ if __name__ == '__main__':
         print >>sys.stderr, 'lastfmsubmitd: no account info specified'
         sys.exit(1)
 
+    if conf.debug:
+        debug = True
+
     if fork:
         try:
             pid = os.fork()
