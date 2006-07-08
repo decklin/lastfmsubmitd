@@ -1,3 +1,6 @@
+0.32 (2006-07-08):
+==================
+
 * Added peel, a simple CD ripper for use with mbget which pipes audio
   data to another command (e.g. bfp) and submits played tracks while
   encoding in the background.
