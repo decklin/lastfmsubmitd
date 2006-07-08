@@ -71,7 +71,7 @@ if __name__ == '__main__':
             device = None
 
     if not quiet:
-        play_cmd = play_cmds[player] % (play_opts)
+        play_cmd = play_cmds[player] % play_opts
         play = os.popen(play_cmd, 'w')
         log = lastfm.logger('flip')
 
@@ -90,6 +90,7 @@ if __name__ == '__main__':
         dir = os.path.dirname(path)
         if dir and not os.path.isdir(dir):
             os.makedirs(dir)
+
         enc_cmd = enc_cmds[encoder] % (enc_opts, tag_opts[encoder] % s, path)
         enc = os.popen(enc_cmd, 'w')
 
