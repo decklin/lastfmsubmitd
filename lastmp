@@ -69,7 +69,6 @@ class MPDMonitor:
     def __init__(self, log, sleep, host, port, password):
         self.log = log
         self.sleep = sleep
-        self.kids = []
 
         mpd_args = {'host': host, 'port': port, 'password': password}
         try:
@@ -134,8 +133,7 @@ class MPDMonitor:
                         self.played_enough = True
                     if not self.submitted and not self.skipped and \
                             self.played_enough:
-                        pid = self.submit(song)
-                        if pid: self.kids.append(pid)
+                        self.submit(song)
                         self.submitted = True
         else:
             pos = None
@@ -154,23 +152,6 @@ class MPDMonitor:
                     self.log.warning('Connected to MPD')
                 except (EOFError, mpdclient2.socket.error):
                     pass
-            # OK, we're connected. Check this first...
-            for pid in self.kids:
-                try:
-                    pid, status = os.waitpid(pid, os.WNOHANG)
-                    if pid:
-                        if os.WEXITSTATUS(status) == 0:
-                            self.log.debug('Child %d exited' % pid)
-                        else:
-                            self.log.warning('Child %d failed (%d)' %
-                                (pid, status))
-                except OSError:
-                    pass
-            # But don't do anything else here, because we guarantee that as
-            # long as we are connected, sucessive calls to wake() will happen
-            # no more than sleep + FUZZ seconds apart. (When mpd is latency is
-            # extremely high, e.g. when doing an db update on an already
-            # heavily loaded machine, this unfortunately may not be true).
             if self.mpd:
                 try:
                     self.wake()
