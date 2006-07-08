@@ -21,6 +21,7 @@ USAGE = """usage: lastmp [--debug] [--no-daemon] [--help]"""
 FUZZ = 1
 
 class NoHostError(Exception): pass
+class MPDPermissionError(Exception): pass
 
 class Song:
     def __init__(self, sobj):
@@ -69,25 +70,15 @@ class MPDMonitor:
     def __init__(self, log, sleep, host, port, password):
         self.log = log
         self.sleep = sleep
-
-        mpd_args = {'host': host, 'port': port, 'password': password}
-        try:
-            self.mpd = mpdclient2.connect(**mpd_args)
-            self.log.info('Connected to MPD')
-        except (EOFError, mpdclient2.socket.error):
-            self.mpd = None
-            self.log.warning("Can't connect to MPD")
-
-        self.prevstatus = None
-        self.prevsong = None
-        self.prevpos = None
-        self.skipped = False
-        self.submitted = False
-        self.played_enough = False
+        self.mpd_args = {'host': host, 'port': port, 'password': password}
+        self.mpd = None
 
     def wake(self):
         status = self.mpd.do.status()
         song = Song(self.mpd.do.currentsong())
+
+        if not hasattr(status, 'state'):
+            raise MPDPermissionError
 
         if not self.prevstatus or status.state != self.prevstatus.state:
             self.log.debug('Changed state: %s' % status.state)
@@ -146,21 +137,24 @@ class MPDMonitor:
         """Loop forever, periodically checking MPD's state and
         submitting songs when necessary."""
         while True:
-            if self.mpd is None:
-                try:
-                    self.mpd = mpdclient2.connect()
-                    self.log.warning('Connected to MPD')
-                except (EOFError, mpdclient2.socket.error):
-                    pass
-            if self.mpd:
-                try:
-                    self.wake()
-                except (EOFError, mpdclient2.socket.error):
-                    self.log.warning('Lost connection to MPD')
-                    self.mpd = None
-                    self.prevsong = None
+            try:
+                if not self.mpd:
+                    self.mpd = mpdclient2.connect(**self.mpd_args)
+                    self.log.info('Connected to MPD')
                     self.prevstatus = None
+                    self.prevsong = None
                     self.prevpos = None
+                    self.skipped = False
+                    self.submitted = False
+                    self.played_enough = False
+                if self.mpd:
+                    self.wake()
+            except (EOFError, mpdclient2.socket.error):
+                self.log.error("Can't connect or lost connection to MPD")
+                self.mpd = None
+            except MPDPermissionError:
+                self.log.error("Can't read info from MPD (bad password?)")
+
             time.sleep(self.sleep)
 
     def submit(self, song):
