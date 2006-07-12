@@ -43,9 +43,10 @@ def dump_documents(docs, out):
     print >>out, '\n'.join([dump(d) for d in docs])
 
 def load(doc):
-    lines = filter(None, doc.split('\n'))
     song = {}
-    for line in lines:
+    for line in doc.split('\n'):
+        if not line:
+            continue
         k, v = line.split(': ', 1)
         if v.startswith('!timestamp '):
             v = time.strptime(v[11:], lastfm.TIME_FMT)
@@ -58,9 +59,12 @@ def load(doc):
     return song
 
 def load_documents(stream):
-    docs = filter(None, [d.strip() for d in stream.split('---\n')])
-    for d in docs:
+    docs = []
+    for doc in stream.read().split('---\n'):
+        if not doc:
+            continue
         try:
-            yield load(d)
+            docs.append(load(doc))
         except ValueError:
             pass
+    return docs

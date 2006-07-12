@@ -94,7 +94,7 @@ class Spool:
             if path not in self.files:
                 self.files.append(path)
                 data = file(path)
-                for doc in lastfm.marshaller.load_documents(data.read()):
+                for doc in lastfm.marshaller.load_documents(data):
                     try:
                         for reqd in ('artist', 'title', 'length', 'time'):
                             if not doc.has_key(reqd):

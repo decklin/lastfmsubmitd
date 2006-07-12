@@ -46,8 +46,7 @@ if __name__ == '__main__':
 
     songs = []
     for f in [file(name) for name in args] or [sys.stdin]:
-        for song in lastfm.marshaller.load_documents(f.read()):
-            songs.append(song)
+        songs += lastfm.marshaller.load_documents(f)
 
     total_len = 0
     for s in songs:
