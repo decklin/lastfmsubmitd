@@ -45,26 +45,25 @@ def dump_documents(docs, out):
 def load(doc):
     song = {}
     for line in doc.split('\n'):
-        if not line:
-            continue
-        k, v = line.split(': ', 1)
-        if v.startswith('!timestamp '):
-            v = time.strptime(v[11:], lastfm.TIME_FMT)
-        else:
-            try:
-                v = parse_length(v)
-            except ValueError:
-                v = parse_string(v)
-        song[k] = v
+        if line:
+            k, v = line.split(': ', 1)
+            if v.startswith('!timestamp '):
+                v = time.strptime(v[11:], lastfm.TIME_FMT)
+            else:
+                try:
+                    v = parse_length(v)
+                except ValueError:
+                    v = parse_string(v)
+            song[k] = v
     return song
 
 def load_documents(stream):
     docs = []
     for doc in stream.read().split('---\n'):
-        if not doc:
-            continue
-        try:
-            docs.append(load(doc))
-        except ValueError:
-            pass
+        doc = doc.strip()
+        if doc:
+            try:
+                docs.append(load(doc))
+            except ValueError:
+                pass
     return docs
