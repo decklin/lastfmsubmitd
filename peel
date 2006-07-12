@@ -8,26 +8,47 @@ import getopt
 
 import lastfm.marshaller
 
-sox_cmd = 'sox "%s" -t raw -r 44100 -s -w -c 2 -'
-rip_cmds = {
-    'cdparanoia': 'cdparanoia -r %s -d "%s" "%s" -'
-    }
+class Command:
+    def __init__(self, user_opts):
+        self.user_opts = user_opts
+    def quotemeta(self, s):
+        for meta in ('$', '`', '"', '\\', '\n'):
+            s = s.replace(meta, '\\' + meta)
+        return s
 
-play_cmds = {
-    'aplay': 'aplay -q -t raw -c 2 -r 44100 -f S16_LE %s',
-    'bfp': 'bfp %s',
-}
+class CdParanoia(Command):
+    def open(self, device, number):
+        return os.popen('cdparanoia -r %s -d "%s" "%d" -' % (self.user_opts,
+            device, number))
 
-enc_cmds = {
-    'oggenc': 'oggenc -Q -r %s %s -o "%s.ogg" -',
-    'lame': 'lame --quiet -rx %s %s - "%s.mp3"'
-    }
-tag_opts = {
-    'oggenc': '-a "%(artist)s" -t "%(title)s" -l "%(album)s" -N "%(number)s" \
-        -c "musicbrainz_trackid=%(mbid)s"',
-    'lame': '--ta "%(artist)s" --tt "%(title)s" --tl "%(album)s" \
-        --tn "%(number)s"',
-    }
+class APlay(Command):
+    def open(self):
+        return os.popen('aplay -q -t raw -c 2 -r 44100 -f S16_LE %s' %
+            self.user_opts, 'w')
+
+class Bfp(Command):
+    def open(self):
+        return os.popen('bfp %s' % self.user_opts, 'w')
+
+class OggEnc(Command):
+    def tag_opts(self, song):
+        return '-a "%(artist)s" -t "%(title)s" -l "%(album)s" -N ' \
+            '"%(number)s" -c "musicbrainz_trackid=%(mbid)s"' % song
+    def open(self, song, path):
+        return os.popen('oggenc -Q -r %s %s -o "%s.ogg" -' % (self.user_opts,
+            self.tag_opts(song), self.quotemeta(path)), 'w')
+
+class Lame(Command):
+    def tag_opts(self, song):
+        return '--ta "%(artist)s" --tt "%(title)s" --tl "%(album)s" --tn ' \
+            '"%(number)s"' % song
+    def open(self, song, path):
+        return os.popen('lame --quiet -rx %s %s - "%s.mp3"' % (self.user_opts,
+            self.tag_opts(song), self.quotemeta(path)), 'w')
+
+rippers = {'cdparanoia': CdParanoia}
+players = {'aplay': APlay, 'bfp': Bfp}
+encoders = {'oggenc': OggEnc, 'lame': Lame}
 
 class SaneConfParser(ConfigParser.RawConfigParser):
     def get(self, section, option, default):
@@ -36,20 +57,10 @@ class SaneConfParser(ConfigParser.RawConfigParser):
         except (ConfigParser.NoSectionError, ConfigParser.NoOptionError):
             return default
 
+def_path = '%(artist)/%(album)/%(number)02d - %(title)s'
+sox = 'sox "track%02d.cdda.wav" -t raw -r 44100 -s -w -c 2 -'
+
 if __name__ == '__main__':
-    cp = SaneConfParser()
-    cp.read(os.path.expanduser('~/.peelrc'))
-
-    ripper = cp.get('commands', 'rip', 'cdparanoia')
-    player = cp.get('commands', 'play', 'aplay')
-    encoder = cp.get('commands', 'encode', 'oggenc')
-
-    rip_opts = cp.get('options', ripper, '')
-    play_opts = cp.get('options', player, '')
-    enc_opts = cp.get('options', encoder, '')
-
-    path_tmpl = cp.get('output', 'path', '%(artist)s - %(title)s')
-
     shortopts = 'dqc'
     longopts = ['device=', 'quiet', 'continue']
 
@@ -70,40 +81,56 @@ if __name__ == '__main__':
         elif opt in ('--continue', '-c'):
             device = None
 
+    cp = SaneConfParser()
+    cp.read(os.path.expanduser('~/.peelrc'))
+
+    rip_cmd = cp.get('commands', 'rip', 'cdparanoia')
+    play_cmd = cp.get('commands', 'play', 'aplay')
+    enc_cmd = cp.get('commands', 'encode', 'oggenc')
+
+    rip_opts = cp.get('options', rip_cmd, '')
+    play_opts = cp.get('options', play_cmd, '')
+    enc_opts = cp.get('options', enc_cmd, '')
+
+    path_tmpl = cp.get('output', 'path', def_path)
+
+    try:
+        ripper = rippers[rip_cmd](rip_opts)
+        player = players[play_cmd](play_opts)
+        encoder = encoders[enc_cmd](enc_opts)
+    except KeyError, e:
+        print >>sys.stderr, 'unknown command: %s' % e.args[0]
+
     if not quiet:
-        play_cmd = play_cmds[player] % play_opts
-        play = os.popen(play_cmd, 'w')
-        log = lastfm.logger('flip')
+        play = player.open()
+        log = lastfm.logger('peel')
 
-    songs = lastfm.marshaller.load_documents(sys.stdin.read())
-
-    for s in songs:
-        print "Track %(number)s: %(title)s..." % s
+    for song in lastfm.marshaller.load_documents(sys.stdin):
+        print "Track %(number)s: %(title)s..." % song
 
         if device:
-            rip_cmd = rip_cmds[ripper] % (rip_opts, device, s['number'])
+            rip = ripper.open(device, song['number'])
         else:
-            rip_cmd = sox_cmd % ('track%02d.cdda.wav' % s['number'])
-        rip = os.popen(rip_cmd)
+            rip = os.popen(sox % song['number'])
 
-        path = path_tmpl % s
+        path = path_tmpl % song
         dir = os.path.dirname(path)
         if dir and not os.path.isdir(dir):
             os.makedirs(dir)
 
-        enc_cmd = enc_cmds[encoder] % (enc_opts, tag_opts[encoder] % s, path)
-        enc = os.popen(enc_cmd, 'w')
+        enc = encoder.open(song, path)
 
         while True:
             buf = rip.read(4096)
             if buf:
                 enc.write(buf)
-                if not quiet: play.write(buf)
+                if not quiet:
+                    play.write(buf)
             else:
                 break
 
         if not quiet:
-            if s['length'] >= 30:
-                s['time'] = time.gmtime()
-                lastfm.submit([s])
-                log.info('Sent %s to daemon' % lastfm.repr(s))
+            if song['length'] >= 30:
+                song['time'] = time.gmtime()
+                lastfm.submit([song])
+                log.info('Sent %s to daemon' % lastfm.repr(song))
