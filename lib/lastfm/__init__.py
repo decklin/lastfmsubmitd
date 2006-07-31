@@ -24,6 +24,12 @@ SUB_PERCENT = 0.5
 SUB_SECONDS = 240
 
 def logger(name='unknown', path=LOG_PATH, debug=False, stderr=False):
+    """Returns a logging object that will write to the lastfm system log, or
+    another file specified by ``path``. If ``debug`` is true, the logging
+    object's level will be set to DEBUG. If ``stderr`` is true, the object
+    will also print all messages to stderr. ``name`` should be set to the name
+    of the program opening the log."""
+
     if debug:
         level = logging.DEBUG
     else:
@@ -55,7 +61,11 @@ def logger(name='unknown', path=LOG_PATH, debug=False, stderr=False):
 
 def submit(subs, path=SPOOL_PATH):
     """Creates a uniquely named file in the spool directory containing the
-    given subs."""
+    given submissions. ``subs`` should be a list of dictionaries, each
+    containing the keys ``artist``, ``title``, ``length``, and ``time`` (and
+    optionally ``album`` and ``mbid``). ``artist``, ``title``, ``album``, and
+    ``mbid`` are strings, ``length`` is an integer, and ``time`` is a UTC time
+    tuple."""
 
     fd, path = tempfile.mkstemp(dir=path)
     data = os.fdopen(fd, 'w+')
@@ -64,6 +74,8 @@ def submit(subs, path=SPOOL_PATH):
     return path
 
 def repr(song):
+    """Returns a short text representation of a song dictionary, suitable for
+    logging."""
     try:
         name = '%s - %s' % (song['artist'], song['title'])
     except KeyError:

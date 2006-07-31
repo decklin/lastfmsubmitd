@@ -1,45 +1,58 @@
 HOWTO Write Client Plugins for lastfmsubmitd
 ============================================
 
-lastfmsubmitd is designed to handle the Last.fm protocol, and recover
-from network/server outages, so you don't have to. When your player
-plugin determines that a song has been played, it only needs to write a
-file to /var/spool/lastfm. The recommended method of doing this is by
-forking and execing /usr/lib/lastfm/lastfmsubmit. lastfmsubmit accepts
-the command-line options --artist, --title, and --length (required), and
---album or --mbid (optional). --length may be formatted as hh:mm:ss or
-as a ordinary integer.
+lastfmsubmitd is designed to handle the Last.fm protocol, so that every
+player plugin does not need to re-implement it. Player plugins that use
+lastfmsubmitd only need to determine when a song has been played and
+drop its information in lastfmsubmitd's spool directory. After doing so,
+the player plugin can forget about it -- If the network is down, or even
+if lastfmsubmitd is not running, the contents of the spool will be saved
+until they can be submitted.
 
-You can also write multiple submissions at once, in the same file (e.g.
-if you want to make a plugin to parse your portable music player's log
-file). If your plugin is written in Python, call lastfm.submit() with a
-list of dictionaries representing submissions. These dictionaries should
-have the keys "artist", "title", "length", "time", and optionally
-"album" or "mbid". "length" is an integer, and "time" a UTC time tuple;
-the rest are (possibly unicode) strings.
+To send song information to lastfmsubmitd, you can do one of the
+following:
 
-Behind the scenes, submit() creates a uniquely named temporary file and
-then serializes the given submissions as YAML_ documents. If your plugin
-is written in another language, you can do this yourself. The temporary
-file should be created with mkstemp or equivalent. The data can be
-serialized with a YAML implementation such as Syck_, or printed manually;
-and should look like the following::
+  * Fork and exec /usr/lib/lastfm/lastfmsubmit. The options for this
+    helper program (--artist, --title, etc) are documented in its man
+    page.
 
-  ---
-  artist: "The Jam"
-  title: "\"A\" Bomb in Wardour Street"
-  album: "All Mod Cons"
-  length: 3:21
-  mbid: b7ec9e64-baa4-49bc-ad33-570919d01ba1
-  time: !timestamp 2006-03-23 13:42:25
+  * Use the lastfm Python module. Example code::
 
-This song is actually in MusicBrainz with single quotes, but I've
-changed that to illustrate backslash-escaping (if any string actually
-contains a backslash, escape it as "\\"; no other escapes are
-currently interpreted). You could also quote the mbid, but it cannot
-contain any "special" characters so this is not required. The time
-(%Y-%m-%d %H:%M:%S) is in UTC; all the strings must be UTF-8. As
-above, the length may be an integer instead of hh:mm:ss.
+      import time
+      import lastfm
+
+      song = {'artist': 'New Order', 'title': 'Your Silent Face',
+        'album': 'Power, Corruption & Lies',
+        'mbid': '3a54b3b2-6037-4fc3-a7a0-ead924e55ea2'}
+
+      log = lastfm.logger('example')
+      log.info('Played song: %s' % lastfm.repr(song))
+
+      song['time'] = time.gmtime()
+      lastfm.submit([song])
+
+    Documentation for each of these functions can be read using pydoc.
+
+  * Write a file to /var/spool/lastfm yourself. Submission files contain
+    simple data structures serialized as YAML_. You can use a YAML
+    implementation such as Syck_, as long as it is UTF-8 clean.
+    Alternatively, you can print the data yourself. Example data::
+
+      ---
+      artist: "The Jam"
+      title: "\"A\" Bomb in Wardour Street"
+      album: "All Mod Cons"
+      length: 201
+      mbid: b7ec9e64-baa4-49bc-ad33-570919d01ba1
+      time: !timestamp 2006-03-23 13:42:25
+
+    Make sure any non-ASCII characters are converted to UTF-8. If a
+    string contains double-quotes, as above, they must be escaped with
+    backslashes. Any literal backslashes must be escaped as well.
+
+    If you have multiple submissions, you can write them all in one
+    file. Each file in /var/spool/lastfm should be created with a unique
+    name; mkstemp(3) is a good way to do this.
 
 .. _YAML: http://yaml.org/
 .. _Syck: http://whytheluckystiff.net/syck/
