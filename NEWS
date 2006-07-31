@@ -1,5 +1,8 @@
 * Improved some documentation.
 
+* If there is no account information set, print a warning and exit
+  normally, instead of panicking. (Reported by Joey Hess.)
+
 0.32 (2006-07-08):
 ==================
 

@@ -347,11 +347,11 @@ if __name__ == '__main__':
     try:
         conf = LastFmConfig('lastfmsubmitd')
     except NoConfError:
-        print >>sys.stderr, 'lastfmsubmitd: could not find config'
-        sys.exit(1)
+        print >>sys.stderr, 'lastfmsubmitd: could not find config; exiting'
+        sys.exit(0)
     except NoAccountError:
-        print >>sys.stderr, 'lastfmsubmitd: no account info specified'
-        sys.exit(1)
+        print >>sys.stderr, 'lastfmsubmitd: no account info found; exiting'
+        sys.exit(0)
 
     if conf.debug:
         debug = True
