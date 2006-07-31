@@ -1,3 +1,6 @@
+0.33 (2006-07-31):
+==================
+
 * Improved some documentation.
 
 * If there is no account information set, print a warning and exit
