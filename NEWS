@@ -1,3 +1,5 @@
+* Fixed -d option parsing in peel.
+
 0.33 (2006-07-31):
 ==================
 

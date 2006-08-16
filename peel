@@ -61,7 +61,7 @@ def_path = '%(artist)/%(album)/%(number)02d - %(title)s'
 sox = 'sox "track%02d.cdda.wav" -t raw -r 44100 -s -w -c 2 -'
 
 if __name__ == '__main__':
-    shortopts = 'dqc'
+    shortopts = 'd:qc'
     longopts = ['device=', 'quiet', 'continue']
 
     try:
