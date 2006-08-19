@@ -8,6 +8,10 @@ import getopt
 
 import lastfm.marshaller
 
+def popen(command, mode='r'):
+    # NO SRSLY
+    return os.popen(command.encode(sys.getfilesystemencoding()), mode)
+
 class Command:
     def __init__(self, user_opts):
         self.user_opts = user_opts
@@ -18,24 +22,24 @@ class Command:
 
 class CdParanoia(Command):
     def open(self, device, number):
-        return os.popen('cdparanoia -r %s -d "%s" "%d" -' % (self.user_opts,
+        return popen('cdparanoia -r %s -d "%s" "%d" -' % (self.user_opts,
             device, number))
 
 class APlay(Command):
     def open(self):
-        return os.popen('aplay -q -t raw -c 2 -r 44100 -f S16_LE %s' %
+        return popen('aplay -q -t raw -c 2 -r 44100 -f S16_LE %s' %
             self.user_opts, 'w')
 
 class Bfp(Command):
     def open(self):
-        return os.popen('bfp %s' % self.user_opts, 'w')
+        return popen('bfp %s' % self.user_opts, 'w')
 
 class OggEnc(Command):
     def tag_opts(self, song):
         return '-a "%(artist)s" -t "%(title)s" -l "%(album)s" -N ' \
             '"%(number)s" -c "musicbrainz_trackid=%(mbid)s"' % song
     def open(self, song, path):
-        return os.popen('oggenc -Q -r %s %s -o "%s.ogg" -' % (self.user_opts,
+        return popen('oggenc -Q -r %s %s -o "%s.ogg" -' % (self.user_opts,
             self.tag_opts(song), self.quotemeta(path)), 'w')
 
 class Lame(Command):
@@ -43,7 +47,7 @@ class Lame(Command):
         return '--ta "%(artist)s" --tt "%(title)s" --tl "%(album)s" --tn ' \
             '"%(number)s"' % song
     def open(self, song, path):
-        return os.popen('lame --quiet -rx %s %s - "%s.mp3"' % (self.user_opts,
+        return popen('lame --quiet -rx %s %s - "%s.mp3"' % (self.user_opts,
             self.tag_opts(song), self.quotemeta(path)), 'w')
 
 rippers = {'cdparanoia': CdParanoia}
@@ -111,7 +115,7 @@ if __name__ == '__main__':
         if device:
             rip = ripper.open(device, song['number'])
         else:
-            rip = os.popen(sox % song['number'])
+            rip = popen(sox % song['number'])
 
         path = path_tmpl % song
         dir = os.path.dirname(path)
