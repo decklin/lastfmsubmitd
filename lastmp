@@ -136,6 +136,7 @@ class MPDMonitor:
     def observe(self):
         """Loop forever, periodically checking MPD's state and
         submitting songs when necessary."""
+        failed = False
         while True:
             try:
                 if not self.mpd:
@@ -150,10 +151,14 @@ class MPDMonitor:
                 if self.mpd:
                     self.wake()
             except (EOFError, mpdclient2.socket.error):
-                self.log.error("Can't connect or lost connection to MPD")
+                if not failed:
+                    self.log.error("Can't connect or lost connection to MPD")
                 self.mpd = None
+                failed = True
             except MPDPermissionError:
-                self.log.error("Can't read info from MPD (bad password?)")
+                if not failed:
+                    self.log.error("Can't read info from MPD (bad password?)")
+                failed = True
 
             time.sleep(self.sleep)
 
