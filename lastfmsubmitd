@@ -88,7 +88,7 @@ class Spool:
         self.subs = []
 
     def poll(self):
-        n = 0
+        new_subs = []
         for f in os.listdir(self.spool_path):
             path = '%s/%s' % (self.spool_path, f)
             if path not in self.files:
@@ -100,11 +100,12 @@ class Spool:
                             if not doc.has_key(reqd):
                                 raise ValueError('missing %s' % reqd)
                         else:
-                            self.subs.append(doc)
-                            n += 1
+                            new_subs.append(doc)
                     except ValueError, e:
                         self.log.warning('Invalid data, ignoring: %s' % e)
-        return n
+        if new_subs: log.debug('Read %d sub(s)' % len(new_subs))
+        self.subs += new_subs
+        self.subs.sort(key=lambda x: x['time'])
 
     def sync(self):
         for f in self.files:
@@ -287,8 +288,7 @@ def daemon(log, conf, online):
 
     while True:
         if throttle.ready():
-            n = spool.poll()
-            if n: log.debug('Read %d sub(s)' % n)
+            spool.poll()
 
             if online and not session.connected:
                 try:

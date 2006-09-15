@@ -1,3 +1,6 @@
+* Sort submissions by time if several spool files are read in one go, to
+  avoid erroneously triggering the spam filter (thanks to Steve Hill).
+
 * Suppress extra warnings if lastmp cannot connect to MPD.
 
 * Fixed creation of Unicode filenames and -d option parsing in peel.
