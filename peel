@@ -8,47 +8,62 @@ import getopt
 
 import lastfm.marshaller
 
-def popen(command, mode='r'):
-    # NO SRSLY
+def popen(argv, mode='r'):
+    command = ' '.join(argv)
     return os.popen(command.encode(sys.getfilesystemencoding()), mode)
+
+def quotemeta(s):
+    for meta in ('\\', '$', '`', '"', '\n'):
+        s = s.replace(meta, '\\' + meta)
+    return '"%s"' % s
 
 class Command:
     def __init__(self, user_opts):
         self.user_opts = user_opts
-    def quotemeta(self, s):
-        for meta in ('\\', '$', '`', '"', '\n'):
-            s = s.replace(meta, '\\' + meta)
-        return s
 
 class CdParanoia(Command):
     def open(self, device, number):
-        return popen('cdparanoia -r %s -d "%s" "%d" -' % (self.user_opts,
-            device, number))
+        return popen(['cdparanoia', '-r', self.user_opts, '-d', device,
+            '%d' % number, '-'])
 
 class APlay(Command):
     def open(self):
-        return popen('aplay -q -t raw -c 2 -r 44100 -f S16_LE %s' %
-            self.user_opts, 'w')
+        return popen(['aplay', '-q', '-t', 'raw', '-c', '2', '-r', '44100',
+            '-f', 'S16_LE', self.user_opts], 'w')
 
 class Bfp(Command):
     def open(self):
-        return popen('bfp %s' % self.user_opts, 'w')
+        return popen(['bfp', self.user_opts], 'w')
 
 class OggEnc(Command):
-    def tag_opts(self, song):
-        return '-a "%(artist)s" -t "%(title)s" -l "%(album)s" -N ' \
-            '"%(number)s" -c "musicbrainz_trackid=%(mbid)s"' % song
     def open(self, song, path):
-        return popen('oggenc -Q -r %s %s -o "%s.ogg" -' % (self.user_opts,
-            self.tag_opts(song), self.quotemeta(path)), 'w')
+        argv = ['oggenc', '-Q', '-r', self.user_opts]
+        try: argv += ['-a', quotemeta(song['artist'])]
+        except KeyError: pass
+        try: argv += ['-t', quotemeta(song['title'])]
+        except KeyError: pass
+        try: argv += ['-l', quotemeta(song['album'])]
+        except KeyError: pass
+        try: argv += ['-l', '%d' % song['number']] # XXX
+        except KeyError: pass
+        try: argv += ['-c', quotemeta('musicbrainz_trackid=%s' % song['mbid'])]
+        except KeyError: pass
+        argv += ['-o', quotemeta('%s.ogg' % path), '-']
+        return popen(argv, 'w')
 
 class Lame(Command):
-    def tag_opts(self, song):
-        return '--ta "%(artist)s" --tt "%(title)s" --tl "%(album)s" --tn ' \
-            '"%(number)s"' % song
     def open(self, song, path):
-        return popen('lame --quiet -rx %s %s - "%s.mp3"' % (self.user_opts,
-            self.tag_opts(song), self.quotemeta(path)), 'w')
+        argv = ['lame', '--quiet', '-rx', self.user_opts]
+        try: argv += ['--ta', quotemeta(song['artist'])]
+        except KeyError: pass
+        try: argv += ['--tt', quotemeta(song['title'])]
+        except KeyError: pass
+        try: argv += ['--tl', quotemeta(song['album'])]
+        except KeyError: pass
+        try: argv += ['--tn', '%d' % song['number']] # XXX
+        except KeyError: pass
+        argv += ['-', quotemeta('%s.mp3' % path)]
+        return popen(argv, 'w')
 
 rippers = {'cdparanoia': CdParanoia}
 players = {'aplay': APlay, 'bfp': Bfp}
@@ -117,7 +132,14 @@ if __name__ == '__main__':
         else:
             rip = popen(sox % song['number'])
 
-        path = path_tmpl % song
+        safe_song = {}
+        for k, v in song.iteritems():
+            try:
+                safe_song[k] = v.replace('/', '_')
+            except AttributeError:
+                safe_song[k] = v
+
+        path = path_tmpl % safe_song
         dir = os.path.dirname(path)
         if dir and not os.path.isdir(dir):
             os.makedirs(dir)
