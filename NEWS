@@ -1,5 +1,9 @@
+0.34 (2007-03-26):
+==================
+
 * Sort submissions by time if several spool files are read in one go, to
-  avoid erroneously triggering the spam filter (thanks to Steve Hill).
+  avoid erroneously triggering the spam filter (thanks to Steve Hill and
+  a cast of thousands).
 
 * Suppress extra warnings if lastmp cannot connect to MPD.
 
