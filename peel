@@ -16,7 +16,7 @@ class Command:
     def __init__(self, user_opts):
         self.user_opts = user_opts
     def quotemeta(self, s):
-        for meta in ('$', '`', '"', '\\', '\n'):
+        for meta in ('\\', '$', '`', '"', '\n'):
             s = s.replace(meta, '\\' + meta)
         return s
 
