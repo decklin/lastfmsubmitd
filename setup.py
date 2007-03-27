@@ -27,6 +27,7 @@ setup(
         'mbfind',
         'mbget',
         'mbsubmit',
+        'peel',
         ],
     data_files=[
         ('share/man/man1', [
