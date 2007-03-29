@@ -1,3 +1,6 @@
+0.35 (2007-03-29):
+==================
+
 * Fix crash when a buggy MPD reports the length of a track as zero.
 
 0.34 (2007-03-26):
