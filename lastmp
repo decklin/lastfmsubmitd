@@ -85,6 +85,8 @@ class MPDMonitor:
 
         if status.state in ('play', 'pause'):
             pos, length = map(float, status.time.split(':'))
+            if length == 0: length = lastfm.MAX_LEN
+
             if status.state == 'play':
                 if song != self.prevsong or \
                         self.prevstatus.state == 'stop':
