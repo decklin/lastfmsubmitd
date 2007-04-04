@@ -65,6 +65,10 @@ class Lame(Command):
         argv += ['-', quotemeta('%s.mp3' % path)]
         return popen(argv, 'w')
 
+def sox_open(path):
+    return popen(['sox', path, '-t', 'raw', '-s', '-w', '-r', '44100', '-c',
+        '2', '-'])
+
 rippers = {'cdparanoia': CdParanoia}
 players = {'aplay': APlay, 'bfp': Bfp}
 encoders = {'oggenc': OggEnc, 'lame': Lame}
@@ -77,7 +81,6 @@ class SaneConfParser(ConfigParser.RawConfigParser):
             return default
 
 def_path = '%(artist)s/%(album)s/%(number)02d - %(title)s'
-sox = 'sox "track%02d.cdda.wav" -t raw -r 44100 -s -w -c 2 -'
 
 if __name__ == '__main__':
     shortopts = 'd:qc'
@@ -130,7 +133,7 @@ if __name__ == '__main__':
         if device:
             rip = ripper.open(device, song['number'])
         else:
-            rip = popen(sox % song['number'])
+            rip = sox_open('track%02d.cdda.wav' % song['number'])
 
         safe_song = {}
         for k, v in song.iteritems():
