@@ -44,7 +44,7 @@ class OggEnc(Command):
         except KeyError: pass
         try: argv += ['-l', quotemeta(song['album'])]
         except KeyError: pass
-        try: argv += ['-l', '%d' % song['number']] # XXX
+        try: argv += ['-N', '%d' % song['number']]
         except KeyError: pass
         try: argv += ['-c', quotemeta('musicbrainz_trackid=%s' % song['mbid'])]
         except KeyError: pass
