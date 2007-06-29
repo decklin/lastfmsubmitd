@@ -19,25 +19,25 @@ def quotemeta(s):
 
 class Command:
     def __init__(self, user_opts):
-        self.user_opts = user_opts
+        self.user_opts = user_opts.split()
 
 class CdParanoia(Command):
     def open(self, device, number):
-        return popen(['cdparanoia', '-r', self.user_opts, '-d', device,
+        return popen(['cdparanoia', '-r'] + self.user_opts + ['-d', device,
             '%d' % number, '-'])
 
 class APlay(Command):
     def open(self):
         return popen(['aplay', '-q', '-t', 'raw', '-c', '2', '-r', '44100',
-            '-f', 'S16_LE', self.user_opts], 'w')
+            '-f', 'S16_LE'] + self.user_opts, 'w')
 
 class Bfp(Command):
     def open(self):
-        return popen(['bfp', self.user_opts], 'w')
+        return popen(['bfp'] + self.user_opts, 'w')
 
 class OggEnc(Command):
     def open(self, song, path):
-        argv = ['oggenc', '-Q', '-r', self.user_opts]
+        argv = ['oggenc', '-Q', '-r'] + self.user_opts
         try: argv += ['-a', quotemeta(song['artist'])]
         except KeyError: pass
         try: argv += ['-t', quotemeta(song['title'])]
@@ -53,7 +53,7 @@ class OggEnc(Command):
 
 class Lame(Command):
     def open(self, song, path):
-        argv = ['lame', '--quiet', '-rx', self.user_opts]
+        argv = ['lame', '--quiet', '-rx'] + self.user_opts
         try: argv += ['--ta', quotemeta(song['artist'])]
         except KeyError: pass
         try: argv += ['--tt', quotemeta(song['title'])]

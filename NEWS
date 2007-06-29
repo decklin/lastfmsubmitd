@@ -1,5 +1,7 @@
 * Fix sox error in peel -c.
 
+* Fix peelrc [options] section parsing.
+
 0.35 (2007-03-29):
 ==================
 
