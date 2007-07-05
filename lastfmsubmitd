@@ -373,7 +373,7 @@ if __name__ == '__main__':
         log.info('Starting')
         daemon(log, conf, online)
     except SystemExit, e:
-        log.info('exiting')
+        log.info('Exiting')
         sys.exit(e.args[0])
     except:
         import traceback
