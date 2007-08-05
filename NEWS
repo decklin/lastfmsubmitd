@@ -1,3 +1,5 @@
+* Read sleep time correctly in config.
+
 * Fix sox error in peel -c.
 
 * Fix peelrc [options] section parsing.

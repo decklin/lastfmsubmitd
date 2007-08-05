@@ -37,7 +37,7 @@ class Config:
             raise NoConfError
 
         try:
-            self.sleep_time = self.cp.get('daemon', 'sleep_time')
+            self.sleep_time = self.cp.getfloat('daemon', 'sleep_time')
         except (ConfigParser.NoSectionError, ConfigParser.NoOptionError):
             self.sleep_time = SLEEP_TIME
         try:
