@@ -30,11 +30,13 @@ Installation
     password: **********
 
    The MPD password is optional Additionally, either configuration file
-   can contain this section (all items are optional)::
+   can contain these sections (all items are optional)::
 
     [daemon]
     sleep_time: 5
     debug: False
+
+    [paths]
     log: /var/log/lastfm/lastfm.log
     pidfile: /var/run/lastfm/daemon_name.pid
     spool: /var/spool/lastfm
