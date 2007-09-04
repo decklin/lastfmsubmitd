@@ -8,11 +8,12 @@ import signal
 
 import mpdclient2
 import lastfm
+import lastfm.client
 import lastfm.config
 import lastfm.marshaller
-from lastfm.config import NoConfError
 
-USAGE = """usage: lastmp [--debug] [--no-daemon] [--help]"""
+DAEMON_NAME = 'lastmp'
+USAGE = 'usage: %s [--debug] [--no-daemon] [--help]' % DAEMON_NAME
 
 # If the system load is high, we may not wake again until slightly
 # longer than we slept. This should really be like 0.1, but
@@ -21,7 +22,7 @@ USAGE = """usage: lastmp [--debug] [--no-daemon] [--help]"""
 FUZZ = 1
 
 class NoHostError(Exception): pass
-class MPDPermissionError(Exception): pass
+class MPDAuthError(Exception): pass
 
 class Song:
     def __init__(self, sobj):
@@ -45,19 +46,13 @@ class Song:
         return not self == other
 
     def __str__(self):
-        time = '%d:%02d' % divmod(self.length, 60)
-        if self.artist and self.title:
-            return '%s - %s [%s]' % (self.artist, self.title, time)
-        else:
-            return '%s [%s]' % (self.file, time)
+        return lastfm.repr(self.dict())
 
     def dict(self):
-        d = {
-            'time': time.gmtime(),
+        d = {'time': time.gmtime(),
             'artist': lastfm.marshaller.guess_enc(self.artist, 'utf-8'),
             'title': lastfm.marshaller.guess_enc(self.title, 'utf-8'),
-            'length': self.length,
-            }
+            'length': self.length}
         if self.album:
             d['album'] = lastfm.marshaller.guess_enc(self.album, 'utf-8')
         for reqd in ('artist', 'title', 'length'):
@@ -67,10 +62,13 @@ class Song:
             return d
 
 class MPDMonitor:
-    def __init__(self, log, sleep, host, port, password):
-        self.log = log
-        self.sleep = sleep
-        self.mpd_args = {'host': host, 'port': port, 'password': password}
+    def __init__(self, cli):
+        self.cli = cli
+        self.log = cli.logger
+        self.sleep = cli.conf.sleep_time
+        self.mpd_args = {'host': cli.conf.host,
+            'port': cli.conf.port,
+            'password': cli.conf.password}
         self.mpd = None
 
     def wake(self):
@@ -78,7 +76,7 @@ class MPDMonitor:
         song = Song(self.mpd.do.currentsong())
 
         if not hasattr(status, 'state'):
-            raise MPDPermissionError
+            raise MPDAuthError
 
         if not self.prevstatus or status.state != self.prevstatus.state:
             self.log.debug('Changed state: %s' % status.state)
@@ -136,8 +134,8 @@ class MPDMonitor:
         self.prevpos = pos
 
     def observe(self):
-        """Loop forever, periodically checking MPD's state and
-        submitting songs when necessary."""
+        """Loop forever, periodically checking MPD's state and submitting
+        songs when necessary."""
         failed = False
         while True:
             try:
@@ -157,7 +155,7 @@ class MPDMonitor:
                     self.log.error("Can't connect or lost connection to MPD")
                 self.mpd = None
                 failed = True
-            except MPDPermissionError:
+            except MPDAuthError:
                 if not failed:
                     self.log.error("Can't read info from MPD (bad password?)")
                 failed = True
@@ -166,42 +164,34 @@ class MPDMonitor:
 
     def submit(self, song):
         try:
-            sub = song.dict()
             self.log.info('Sending to daemon')
-            lastfm.submit([sub])
+            self.cli.submit(song.dict())
         except ValueError, e:
             self.log.error('Missing tags: %s' % e)
         except IOError:
             log.error("Can't write sub: %s" % e)
 
-class MPDConfig(lastfm.config.Config):
-    def __init__(self, name):
-        lastfm.config.Config.__init__(self, name)
-        try:
-            self.host = self.cp.get('mpd', 'host')
-        except:
+class LmpConfig(lastfm.config.Config):
+    def __init__(self):
+        lastfm.config.Config.__init__(self, search=DAEMON_NAME)
+        self.host = self.cp.get('mpd', 'host', None)
+        self.port = int(self.cp.get('mpd', 'port', 6600))
+        self.password = self.cp.get('mpd', 'password', None)
+        if not self.host:
             raise NoHostError
-        try:
-            self.port = self.cp.getint('mpd', 'port')
-        except:
-            self.port = 6600
-        try:
-            self.password = self.cp.get('mpd', 'password')
-        except:
-            self.password = None
 
-def daemon(log, conf):
-    mo = MPDMonitor(log, conf.sleep_time, conf.host, conf.port, conf.password)
+def daemon(cli):
+    mo = MPDMonitor(cli)
 
     def shutdown(signum, frame):
-        conf.remove_pidfile()
+        cli.remove_pidfile()
         sys.exit(0)
 
     signal.signal(signal.SIGTERM, shutdown)
     signal.signal(signal.SIGINT, shutdown)
 
-    # Even if we couldn't connect, start the observe loop anyway.
-    # Perhaps MPD failed at boot and the admin will fix it later.
+    # Even if we couldn't connect, start the observe loop anyway. Once MPD is
+    # up, we will connect.
     mo.observe()
 
 if __name__ == '__main__':
@@ -211,7 +201,7 @@ if __name__ == '__main__':
     try:
         opts, args = getopt.getopt(sys.argv[1:], shortopts, longopts)
     except getopt.GetoptError, e:
-        print >>sys.stderr, 'lastmp: %s' % e
+        print >>sys.stderr, '%s: %s' % (DAEMON_NAME, e)
         print >>sys.stderr, USAGE
         sys.exit(1)
 
@@ -230,12 +220,9 @@ if __name__ == '__main__':
             sys.exit(0)
 
     try:
-        conf = MPDConfig('lastmp')
-    except NoConfError:
-        print >>sys.stderr, 'lastmp: could not find config'
-        sys.exit(1)
+        conf = LmpConfig()
     except NoHostError:
-        print >>sys.stderr, 'lastmp: no MPD host specified'
+        print >>sys.stderr, '%s: no MPD host specified' % DAEMON_NAME
         sys.exit(1)
 
     if conf.debug:
@@ -246,17 +233,17 @@ if __name__ == '__main__':
             pid = os.fork()
             if pid:
                 sys.exit(0)
-            else:
-                conf.write_pidfile()
         except OSError, e:
-            print >>sys.stderr, "lastmp: can't fork: %s" % e
+            print >>sys.stderr, "%s: can't fork: %s" % (DAEMON_NAME, e)
             sys.exit(1)
 
-    log = lastfm.logger('lastmp', conf.log_path, debug, stderr)
+    cli = lastfm.client.Daemon(DAEMON_NAME, conf)
+    log = cli.open_log(debug, stderr)
+    cli.write_pidfile()
 
     try:
         log.info('Starting')
-        daemon(log, conf)
+        daemon(cli)
     except SystemExit, e:
         log.info('Exiting')
         sys.exit(e.args[0])

@@ -1,3 +1,9 @@
+* Client interface has totally changed (see README.plugins). All problems
+  regarding spool path etc. not being honored should be fixed.
+
+* Write pidfile even if --no-daemon, so we don't crash. Unnecessary, but
+  easier for now.
+
 * Read sleep time correctly in config.
 
 * Fix sox error in peel -c.

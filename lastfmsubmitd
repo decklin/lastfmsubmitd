@@ -10,20 +10,21 @@ import md5
 import signal
 
 import lastfm
+import lastfm.client
 import lastfm.config
 import lastfm.marshaller
-from lastfm.config import NoConfError
 
-USAGE = """\
-usage: lastfmsubmitd [--debug] [--no-daemon] [--no-network] [--help]"""
+DAEMON_NAME = 'lastfmsubmitd'
+USAGE = 'usage: %s [--debug] [--no-daemon] [--no-network] [--help]' % \
+    DAEMON_NAME
+
+CLIENT_ID = 'lsd'
+CLIENT_VERSION = '0.33'
 
 PROTOCOL_VERSION = '1.1'
 HANDSHAKE_URL_BASE = 'http://post.audioscrobbler.com/'
 SUB_CHUNK_SIZE = 10
 DEF_INTERVAL = 1
-
-CLIENT_ID = 'lsd'
-CLIENT_VERSION = '0.33'
 
 # This should be something small, because the server times out quickly. If
 # there is any congestion at either end of the network, it will give up and
@@ -77,7 +78,7 @@ class Throttle:
         time.sleep(secs)
         self.slept += secs
 
-class Spool:
+class LsdSpool:
     """Represents uncommitted submissions on disk. May be extended by writing
     a new file in the spool directory."""
 
@@ -255,23 +256,25 @@ class LastFmSession:
             self.read_interval(response)
             time.sleep(self.interval)
 
-class LastFmConfig(lastfm.config.Config):
-    def __init__(self, name):
-        lastfm.config.Config.__init__(self, name)
-        try:
-            self.user = self.cp.get('account', 'user')
-            self.password = self.cp.get('account', 'password')
-        except:
+class LsdConfig(lastfm.config.Config):
+    def __init__(self):
+        lastfm.config.Config.__init__(self, search=DAEMON_NAME)
+        self.user = self.cp.get('account', 'user', None)
+        self.password = self.cp.get('account', 'password', None)
+        if not (self.user and self.password):
             raise NoAccountError
 
-def daemon(log, conf, online):
-    throttle = Throttle(log)
-    spool = Spool(log, conf.spool_path)
+def daemon(cli, online):
+    conf = cli.conf
+    log = cli.logger
+
     session = LastFmSession(log, conf.user, conf.password)
+    spool = LsdSpool(log, conf.spool_path)
+    throttle = Throttle(log)
 
     def shutdown(signum, frame):
         spool.sync()
-        conf.remove_pidfile()
+        cli.remove_pidfile()
         sys.exit(0)
 
     def alarm(signum, frame):
@@ -323,7 +326,7 @@ if __name__ == '__main__':
     try:
         opts, args = getopt.getopt(sys.argv[1:], shortopts, longopts)
     except getopt.GetoptError, e:
-        print >>sys.stderr, 'lastfmsubmitd: %s' % e
+        print >>sys.stderr, '%s: %s' % (DAEMON_NAME, e)
         print >>sys.stderr, USAGE
         sys.exit(1)
 
@@ -345,12 +348,10 @@ if __name__ == '__main__':
             sys.exit(0)
 
     try:
-        conf = LastFmConfig('lastfmsubmitd')
-    except NoConfError:
-        print >>sys.stderr, 'lastfmsubmitd: could not find config; exiting'
-        sys.exit(0)
+        conf = LsdConfig()
     except NoAccountError:
-        print >>sys.stderr, 'lastfmsubmitd: no account info found; exiting'
+        print >>sys.stderr, '%s: no account info found; exiting' % \
+            DAEMON_NAME
         sys.exit(0)
 
     if conf.debug:
@@ -361,17 +362,17 @@ if __name__ == '__main__':
             pid = os.fork()
             if pid:
                 sys.exit(0)
-            else:
-                conf.write_pidfile()
         except OSError, e:
             print >>sys.stderr, "lastfmsubmitd: can't fork: %s" % e
             sys.exit(1)
 
-    log = lastfm.logger('lastfmsubmitd', conf.log_path, debug, stderr)
+    cli = lastfm.client.Daemon(DAEMON_NAME, conf)
+    log = cli.open_log(debug, stderr)
+    cli.write_pidfile()
 
     try:
         log.info('Starting')
-        daemon(log, conf, online)
+        daemon(cli, online)
     except SystemExit, e:
         log.info('Exiting')
         sys.exit(e.args[0])

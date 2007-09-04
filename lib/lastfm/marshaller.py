@@ -6,7 +6,7 @@ def guess_enc(s, enc):
     except UnicodeDecodeError: pass
     try: return s.decode('utf-8')
     except UnicodeDecodeError: pass
-    try: return s.decode('latin-1')
+    try: return s.decode('latin-1') # Cultural imperialism FTW. Sigh.
     except UnicodeDecodeError:
         return s.decode('ascii', 'replace')
 

@@ -6,7 +6,9 @@ import time
 import ConfigParser
 import getopt
 
+import lastfm.client
 import lastfm.marshaller
+from lastfm.config import SaneConfParser
 
 def popen(argv, mode='r'):
     command = ' '.join(argv)
@@ -73,13 +75,6 @@ rippers = {'cdparanoia': CdParanoia}
 players = {'aplay': APlay, 'bfp': Bfp}
 encoders = {'oggenc': OggEnc, 'lame': Lame}
 
-class SaneConfParser(ConfigParser.RawConfigParser):
-    def get(self, section, option, default):
-        try:
-            return ConfigParser.RawConfigParser.get(self, section, option)
-        except (ConfigParser.NoSectionError, ConfigParser.NoOptionError):
-            return default
-
 def_path = '%(artist)s/%(album)s/%(number)02d - %(title)s'
 
 if __name__ == '__main__':
@@ -104,7 +99,7 @@ if __name__ == '__main__':
             device = None
 
     cp = SaneConfParser()
-    cp.read(os.path.expanduser('~/.peelrc'))
+    cp.read([os.path.expanduser('~/.peelrc')])
 
     rip_cmd = cp.get('commands', 'rip', 'cdparanoia')
     play_cmd = cp.get('commands', 'play', 'aplay')
@@ -125,7 +120,8 @@ if __name__ == '__main__':
 
     if not quiet:
         play = player.open()
-        log = lastfm.logger('peel')
+        cli = lastfm.client.Client()
+        log = cli.open_log('peel')
 
     for song in lastfm.marshaller.load_documents(sys.stdin):
         print "Track %(number)s: %(title)s..." % song
@@ -161,5 +157,5 @@ if __name__ == '__main__':
         if not quiet:
             if song['length'] >= 30:
                 song['time'] = time.gmtime()
-                lastfm.submit([song])
+                cli.submit(song)
                 log.info('Sent %s to daemon' % lastfm.repr(song))

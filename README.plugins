@@ -21,15 +21,21 @@ following:
       import time
       import lastfm
 
-      song = {'artist': 'New Order', 'title': 'Your Silent Face',
+      song = {'artist': 'New Order',
+        'title': 'Your Silent Face',
         'album': 'Power, Corruption & Lies',
-        'mbid': '3a54b3b2-6037-4fc3-a7a0-ead924e55ea2'}
+        'mbid': '3a54b3b2-6037-4fc3-a7a0-ead924e55ea2',
+        'length: 359}
 
-      log = lastfm.logger('example')
+      # You can use the named arg ``path`` to read another config, or define
+      # your own subclass of lastfm.config.Config and use the arg ``conf``.
+
+      cli = lastfm.client.Client()
+      log = cli.open_log('demo')
       log.info('Played song: %s' % lastfm.repr(song))
 
       song['time'] = time.gmtime()
-      lastfm.submit([song])
+      cli.submit(song)
 
     Documentation for each of these functions can be read using pydoc.
 

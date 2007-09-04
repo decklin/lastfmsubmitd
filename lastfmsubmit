@@ -52,7 +52,8 @@ if __name__ == '__main__':
             stderr = False
 
     try:
-        log = lastfm.logger('lastfmsubmit', debug=debug, stderr=stderr)
+        cli = lastfm.client.Client()
+        log = cli.open_log('lastfmsubmit', debug=debug, stderr=stderr)
     except IOError, e:
         print >>sys.stderr, 'lastfmsubmit: error opening log: %s' % e
         sys.exit(1)
@@ -82,7 +83,7 @@ if __name__ == '__main__':
                 sys.exit(1)
 
         if len(sub) == 0:
-            print >>sys.stderr, "lastfmsubmit: nothing specified"
+            print >>sys.stderr, 'lastfmsubmit: nothing specified'
             print >>sys.stderr, USAGE
             sys.exit(1)
         if not sub.has_key('time'):
@@ -93,7 +94,7 @@ if __name__ == '__main__':
         else:
             try:
                 log.debug('Sending %s to daemon' % lastfm.repr(sub))
-                lastfm.submit([sub])
+                cli.submit(sub)
             except IOError:
                 log.error("Can't write sub: %s" % e)
                 sys.exit(1)
