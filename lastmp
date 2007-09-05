@@ -46,7 +46,10 @@ class Song:
         return not self == other
 
     def __str__(self):
-        return lastfm.repr(self.dict())
+        try:
+            return lastfm.repr(self.dict())
+        except ValueError:
+            return self.file
 
     def dict(self):
         d = {'time': time.gmtime(),
@@ -162,8 +165,8 @@ class MPDMonitor:
 
     def submit(self, song):
         try:
-            self.cli.log.info('Sending to daemon')
             self.cli.submit(song.dict())
+            self.cli.log.info('Sent to daemon')
         except ValueError, e:
             self.cli.log.error('Missing tags: %s' % e)
         except IOError:
