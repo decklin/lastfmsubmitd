@@ -64,7 +64,6 @@ class Song:
 class MPDMonitor:
     def __init__(self, cli):
         self.cli = cli
-        self.log = cli.logger
         self.sleep = cli.conf.sleep_time
         self.mpd_args = {'host': cli.conf.host,
             'port': cli.conf.port,
@@ -79,7 +78,7 @@ class MPDMonitor:
             raise MPDAuthError
 
         if not self.prevstatus or status.state != self.prevstatus.state:
-            self.log.debug('Changed state: %s' % status.state)
+            self.cli.log.debug('Changed state: %s' % status.state)
 
         if status.state in ('play', 'pause'):
             pos, length = map(float, status.time.split(':'))
@@ -88,14 +87,14 @@ class MPDMonitor:
             if status.state == 'play':
                 if song != self.prevsong or \
                         self.prevstatus.state == 'stop':
-                    self.log.info('New song: %s', song)
+                    self.cli.log.info('New song: %s', song)
                     if (self.prevsong and pos > self.sleep +
                             FUZZ + int(status.xfade)) or \
                             (self.prevsong is None and
                             pos/length > lastfm.SUB_PERCENT or
                             pos > lastfm.SUB_SECONDS):
-                        self.log.warning(
-                            'Started at %d, will not submit' % pos)
+                        self.cli.log.warning('Started at %d, will not submit'
+                            % pos)
                         self.skipped = True
                     else:
                         self.skipped = False
@@ -105,14 +104,13 @@ class MPDMonitor:
                     if self.prevpos and pos < self.sleep + FUZZ and \
                             (self.prevpos/length >= lastfm.SUB_PERCENT or \
                             self.prevpos >= lastfm.SUB_SECONDS):
-                        self.log.info('Restarted song')
+                        self.cli.log.info('Restarted song')
                         self.skipped = False
                         self.submitted = False
                         self.played_enough = False
                     if self.prevpos and \
                             pos > self.prevpos + self.sleep + FUZZ:
-                        self.log.warning(
-                            'Skipped from %d to %d' %
+                        self.cli.log.warning('Skipped from %d to %d' %
                             (self.prevpos, pos))
                         self.skipped = True
                     if not self.skipped and not self.played_enough and \
@@ -120,7 +118,7 @@ class MPDMonitor:
                             length <= lastfm.MAX_LEN and \
                             (pos >= lastfm.SUB_SECONDS or \
                             pos/length >= lastfm.SUB_PERCENT):
-                        self.log.debug('OK, %d/%d played' % (pos, length))
+                        self.cli.log.debug('OK, %d/%d played' % (pos, length))
                         self.played_enough = True
                     if not self.submitted and not self.skipped and \
                             self.played_enough:
@@ -141,7 +139,7 @@ class MPDMonitor:
             try:
                 if not self.mpd:
                     self.mpd = mpdclient2.connect(**self.mpd_args)
-                    self.log.info('Connected to MPD')
+                    self.cli.log.info('Connected to MPD')
                     self.prevstatus = None
                     self.prevsong = None
                     self.prevpos = None
@@ -152,24 +150,24 @@ class MPDMonitor:
                     self.wake()
             except (EOFError, mpdclient2.socket.error):
                 if not failed:
-                    self.log.error("Can't connect or lost connection to MPD")
+                    self.cli.log.error("Can't connect or lost connection to MPD")
                 self.mpd = None
                 failed = True
             except MPDAuthError:
                 if not failed:
-                    self.log.error("Can't read info from MPD (bad password?)")
+                    self.cli.log.error("Can't read info from MPD (bad password?)")
                 failed = True
 
             time.sleep(self.sleep)
 
     def submit(self, song):
         try:
-            self.log.info('Sending to daemon')
+            self.cli.log.info('Sending to daemon')
             self.cli.submit(song.dict())
         except ValueError, e:
-            self.log.error('Missing tags: %s' % e)
+            self.cli.log.error('Missing tags: %s' % e)
         except IOError:
-            log.error("Can't write sub: %s" % e)
+            self.cli.log.error("Can't write sub: %s" % e)
 
 class LmpConfig(lastfm.config.Config):
     def __init__(self):
@@ -238,17 +236,17 @@ if __name__ == '__main__':
             sys.exit(1)
 
     cli = lastfm.client.Daemon(DAEMON_NAME, conf)
-    log = cli.open_log(debug, stderr)
+    cli.open_log(debug, stderr)
     cli.write_pidfile()
 
     try:
-        log.info('Starting')
+        cli.log.info('Starting')
         daemon(cli)
     except SystemExit, e:
-        log.info('Exiting')
+        cli.log.info('Exiting')
         sys.exit(e.args[0])
     except:
         import traceback
         einfo = traceback.format_exception(*sys.exc_info())
-        log.error('Aborting: %s' % ''.join(einfo))
+        cli.log.error('Aborting: %s' % ''.join(einfo))
         sys.exit(1)

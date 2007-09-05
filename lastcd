@@ -39,12 +39,8 @@ if __name__ == '__main__':
             print USAGE
             sys.exit(0)
 
-    try:
-        cli = lastfm.client.Client()
-        log = cli.open_log('lastcd', debug=debug)
-    except IOError, e:
-        print >>sys.stderr, 'lastcd: error opening log: %s' % e
-        sys.exit(1)
+    cli = lastfm.client.Client('lastcd')
+    cli.open_log(debug)
 
     songs = []
     for f in [file(name) for name in args] or [sys.stdin]:
@@ -54,8 +50,8 @@ if __name__ == '__main__':
     for s in songs:
         total_len += s['length']
 
-    # We will simulate things as if the last track in our input just
-    # finished playing right now.
+    # We will simulate things as if the last track in our input just finished
+    # playing right now.
 
     pos = time.time() - total_len
 
@@ -81,7 +77,7 @@ if __name__ == '__main__':
             print lastfm.marshaller.dump(s)
     else:
         try:
-            log.info('Sending %s song(s) to daemon' % len(subs))
+            cli.log.info('Sending %s song(s) to daemon' % len(subs))
             cli.submit_many(subs)
         except IOError, e:
             print >>sys.stderr, 'lastcd: error writing: %s' % e

@@ -10,47 +10,44 @@ PIDFILE_BASE = '/var/run/lastfm'
 
 class Client:
     """Something that uses the lastfmsubmitd spool. Has a configuration
-    (lastfm.config.Config), and can store submissions or open a log in
-    the places defined by it. The word "client" does not imply anything
-    about the program's function; all daemons are also clients in the
-    sense that they use the spool and log through this interface."""
+    (lastfm.config.Config), a name (mostly for logging purposes), and can
+    write submissions. The word "client" does not imply anything about the
+    program's function; all daemons are also clients in the sense that they
+    use the spool and log through this interface."""
 
-    def __init__(self, conf=None, path=None):
+    def __init__(self, name, conf=None, log=True):
         """Create something that can hand submissions over to a running
-        lastfmsubmitd; by default, look for the one defined by the
-        standard config, but if ``conf`` is or ``path`` is supplied,
-        talk to that one."""
+        lastfmsubmitd; by default, look for the one defined by the standard
+        config, but if ``conf`` is supplied, talk to that one."""
+
+        self.name = name
         if conf:
             self.conf = conf
-        elif path:
-            self.conf = lastfm.config.Config(path=path)
         else:
             self.conf = lastfm.config.Config(search='lastfmsubmitd')
 
-    def open_log(self, name, debug=False, stderr=False):
-        """Returns a logging object that will write to the client's log.
-        If ``debug`` is true, the client's debug setting will be overridden
-        and the logging object's level will be set to DEBUG. If
-        ``stderr`` is true, the object will also print all messages
-        to stderr. ``name`` should be set to the name of the program
-        opening the log."""
+    def open_log(self, debug=False, stderr=False):
+        """Returns a logging object that will write to the client's log. If
+        ``debug`` is true, the client's debug setting will be overridden and
+        the logging object's level will be set to DEBUG. If ``stderr`` is
+        true, the object will also print all messages to stderr."""
 
         if debug or self.conf.debug:
             level = logging.DEBUG
         else:
             level = logging.INFO
 
-        self.logger = logging.getLogger(name)
-        self.logger.setLevel(level)
+        self.log = logging.getLogger(self.name)
+        self.log.setLevel(level)
 
         try:
-            oldmask = os.umask(002)
             filefmt = \
                 '%(asctime)s %(name)s[%(process)s] %(levelname)s: %(message)s'
+            oldmask = os.umask(002)
             filehandler = logging.FileHandler(self.conf.log_path)
             filehandler.setLevel(level)
             filehandler.setFormatter(logging.Formatter(filefmt))
-            self.logger.addHandler(filehandler)
+            self.log.addHandler(filehandler)
             os.umask(oldmask)
         except IOError:
             # If we can't log it here, better do it somewhere...
@@ -61,17 +58,15 @@ class Client:
             stderrhandler = logging.StreamHandler(sys.stderr)
             stderrhandler.setLevel(level)
             stderrhandler.setFormatter(logging.Formatter(stderrfmt))
-            self.logger.addHandler(stderrhandler)
-
-        return self.logger
+            self.log.addHandler(stderrhandler)
 
     def submit_many(self, songs):
-        """Creates a uniquely named file in the spool directory
-        containing the given submission. ``subs`` should be a dict
-        containing the keys ``artist``, ``title``, ``length``, and
-        ``time`` (and optionally ``album`` and ``mbid``). ``artist``,
-        ``title``, ``album``, and ``mbid`` are strings, ``length`` is an
-        integer, and ``time`` is a UTC time tuple."""
+        """Creates a uniquely named file in the spool directory containing
+        the given submission. ``subs`` should be a dict containing the keys
+        ``artist``, ``title``, ``length``, and ``time`` (and optionally
+        ``album`` and ``mbid``). ``artist``, ``title``, ``album``, and
+        ``mbid`` are strings, ``length`` is an integer, and ``time`` is a UTC
+        time tuple."""
 
         fd, path = tempfile.mkstemp(dir=self.conf.spool_path)
         spool_file = os.fdopen(fd, 'w+')
@@ -88,16 +83,12 @@ class Daemon(Client):
     configuration options and the ability to use a pidfile. The name used for
     both pidfile and logging is unified."""
 
-    def __init__(self, name, conf=None, path=None):
-        Client.__init__(self, conf, path)
-        self.name = name
+    def __init__(self, name, conf=None, log=True):
+        Client.__init__(self, name, conf, log)
         self.conf.sleep_time = float(self.conf.cp.get('daemon', 'sleep_time',
             SLEEP_TIME))
         self.conf.pidfile_path = self.conf.cp.get('paths', 'pidfile',
             '%s/%s.pid' % (PIDFILE_BASE, self.name))
-
-    def open_log(self, debug=False, stderr=False):
-        return Client.open_log(self, self.name, debug, stderr)
 
     def write_pidfile(self):
         try:

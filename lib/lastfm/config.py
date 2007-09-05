@@ -17,20 +17,19 @@ class SaneConfParser(ConfigParser.RawConfigParser):
 class Config:
     """The minimum configuration needed by any program that communicates
     through the lastfmsubmitd "protocol": where to put the serialized
-    submissions and where to log. Since most everything can make use of
-    it, a debug flag is also provided. A standard for configuration file
-    locations is defined (specify ``search`` to look for /etc/foo.conf
-    or ~/.foo.conf, with the latter overriding), but arbitrary locations
-    may be specified using ``path``. If no configuration files are
-    provided or readable, the default values of SPOOL_PATH and LOG_PATH
-    are used."""
+    submissions and where to log. Since most everything can make use of it, a
+    debug flag is also provided. A standard for configuration file locations
+    is defined (specify ``search`` to look for /etc/foo.conf or ~/.foo.conf,
+    with the latter overriding), but arbitrary locations may be specified
+    using ``path``. If no configuration files are provided or readable, the
+    default values of SPOOL_PATH and LOG_PATH are used."""
 
-    def __init__(self, search=None, path=None):
+    def __init__(self, path=None, search=None):
         self.cp = SaneConfParser()
-        if search:
-            self.cp.read([SYS_CONF % search, USER_CONF % search])
         if path:
             self.cp.read([path])
+        elif search:
+            self.cp.read([SYS_CONF % search, USER_CONF % search])
 
         self.spool_path = self.cp.get('paths', 'spool', SPOOL_PATH)
         self.log_path = self.cp.get('paths', 'log', LOG_PATH)

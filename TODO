@@ -1,5 +1,3 @@
-* Sort multiple subs on read?
-
 * Use throttle to implement protocol interval.
 
 * Figure out some way to catch SIGINT in select.

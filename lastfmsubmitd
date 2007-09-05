@@ -54,8 +54,8 @@ class Throttle:
     stuff. Only keeps track of how long it has slept, not the actual time
     elapsed. You can mess with time.slept to simulate a sleep."""
 
-    def __init__(self, log):
-        self.log = log
+    def __init__(self, cli):
+        self.cli = cli
         self.reset()
 
     def reset(self):
@@ -71,7 +71,7 @@ class Throttle:
             self.sleep_until = INITIAL_BACKOFF
         elif self.sleep_until < 6 * 3600:
             self.sleep_until *= 2
-        self.log.info('Backing off, will retry in %d:%02d' %
+        self.cli.log.info('Backing off, will retry in %d:%02d' %
             divmod(self.sleep_until, 60))
 
     def sleep(self, secs):
@@ -82,16 +82,15 @@ class LsdSpool:
     """Represents uncommitted submissions on disk. May be extended by writing
     a new file in the spool directory."""
 
-    def __init__(self, log, spool_path):
-        self.log = log
-        self.spool_path = spool_path
+    def __init__(self, cli):
+        self.cli = cli
         self.files = []
         self.subs = []
 
     def poll(self):
         new_subs = []
-        for f in os.listdir(self.spool_path):
-            path = '%s/%s' % (self.spool_path, f)
+        for f in os.listdir(self.cli.conf.spool_path):
+            path = '%s/%s' % (self.cli.conf.spool_path, f)
             if path not in self.files:
                 self.files.append(path)
                 data = file(path)
@@ -103,8 +102,9 @@ class LsdSpool:
                         else:
                             new_subs.append(doc)
                     except ValueError, e:
-                        self.log.warning('Invalid data, ignoring: %s' % e)
-        if new_subs: log.debug('Read %d sub(s)' % len(new_subs))
+                        self.cli.log.warning('Invalid data, ignoring: %s' % e)
+        if new_subs:
+            self.cli.log.debug('Read %d sub(s)' % len(new_subs))
         self.subs += new_subs
         self.subs.sort(key=lambda x: x['time'])
 
@@ -112,34 +112,32 @@ class LsdSpool:
         for f in self.files:
             os.unlink(f)
         if self.subs:
-            newfile = lastfm.submit(self.subs)
+            newfile = self.cli.submit(self.subs)
             self.files = [newfile]
         else:
             self.files = []
 
 class LastFmSession:
-    def __init__(self, log, user, password):
-        self.log = log
-        self.user = user
-        self.password = password
+    def __init__(self, cli):
+        self.cli = cli
         self.connected = False
         self.interval = DEF_INTERVAL
         self.uncommitted_subs = []
-        self.handshake_url = self.make_handshake_url(user)
+        self.handshake_url = self.make_handshake_url()
         self.submit_url = None
 
-    def make_handshake_url(self, user):
+    def make_handshake_url(self):
         args = {
             'hs': 'true',
             'p': PROTOCOL_VERSION,
             'c': CLIENT_ID,
             'v': CLIENT_VERSION,
-            'u': user,
+            'u': self.cli.conf.user,
             }
         return '?'.join([HANDSHAKE_URL_BASE, urllib.urlencode(args)])
 
     def handshake(self):
-        self.log.debug('Handshake URL: %s' % self.handshake_url)
+        self.cli.log.debug('Handshake URL: %s' % self.handshake_url)
 
         try:
             signal.alarm(HTTP_TIMEOUT)
@@ -156,10 +154,10 @@ class LastFmSession:
         elif status_line.startswith('UPDATE'):
             try:
                 msg, url = status_line.split(' ', 1)
-                self.log.warning('Plugin is out of date: %s' % msg)
-                self.log.info('Please go to %s to upgrade' % url)
+                self.cli.log.warning('Plugin is out of date: %s' % msg)
+                self.cli.log.info('Please go to %s to upgrade' % url)
             except ValueError:
-                self.log.warning('Plugin is out of date')
+                self.cli.log.warning('Plugin is out of date')
             self.read_submit_url(response)
         elif status_line == 'BADUSER':
             raise HandshakeError('bad username')
@@ -180,8 +178,8 @@ class LastFmSession:
         challenge = response.readline().strip()
         self.session_key = self.digest(challenge)
         self.submit_url = response.readline().strip()
-        self.log.info('Handshake sucessful')
-        self.log.debug('Submit URL: %s' % self.submit_url)
+        self.cli.log.info('Handshake sucessful')
+        self.cli.log.debug('Submit URL: %s' % self.submit_url)
 
     def read_interval(self, response):
         interval_line = response.readline().strip()
@@ -189,18 +187,18 @@ class LastFmSession:
             msg, secs = interval_line.split(' ', 1)
             interval = int(secs)
             if interval != self.interval:
-                self.log.debug('Session interval changed to %d' % interval)
+                self.cli.log.debug('Session interval changed to %d' % interval)
                 self.interval = interval
 
     def digest(self, challenge):
-        pass_hash = md5.new(self.password)
+        pass_hash = md5.new(self.cli.conf.password)
         sess_hash = md5.new(pass_hash.hexdigest() + challenge)
         return sess_hash.hexdigest()
 
     def submit(self, spool):
         while spool.subs:
             chunk = spool.subs[:SUB_CHUNK_SIZE]
-            args = { 'u': self.user, 's': self.session_key }
+            args = {'u': self.cli.conf.user, 's': self.session_key}
             post_data = [urllib.urlencode(args)]
             for i, sub in enumerate(chunk):
                 args = {}
@@ -216,11 +214,11 @@ class LastFmSession:
                     args['m[%d]' % i] = sub['mbid'].encode('utf-8')
                 except KeyError:
                     args['m[%d]' % i] = ''
-                self.log.info('Submitting: %s' % lastfm.repr(sub))
+                self.cli.log.info('Submitting: %s' % lastfm.repr(sub))
                 post_data.append(urllib.urlencode(args))
 
             post_str = '&'.join(post_data)
-            self.log.debug('POST data: %s' % post_str)
+            self.cli.log.debug('POST data: %s' % post_str)
             try:
                 signal.alarm(HTTP_TIMEOUT)
                 response = urllib.urlopen(self.submit_url, post_str)
@@ -236,7 +234,7 @@ class LastFmSession:
             status_line = response.readline().strip()
 
             if status_line == 'OK':
-                self.log.info('Submission(s) accepted')
+                self.cli.log.info('Submission(s) accepted')
                 # Now, and only now, we do our side effect.
                 spool.subs = spool.subs[SUB_CHUNK_SIZE:]
                 spool.sync()
@@ -265,12 +263,9 @@ class LsdConfig(lastfm.config.Config):
             raise NoAccountError
 
 def daemon(cli, online):
-    conf = cli.conf
-    log = cli.logger
-
-    session = LastFmSession(log, conf.user, conf.password)
-    spool = LsdSpool(log, conf.spool_path)
-    throttle = Throttle(log)
+    session = LastFmSession(cli)
+    spool = LsdSpool(cli)
+    throttle = Throttle(cli)
 
     def shutdown(signum, frame):
         spool.sync()
@@ -278,7 +273,7 @@ def daemon(cli, online):
         sys.exit(0)
 
     def alarm(signum, frame):
-        log.debug('Resuming on alarm')
+        cli.log.debug('Resuming on alarm')
 
     def reinit(signum, frame):
         # XXX: reread config, reopen log, reset throttle, rehandshake
@@ -298,26 +293,26 @@ def daemon(cli, online):
                     session.handshake()
                     throttle.reset()
                 except HandshakeError, e:
-                    log.error('Handshake failed: %s' % e)
+                    cli.log.error('Handshake failed: %s' % e)
                     throttle.backoff()
 
             if session.connected and spool.subs:
                 try:
-                    log.debug('Doing submit, %d sub(s)' % len(spool.subs))
+                    cli.log.debug('Doing submit, %d sub(s)' % len(spool.subs))
                     session.submit(spool)
-                    log.debug('Done, %d in spool' % len(spool.subs))
+                    cli.log.debug('Done, %d in spool' % len(spool.subs))
                     throttle.reset()
                 except SessionError, e:
-                    log.error('Session failed: %s' % e)
+                    cli.log.error('Session failed: %s' % e)
                     throttle.backoff()
                 except InvalidSubError, e:
-                    log.error('Submission failed: %s' % e)
+                    cli.log.error('Submission failed: %s' % e)
                     throttle.backoff()
                 except SubTimeoutError:
-                    log.error('Submission timed out')
+                    cli.log.error('Submission timed out')
                     throttle.backoff()
 
-        throttle.sleep(conf.sleep_time)
+        throttle.sleep(cli.conf.sleep_time)
 
 if __name__ == '__main__':
     shortopts = 'dnlh'
@@ -367,17 +362,17 @@ if __name__ == '__main__':
             sys.exit(1)
 
     cli = lastfm.client.Daemon(DAEMON_NAME, conf)
-    log = cli.open_log(debug, stderr)
+    cli.open_log(debug, stderr)
     cli.write_pidfile()
 
     try:
-        log.info('Starting')
+        cli.log.info('Starting')
         daemon(cli, online)
     except SystemExit, e:
-        log.info('Exiting')
+        cli.log.info('Exiting')
         sys.exit(e.args[0])
     except:
         import traceback
         einfo = traceback.format_exception(*sys.exc_info())
-        log.error('Aborting: %s' % ''.join(einfo))
+        cli.log.error('Aborting: %s' % ''.join(einfo))
         sys.exit(1)

@@ -51,12 +51,8 @@ if __name__ == '__main__':
         if opt in ('--quiet', '-q'):
             stderr = False
 
-    try:
-        cli = lastfm.client.Client()
-        log = cli.open_log('lastfmsubmit', debug=debug, stderr=stderr)
-    except IOError, e:
-        print >>sys.stderr, 'lastfmsubmit: error opening log: %s' % e
-        sys.exit(1)
+    cli = lastfm.client.Client('lastfmsubmit')
+    cli.open_log(debug, stderr)
 
     try:
         for opt, arg in opts:
@@ -93,10 +89,10 @@ if __name__ == '__main__':
             print lastfm.marshaller.dump(sub)
         else:
             try:
-                log.debug('Sending %s to daemon' % lastfm.repr(sub))
+                cli.log.debug('Sending %s to daemon' % lastfm.repr(sub))
                 cli.submit(sub)
             except IOError:
-                log.error("Can't write sub: %s" % e)
+                cli.log.error("Can't write sub: %s" % e)
                 sys.exit(1)
 
     except SystemExit, e:
@@ -104,5 +100,5 @@ if __name__ == '__main__':
     except:
         import traceback
         einfo = traceback.format_exception(*sys.exc_info())
-        log.error('Aborting: %s' % ''.join(einfo))
+        cli.log.error('Aborting: %s' % ''.join(einfo))
         sys.exit(1)

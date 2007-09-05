@@ -21,21 +21,26 @@ following:
       import time
       import lastfm
 
+      # get your song from somewhere...
       song = {'artist': 'New Order',
         'title': 'Your Silent Face',
         'album': 'Power, Corruption & Lies',
         'mbid': '3a54b3b2-6037-4fc3-a7a0-ead924e55ea2',
         'length: 359}
 
-      # You can use the named arg ``path`` to read another config, or define
-      # your own subclass of lastfm.config.Config and use the arg ``conf``.
+      cli = lastfm.client.Client('demo')
+      cli.open_log()
 
-      cli = lastfm.client.Client()
-      log = cli.open_log('demo')
-      log.info('Played song: %s' % lastfm.repr(song))
-
+      # determine that your song has been played...
       song['time'] = time.gmtime()
+
+      cli.log.info('Played song: %s' % lastfm.repr(song))
       cli.submit(song)
+
+    You can also supply a custom configuration, like this::
+
+      cli = lastfm.client.Client('demo',
+          lastfm.config.Config('/path/to/demo.conf'))
 
     Documentation for each of these functions can be read using pydoc.
 

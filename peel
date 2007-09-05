@@ -3,7 +3,6 @@
 import os
 import sys
 import time
-import ConfigParser
 import getopt
 
 import lastfm.client
@@ -120,8 +119,8 @@ if __name__ == '__main__':
 
     if not quiet:
         play = player.open()
-        cli = lastfm.client.Client()
-        log = cli.open_log('peel')
+        cli = lastfm.client.Client('peel')
+        cli.open_log()
 
     for song in lastfm.marshaller.load_documents(sys.stdin):
         print "Track %(number)s: %(title)s..." % song
@@ -158,4 +157,4 @@ if __name__ == '__main__':
             if song['length'] >= 30:
                 song['time'] = time.gmtime()
                 cli.submit(song)
-                log.info('Sent %s to daemon' % lastfm.repr(song))
+                cli.log.info('Sent %s to daemon' % lastfm.repr(song))
