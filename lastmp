@@ -90,7 +90,7 @@ class MPDMonitor:
             if status.state == 'play':
                 if song != self.prevsong or \
                         self.prevstatus.state == 'stop':
-                    self.cli.log.info('New song: %s', song)
+                    self.cli.log.info(u'New song: %s' % song)
                     if (self.prevsong and pos > self.sleep +
                             FUZZ + int(status.xfade)) or \
                             (self.prevsong is None and
