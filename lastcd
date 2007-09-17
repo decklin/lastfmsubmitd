@@ -73,8 +73,7 @@ if __name__ == '__main__':
         sys.exit(1)
 
     if stdout:
-        for s in subs:
-            print lastfm.marshaller.dump(s)
+        lastfm.marshaller.dump_documents(subs, sys.stdout)
     else:
         try:
             cli.log.info('Sending %s song(s) to daemon' % len(subs))
