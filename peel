@@ -77,8 +77,8 @@ encoders = {'oggenc': OggEnc, 'lame': Lame}
 def_path = '%(artist)s/%(album)s/%(number)02d - %(title)s'
 
 if __name__ == '__main__':
-    shortopts = 'd:qc'
-    longopts = ['device=', 'quiet', 'continue']
+    shortopts = 'd:e:qc'
+    longopts = ['device=', 'encoder', 'quiet', 'continue']
 
     try:
         opts, args = getopt.getopt(sys.argv[1:], shortopts, longopts)
@@ -88,14 +88,6 @@ if __name__ == '__main__':
 
     device = '/dev/cdrom'
     quiet = False
-
-    for opt, arg in opts:
-        if opt in ('--device', '-d'):
-            device = arg
-        elif opt in ('--quiet', '-q'):
-            quiet = True
-        elif opt in ('--continue', '-c'):
-            device = None
 
     cp = SaneConfParser()
     cp.read([os.path.expanduser('~/.peelrc')])
@@ -109,6 +101,16 @@ if __name__ == '__main__':
     enc_opts = cp.get('options', enc_cmd, '')
 
     path_tmpl = cp.get('output', 'path', def_path)
+
+    for opt, arg in opts:
+        if opt in ('--device', '-d'):
+            device = arg
+        elif opt in ('--quiet', '-q'):
+            quiet = True
+        elif opt in ('--continue', '-c'):
+            device = None
+        elif opt in ('--encoder', '-e'):
+            enc_cmd = arg
 
     try:
         ripper = rippers[rip_cmd](rip_opts)

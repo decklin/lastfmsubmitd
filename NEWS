@@ -10,6 +10,8 @@
 
 * Fix peelrc [options] section parsing.
 
+* Add --encoder option in peel.
+
 0.35 (2007-03-29):
 ==================
 
