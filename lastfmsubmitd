@@ -112,7 +112,7 @@ class LsdSpool:
         for f in self.files:
             os.unlink(f)
         if self.subs:
-            newfile = self.cli.submit(self.subs)
+            newfile = self.cli.submit_many(self.subs)
             self.files = [newfile]
         else:
             self.files = []
