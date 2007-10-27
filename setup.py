@@ -4,7 +4,7 @@ from distutils.core import setup
 
 setup(
     name='lastfmsubmitd',
-    version='0.35',
+    version='0.36',
     description='Last.fm submit daemon and example MPD/MusicBrainz clients',
     author='Decklin Foster',
     author_email='decklin@red-bean.com',
