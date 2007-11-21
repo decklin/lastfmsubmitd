@@ -60,6 +60,8 @@ class Client:
             stderrhandler.setLevel(level)
             stderrhandler.setFormatter(logging.Formatter(stderrfmt))
             self.log.addHandler(stderrhandler)
+        else:
+            os.dup2(filehandler.stream.fileno(), sys.stderr.fileno())
 
     def submit_many(self, songs):
         """Creates a uniquely named file in the spool directory containing
@@ -91,7 +93,25 @@ class Daemon(Client):
         self.conf.pidfile_path = self.conf.cp.get('paths', 'pidfile',
             '%s/%s.pid' % (PIDFILE_BASE, self.name))
 
-    def write_pidfile(self):
+    def daemonize(self, fork=True):
+        if fork:
+            try:
+                pid = os.fork()
+                if pid: sys.exit(0)
+            except OSError, e:
+                print >>sys.stderr, "%s: can't fork: %s" % (self.name, e)
+                sys.exit(1)
+
+        os.chdir('/')
+        os.setsid()
+        os.umask(0)
+
+        devnull = os.open('/dev/null', os.O_RDWR)
+        os.dup2(devnull, sys.stdin.fileno())
+        os.dup2(devnull, sys.stdout.fileno())
+        os.dup2(devnull, sys.stderr.fileno())
+        os.close(devnull)
+
         try:
             pidfile = open(self.conf.pidfile_path, 'w')
             print >>pidfile, os.getpid()
@@ -100,6 +120,6 @@ class Daemon(Client):
             print >>sys.stderr, "can't open pidfile: %s" % e
             self.conf.pidfile_path = None
 
-    def remove_pidfile(self):
+    def cleanup(self):
         if self.conf.pidfile_path:
             os.remove(self.conf.pidfile_path)

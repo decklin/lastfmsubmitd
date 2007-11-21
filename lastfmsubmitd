@@ -269,7 +269,7 @@ def daemon(cli, online):
 
     def shutdown(signum, frame):
         spool.sync()
-        cli.remove_pidfile()
+        cli.cleanup()
         sys.exit(0)
 
     def alarm(signum, frame):
@@ -362,8 +362,8 @@ if __name__ == '__main__':
             sys.exit(1)
 
     cli = lastfm.client.Daemon(DAEMON_NAME, conf)
+    cli.daemonize(fork)
     cli.open_log(debug, stderr)
-    cli.write_pidfile()
 
     try:
         cli.log.info('Starting')

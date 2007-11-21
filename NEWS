@@ -1,4 +1,6 @@
-* Add missing import in client.py (thanks dato)
+* Close file descriptors, etc, when daemonizing.
+
+* Add missing import in client.py.
 
 0.36 (2007-10-27):
 ==================

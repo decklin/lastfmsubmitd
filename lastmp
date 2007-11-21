@@ -185,7 +185,7 @@ def daemon(cli):
     mo = MPDMonitor(cli)
 
     def shutdown(signum, frame):
-        cli.remove_pidfile()
+        cli.cleanup()
         sys.exit(0)
 
     signal.signal(signal.SIGTERM, shutdown)
@@ -228,19 +228,9 @@ if __name__ == '__main__':
 
     if conf.debug:
         debug = True
-
-    if fork:
-        try:
-            pid = os.fork()
-            if pid:
-                sys.exit(0)
-        except OSError, e:
-            print >>sys.stderr, "%s: can't fork: %s" % (DAEMON_NAME, e)
-            sys.exit(1)
-
     cli = lastfm.client.Daemon(DAEMON_NAME, conf)
+    cli.daemonize(fork)
     cli.open_log(debug, stderr)
-    cli.write_pidfile()
 
     try:
         cli.log.info('Starting')
