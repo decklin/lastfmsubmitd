@@ -4,6 +4,7 @@ import logging
 import tempfile
 
 import lastfm.config
+import lastfm.marshaller
 
 SLEEP_TIME = 5
 PIDFILE_BASE = '/var/run/lastfm'
