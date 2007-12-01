@@ -51,7 +51,6 @@ class Client:
             self.log.addHandler(filehandler)
             os.umask(oldmask)
         except IOError:
-            # If we can't log it here, better do it somewhere...
             stderr = True
 
         if stderr:
@@ -60,8 +59,6 @@ class Client:
             stderrhandler.setLevel(level)
             stderrhandler.setFormatter(logging.Formatter(stderrfmt))
             self.log.addHandler(stderrhandler)
-        else:
-            os.dup2(filehandler.stream.fileno(), sys.stderr.fileno())
 
     def submit_many(self, songs):
         """Creates a uniquely named file in the spool directory containing
