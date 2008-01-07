@@ -1,3 +1,6 @@
+0.37 (2008-01-07):
+==================
+
 * Close file descriptors, etc, when daemonizing.
 
 * Add missing import in client.py.
