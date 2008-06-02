@@ -1,3 +1,5 @@
+* Fixed a possible crash when lastfmsubmitd is fed malformed YAML.
+
 0.37 (2008-01-07):
 ==================
 

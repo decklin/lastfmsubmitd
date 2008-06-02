@@ -42,6 +42,11 @@ HTTP_TIMEOUT = 30
 
 INITIAL_BACKOFF = 60
 
+# Lame shortcut
+
+def utf8(a):
+    return unicode(a).encode('utf-8')
+
 class HandshakeError(Exception): pass
 class SubTimeoutError(Exception): pass
 class SessionError(Exception): pass
@@ -202,16 +207,16 @@ class LastFmSession:
             post_data = [urllib.urlencode(args)]
             for i, sub in enumerate(chunk):
                 args = {}
-                args['a[%d]'%i] = sub['artist'].encode('utf-8')
-                args['t[%d]'%i] = sub['title'].encode('utf-8')
-                args['l[%d]'%i] = sub['length']
+                args['a[%d]'%i] = utf8(sub['artist'])
+                args['t[%d]'%i] = utf8(sub['title'])
+                args['l[%d]'%i] = utf8(sub['length'])
                 args['i[%d]'%i] = time.strftime(lastfm.TIME_FMT, sub['time'])
                 try:
-                    args['b[%d]' % i] = sub['album'].encode('utf-8')
+                    args['b[%d]' % i] = utf8(sub['album'])
                 except KeyError:
                     args['b[%d]' % i] = ''
                 try:
-                    args['m[%d]' % i] = sub['mbid'].encode('utf-8')
+                    args['m[%d]' % i] = utf8(sub['mbid'])
                 except KeyError:
                     args['m[%d]' % i] = ''
                 self.cli.log.info('Submitting: %s' % lastfm.repr(sub))
