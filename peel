@@ -4,10 +4,16 @@ import os
 import sys
 import time
 import getopt
+import select
+import fcntl
 
 import lastfm.client
 import lastfm.marshaller
 from lastfm.config import SaneConfParser
+
+BUF_CHUNK = 4096
+BUF_MAX = 2048
+BUF_INIT = 512
 
 def popen(argv, mode='r'):
     command = ' '.join(argv)
@@ -127,11 +133,6 @@ if __name__ == '__main__':
     for song in lastfm.marshaller.load_documents(sys.stdin):
         print "Track %(number)s: %(title)s..." % song
 
-        if device:
-            rip = ripper.open(device, song['number'])
-        else:
-            rip = sox_open('track%02d.cdda.wav' % song['number'])
-
         safe_song = {}
         for k, v in song.iteritems():
             try:
@@ -146,14 +147,32 @@ if __name__ == '__main__':
 
         enc = encoder.open(song, path)
 
-        while True:
-            buf = rip.read(4096)
-            if buf:
-                enc.write(buf)
+        if device:
+            rip = ripper.open(device, song['number'])
+        else:
+            rip = sox_open('track%02d.cdda.wav' % song['number'])
+
+        buf = [rip.read(BUF_CHUNK) for i in range(0, BUF_INIT)]
+
+        flags = fcntl.fcntl(rip, fcntl.F_GETFL)
+        fcntl.fcntl(rip, fcntl.F_SETFL, flags|os.O_NONBLOCK)
+
+        while len(buf) > 0 or not rip.closed:
+            while len(buf) < BUF_MAX and not rip.closed:
+                rd, wr, ex = select.select([rip], [], [], 0)
+                if rip in rd:
+                    raw = rip.read(BUF_CHUNK)
+                    if len(raw) > 0:
+                        buf.append(raw)
+                    else:
+                        rip.close()
+                else:
+                    break
+            if len(buf) > 0:
+                raw = buf.pop(0)
+                enc.write(raw)
                 if not quiet:
-                    play.write(buf)
-            else:
-                break
+                    play.write(raw)
 
         if not quiet:
             if song['length'] >= 30:
