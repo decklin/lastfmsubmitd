@@ -1,3 +1,7 @@
+* Split all the non-lastfmsubmitd programs out into their own package
+  (ears). Unrelated players may now depend on us without dragging in
+  dependencies they may not want (MusicBrainz, cdparanoia, MPD).
+
 * Fixed a possible crash when lastfmsubmitd is fed malformed YAML.
 
 0.37 (2008-01-07):

@@ -11,8 +11,8 @@ Installation
    * ``/var/spool/lastfm``
 
    Make them writable by whatever user (or group) is going to be running
-   the daemon(s) and/or music players. ``install-example.sh`` shows how
-   this should be done on most systems.
+   the daemon(s) and/or music players. ``doc/install-example.sh`` shows
+   how this should be done on most systems.
 
 3. Create a configuration file, ``/etc/lastfmsubmitd.conf``. This is a
    regular Python ConfigParser file, and should look like::
@@ -21,16 +21,7 @@ Installation
     user: decklin
     password: **********
 
-   If you want to use LastMP, its configuration file is
-   ``/etc/lastmp.conf`` and should contain::
-
-    [mpd]
-    host: localhost
-    port: 6600
-    password: **********
-
-   The MPD password is optional Additionally, either configuration file
-   can contain these sections (all items are optional)::
+   It can also optionally contain either of these sections:
 
     [daemon]
     sleep_time: 5

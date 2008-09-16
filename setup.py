@@ -5,10 +5,10 @@ from distutils.core import setup
 setup(
     name='lastfmsubmitd',
     version='0.37',
-    description='Last.fm submit daemon and example MPD/MusicBrainz clients',
+    description='Last.fm song submission daemon',
     author='Decklin Foster',
     author_email='decklin@red-bean.com',
-    url='http://www.red-bean.com/~decklin/software/lastfmsubmitd/',
+    url='http://www.red-bean.com/decklin/lastfmsubmitd/',
     classifiers=[
         'Intended Audience :: End Users/Desktop',
         'Development Status :: 4 - Beta',
@@ -22,18 +22,10 @@ setup(
     packages = ['lastfm'],
     scripts = [
         'lastfmsubmitd',
-        'lastmp',
-        'lastcd',
-        'mbfind',
-        'mbget',
-        'mbsubmit',
-        'peel',
         ],
     data_files=[
         ('share/man/man1', [
             'doc/lastfmsubmitd.1',
-            'doc/lastmp.1',
-            'doc/mbget.1',
             ]),
         ('lib/lastfmsubmitd', [
             'lastfmsubmit',
