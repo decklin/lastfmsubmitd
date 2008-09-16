@@ -1,3 +1,12 @@
+* Split everything besides the daemon and example client into its
+  own package (ears). Unrelated players can now depend on us, and
+  distributions can package us, without dragging in things they may not
+  want (MusicBrainz, cdparanoia).
+
+* Moved lastmp to a "contrib" subdirectory to emphasize the fact that
+  this package is not just for MPD; only the 250 lines of our flagship
+  example are.
+
 * Fixed a possible crash when lastfmsubmitd is fed malformed YAML.
 
 0.37 (2008-01-07):

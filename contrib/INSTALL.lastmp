@@ -1,0 +1,14 @@
+Installation
+============
+
+Create a file ``/etc/lastmp.conf`` and put in something like:
+
+    [mpd]
+    host: localhost
+    port: 6600
+    password: **********
+
+All Python programs that are also lastfmsubmitd clients will pick up its
+configuration, so in most cases you won't need to set anything. If you
+do, though, the [daemon] and [paths] sections work the same as they do
+there.

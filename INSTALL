@@ -1,42 +1,33 @@
 Installation
 ============
 
-1. Run ``./setup.py install`` as usual.
+ 1. Run ``./setup.py install`` as usual.
 
-2. Create a user/group for the daemon(s) (I use lastfm:lastfm), and
-   the following directories:
+ 2. Create a user/group for the daemon(s) (I use lastfm:lastfm), and
+    the following directories:
 
-   * ``/var/log/lastfm``
-   * ``/var/run/lastfm``
-   * ``/var/spool/lastfm``
+    * ``/var/log/lastfm``
+    * ``/var/run/lastfm``
+    * ``/var/spool/lastfm``
 
-   Make them writable by whatever user (or group) is going to be running
-   the daemon(s) and/or music players. ``install-example.sh`` shows how
-   this should be done on most systems.
+    Make them writable by whatever user (or group) is going to be running
+    the daemon(s) and/or music players. ``doc/install-example.sh`` shows
+    how this should be done on most systems.
 
-3. Create a configuration file, ``/etc/lastfmsubmitd.conf``. This is a
-   regular Python ConfigParser file, and should look like::
+ 3. Create a configuration file, ``/etc/lastfmsubmitd.conf``. This is a
+    regular Python ConfigParser file, and should look like::
 
-    [account]
-    user: decklin
-    password: **********
+        [account]
+        user: decklin
+        password: ********
 
-   If you want to use LastMP, its configuration file is
-   ``/etc/lastmp.conf`` and should contain::
+    It can also optionally contain either of these sections:
 
-    [mpd]
-    host: localhost
-    port: 6600
-    password: **********
+        [daemon]
+        sleep_time: 5
+        debug: False
 
-   The MPD password is optional Additionally, either configuration file
-   can contain these sections (all items are optional)::
-
-    [daemon]
-    sleep_time: 5
-    debug: False
-
-    [paths]
-    log: /var/log/lastfm/lastfm.log
-    pidfile: /var/run/lastfm/daemon_name.pid
-    spool: /var/spool/lastfm
+        [paths]
+        log: /var/log/lastfm/lastfm.log
+        pidfile: /var/run/lastfm/daemon_name.pid
+        spool: /var/spool/lastfm
