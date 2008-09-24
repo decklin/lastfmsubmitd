@@ -1,3 +1,6 @@
+1.0.0 (2008-09-24):
+===================
+
 * Split all the non-lastfmsubmitd programs out into their own package
   (ears). Unrelated players may now depend on us without dragging in
   dependencies they may not want (MusicBrainz, cdparanoia, MPD).
