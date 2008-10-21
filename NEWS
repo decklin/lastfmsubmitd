@@ -1,394 +1,397 @@
-* Split everything besides the daemon and example client into its
-  own package (ears). Unrelated players can now depend on us, and
-  distributions can package us, without dragging in things they may not
-  want (MusicBrainz, cdparanoia).
-
-* Moved lastmp to a "contrib" subdirectory to emphasize the fact that
-  this package is not just for MPD; only the 250 lines of our flagship
-  example are.
-
-* Fixed a possible crash when lastfmsubmitd is fed malformed YAML.
-
-0.37 (2008-01-07):
+1.0.1 (2008-09-24)
 ==================
 
-* Close file descriptors, etc, when daemonizing.
+  * Split everything besides the daemon and example client into its
+    own package (ears). Unrelated players can now depend on us, and
+    distributions can package us, without dragging in things they may not
+    want (MusicBrainz, cdparanoia).
 
-* Add missing import in client.py.
+  * Moved lastmp to a "contrib" subdirectory to emphasize the fact that
+    this package is not just for MPD; only the 250 lines of our flagship
+    example are.
 
-0.36 (2007-10-27):
-==================
+  * Fixed a possible crash when lastfmsubmitd is fed malformed YAML.
 
-* Client interface has totally changed (see README.plugins). All problems
-  regarding spool path etc. not being honored should be fixed.
-
-* Write pidfile even if --no-daemon, so we don't crash. Unnecessary, but
-  easier for now.
-
-* Read sleep time correctly in config.
-
-* Fix sox error in peel -c.
-
-* Fix peelrc [options] section parsing.
-
-* Add --encoder option in peel.
-
-0.35 (2007-03-29):
-==================
-
-* Fix crash when a buggy MPD reports the length of a track as zero.
-
-0.34 (2007-03-26):
-==================
-
-* Sort submissions by time if several spool files are read in one go, to
-  avoid erroneously triggering the spam filter (thanks to Steve Hill and
-  a cast of thousands).
-
-* Suppress extra warnings if lastmp cannot connect to MPD.
-
-* Fixed creation of Unicode filenames, songs with slashes, and -d option
-  parsing in peel. Also, actually install it.
-
-0.33 (2006-07-31):
-==================
-
-* Improved some documentation.
-
-* If there is no account information set, print a warning and exit
-  normally, instead of panicking. (Reported by Joey Hess.)
-
-0.32 (2006-07-08):
-==================
-
-* Added peel, a simple CD ripper for use with mbget which pipes audio
-  data to another command (e.g. bfp) and submits played tracks while
-  encoding in the background.
-
-* Added a --print-discid option to mbget so that CDs that have been
-  extracted somewhere without network access can be tagged and encoded
-  by peel later.
-
-* Re-added some lost data validation in lastfmsubmitd.
-
-* Fix lastmp's handling of bad passwords (MPD will let us connect, but
-  not actually return any useful information since we don't have read
-  permission).
-
-* Make enabling debug from the config file actually work.
-
-0.31 (2006-06-23):
-==================
-
-* Replace the environment/option nonsense with a config file.
-
-* Make logs group-writable again.
-
-* Fix a timeout crash in lastfmsubmitd.
-
-0.30 (2006-05-31):
-==================
-
-* Use a spool directory for both the "cache" and reading new subs from
-  plugins; no more locks, blocking, or possibly losing stuck submissions
-  when restarting the daemon. If you are upgrading, you must move
-  /var/cache/lastfm to /var/spool/lastfm.
-
-* Removed lastfm.queue and lastfm.logger modules; everything is in
-  lastfm (with simpler function names) or lastfm.marshaller. Non-Python
-  writers should use mkstemp and print normally; there is no more need
-  to fork.
-
-* Replaced all --output options with --stdout.
-
-* Updated a bunch of documentation.
-
-0.29 (2006-05-06):
-==================
-
-* Fixed pesky GC error message that would appear when cleaning up after
-  a failed attempt to grab the lock.
-
-* Added a bunch of --help, and improved error messages.
-
-* Fix some decoding calls in lastfmsubmit that weren't updated when
-  things were reorganized.
-
-0.28 (2006-04-18):
-==================
-
-* Recover correctly if a lastmp forked proccess fails.
-
-* Log untagged files with the filename instead of None, and make a guess
-  at the encoding if MPD breaks it somehow. This should fix a crash with
-  certain files.
-
-0.27 (2006-04-12):
-==================
-
-* Skip bad data rather than attempting to log it and causing errors.
-
-* Install lastfmsubmit in /usr/lib/lastfmsubmitd, and use the Python
-  queue-writer interface in lastmp instead.
-
-* Check for a supplied submission time in lastfmsubmitd.
-
-0.26 (2006-03-25):
-==================
-
-* Fix logging error when creating fifo.
-
-0.25 (2006-03-24):
-==================
-
-* Added some documentation for plugin developers. Hoping to go 1.0 soon.
-
-* Don't create lockfiles with --output; instead use /var/run/lastfm/lock
-  but only if we are writing to the fifo. WARNING: I decided this was a
-  good excuse to change the lastfm.queue.Writer interface while I still
-  can, so if you are using that, please change your init args.
-
-0.24 (2006-03-13):
-==================
-
-* When printing to a pipe in mbfind or mbget, encode with the locale's
-  default encoding instead of corrupting everything into ascii.
-
-* Added a --no-network option to lastfmsubmitd for testing purposes, and
-  fixed the --no-daemon option.
-
-* Work around a bug in urllib's error handling that was causing crashes.
-
-0.23 (2006-02-26):
-==================
-
-* Make mbfind not print a template unless --template is specified;
-  otherwise, it will fail, so that ``mbget || mbsubmit`` works as you
-  would expect.
-
-* Clean up error messages and add some for import errors in the
-  MusicBrainz stuff.
-
-* Ignore songs with missing data properly; this is the daemon's job now,
-  so you don't have to worry about throwing crap at it from your client.
-  (Your client should not know anything about the network protocol.)
-
-0.22 (2006-02-23):
-==================
-
-* Fix possible truncating of song titles due to stringification. This is
-  another brown paper bag fix, isn't it. Today is not my day.
-
-0.21 (2006-02-23):
-==================
-
-* Brown paper bag: fix man page install locations.
-
-0.20 (2006-02-23):
-==================
-
-* Wrote man pages.
-
-* Convert everything to unicode before serializing. Unfortunately, this
-  includes track numbers, but those only exist to make the output easier
-  to read. If we need them for something we'll do real number parsing.
-
-0.19 (2006-02-23):
-==================
-
-* If mbfind or mbget are printing to a pipe, replace non-ascii values
-  rather than raising an error.
-
-* Quote all string values when serializing, so as to be more compatible
-  with real YAML implementations.
-
-* If we crash for any reason, write it to the log. Make debug logging a
-  bit more useful in general and regular logging perhaps a bit less
-  annoying.
-
-0.18 (2006-02-06):
-==================
-
-* Gratuitously renamed all the "other" programs. For consistency with
-  lastmp, the thing that takes a log and sends it to the daemon is now
-  named lastcd. The thing that used to be lastcd, which only fetches
-  data from MusicBrainz and is not Last.fm-specific, is now named mbget.
-  For consistency with that, mbfindalbum is now simply named mbfind. And
-  for symmetry with those two, I have added mbsubmit, which assists in
-  sending disc IDs to MusicBrainz.
-
-* Added a --freedb option to mbget, which fakes a CDDB-format listing
-  suitable for use with abcde or other CD-ripping programs which use
-  FreeDB.
-
-* If lastmp starts when a song is after 4:00 but not at 50%, assume it
-  was already submitted at 4:00 and don't submit it again.
-
-* Rather than replacing invalid data in lastfmsubmit, try UTF-8 and then
-  the locale encoding (this can still be overridden with --encoding). If
-  neither work, abort rather than sending something corrupted.
-
-0.17 (2006-01-30):
-==================
-
-* Got rid of the old install. The new way of doing things is: One
-  user/group lastfm:lastfm, everything in /var/{log,run,cache}/lastfm
-  (which must be created by root), we own and always fix permissions of
-  files in those directories. Put better instructions for this in
-  INSTALL, install-example.sh, and init-example.sh. If you have an
-  existing setup, please change it! It will no longer be compatable with
-  the Debian package.
-
-* The daemons now fork into the background by default. Added a
-  --no-daemon option to prevent this.
-
-* Replaced the asyaml format with a simple marshaller module that uses a
-  format much closer to a simple YAML map. It should now be trivial to
-  use libsyck (once it is working properly, and once pysyck is updated
-  and packaged) as a drop-in replacement.
-
-* Reading from the fifo should be a bit saner about catching multiple
-  writers, and will always wait until there are none before continuing.
-
-* Don't let the exponential backoff keep growing if it becomes longer
-  than 6 hours.
-
-* Added an --encoding option to lastfmsubmit. If not specified, the
-  locale's default will still be used. If invalid data is given, it will
-  be replaced rather than causing an error.
-
-* Provide some nicer error messages if the log file cannot be opened
-  for writing.
-
-0.16 (2006-01-19):
-==================
-
-* Use a proper alarm-based timeout on HTTP connections to the server, so
-  that it doesn't matter what implementation of urllib we have.
-
-* Add --debug to lastcdreplay.
-
-0.15 (2006-01-08):
-==================
-
-* Take setup.py back out of install.sh. This doesn't work if you need to
-  set any options such as --prefix, so it's not very useful.
-
-* Change musicbrainz.queries to just musicbrainz as the python bindings
-  decided to move things around for no good reason. Version 2.1.2 or
-  later is now required if you want to use any of the MB stuff.
-
-0.14 (2006-01-08):
-==================
-
-* Log untagged files as errors.
-
-* Work around some mpdclient2 breakage that was causing lastmp to crash
-  on any song missing one or more pieces of metadata.
-
-0.13 (2006-01-07):
-==================
-
-* Brown paper bag fix: mpdclient2 sucks, and we need to convert
-  crossfade time to an int.
-
-0.12 (2006-01-07):
-==================
-
-* Don't mark new songs as skipped if crossfade is on.
-
-* In install.sh, set up directory permissions and run setup.py.
-
-0.11 (2006-01-06):
-==================
-
-* Reset throttle only when we successfully handshake or submit, so that
-  we actually back off exponentially.
-
-* Set the default timeout for socket in an attempt to make urllib behave
-  nicer. I believe this does not work under 2.4, but it's something.
-
-* If there are multiple writers waiting (for example, upon startup or
-  after a long network timeout), read from all of them and wait until
-  there is nothing left before submitting.
-
-0.10 (2006-01-04):
-==================
-
-* Added setup.py and install.sh so that installation should be
-  relatively painless. setup.py does the actual installing; install.sh
-  merely sets up users and permissions.
-
-* Improve the handling of an empty or nonexistent cache.
-
-0.9 (2006-01-03):
+0.37 (2008-01-07)
 =================
 
-* Some small fixes in how we handle rejected submissions and other
-  FAILED responses.
+  * Close file descriptors, etc, when daemonizing.
 
-* Make log messages more user-friendly and less redundant if debugging
-  is off.
+  * Add missing import in client.py.
 
-0.8 (2006-01-02):
+0.36 (2007-10-27)
 =================
 
-* Brown paper bag fix: submit the oldest cached subs first, not the
-  newest. Yikes!
+  * Client interface has totally changed (see README.plugins). All problems
+    regarding spool path etc. not being honored should be fixed.
 
-0.7 (2006-01-02):
+  * Write pidfile even if --no-daemon, so we don't crash. Unnecessary, but
+    easier for now.
+
+  * Read sleep time correctly in config.
+
+  * Fix sox error in peel -c.
+
+  * Fix peelrc [options] section parsing.
+
+  * Add --encoder option in peel.
+
+0.35 (2007-03-29)
 =================
 
-* Redesign the main loop so that we can increase the network backoff
-  exponentially without forcing lastfmsubmit to block until we succeed.
-  Instead, just sleep for 15 seconds or so at a time and check if we're
-  ready to try the network again. This will keep the fifo from clogging
-  up, so we can read it only once per loop without worrying about
-  falling behind.
+  * Fix crash when a buggy MPD reports the length of a track as zero.
 
-* Don't log debugging information by default. If you want to turn it on,
-  use --debug.
-
-0.6 (2006-01-01):
+0.34 (2007-03-26)
 =================
 
-* Lock the fifo, with /var/run/lastfm/fifo.lock. Any program that needs
-  to write to the fifo must use this.
+  * Sort submissions by time if several spool files are read in one go, to
+    avoid erroneously triggering the spam filter (thanks to Steve Hill and
+    a cast of thousands).
 
-* Catch SIGTERM and clean up/save the cache properly.
+  * Suppress extra warnings if lastmp cannot connect to MPD.
 
-0.5 (2005-12-31):
+  * Fixed creation of Unicode filenames, songs with slashes, and -d option
+    parsing in peel. Also, actually install it.
+
+0.33 (2006-07-31)
 =================
 
-* Improve handling of untagged songs in lastmp.
+  * Improved some documentation.
 
-* Catch handshake errors properly and back off until we can connect.
+  * If there is no account information set, print a warning and exit
+    normally, instead of panicking. (Reported by Joey Hess.)
 
-0.4 (2005-12-14):
+0.32 (2006-07-08)
 =================
 
-* You can now specify standard output as "-" in lastfmsubmit and
-  lastcdreplay.
+  * Added peel, a simple CD ripper for use with mbget which pipes audio
+    data to another command (e.g. bfp) and submits played tracks while
+    encoding in the background.
 
-* Error handling should be improved.
+  * Added a --print-discid option to mbget so that CDs that have been
+    extracted somewhere without network access can be tagged and encoded
+    by peel later.
 
-0.3 (2005-12-11):
+  * Re-added some lost data validation in lastfmsubmitd.
+
+  * Fix lastmp's handling of bad passwords (MPD will let us connect, but
+    not actually return any useful information since we don't have read
+    permission).
+
+  * Make enabling debug from the config file actually work.
+
+0.31 (2006-06-23)
 =================
 
-* Fixed an import error in lastcdreplay that prevented it from running.
+  * Replace the environment/option nonsense with a config file.
 
-* You can now specify --device in lastcd.
+  * Make logs group-writable again.
 
-0.2 (2005-12-08):
+  * Fix a timeout crash in lastfmsubmitd.
+
+0.30 (2006-05-31)
 =================
 
-* Make lastmp call lastfmsubmitd with a correct path, rather than
-  looking for it in the current directory. This will make submissions
-  work again.
+  * Use a spool directory for both the "cache" and reading new subs from
+    plugins; no more locks, blocking, or possibly losing stuck submissions
+    when restarting the daemon. If you are upgrading, you must move
+    /var/cache/lastfm to /var/spool/lastfm.
 
-* Output V/A CDs correctly in lastcd.
+  * Removed lastfm.queue and lastfm.logger modules; everything is in
+    lastfm (with simpler function names) or lastfm.marshaller. Non-Python
+    writers should use mkstemp and print normally; there is no more need
+    to fork.
 
-0.1 (2005-12-08):
+  * Replaced all --output options with --stdout.
+
+  * Updated a bunch of documentation.
+
+0.29 (2006-05-06)
 =================
 
-* Initial release.
+  * Fixed pesky GC error message that would appear when cleaning up after
+    a failed attempt to grab the lock.
+
+  * Added a bunch of --help, and improved error messages.
+
+  * Fix some decoding calls in lastfmsubmit that weren't updated when
+    things were reorganized.
+
+0.28 (2006-04-18)
+=================
+
+  * Recover correctly if a lastmp forked proccess fails.
+
+  * Log untagged files with the filename instead of None, and make a guess
+    at the encoding if MPD breaks it somehow. This should fix a crash with
+    certain files.
+
+0.27 (2006-04-12)
+=================
+
+  * Skip bad data rather than attempting to log it and causing errors.
+
+  * Install lastfmsubmit in /usr/lib/lastfmsubmitd, and use the Python
+    queue-writer interface in lastmp instead.
+
+  * Check for a supplied submission time in lastfmsubmitd.
+
+0.26 (2006-03-25)
+=================
+
+  * Fix logging error when creating fifo.
+
+0.25 (2006-03-24)
+=================
+
+  * Added some documentation for plugin developers. Hoping to go 1.0 soon.
+
+  * Don't create lockfiles with --output; instead use /var/run/lastfm/lock
+    but only if we are writing to the fifo. WARNING: I decided this was a
+    good excuse to change the lastfm.queue.Writer interface while I still
+    can, so if you are using that, please change your init args.
+
+0.24 (2006-03-13)
+=================
+
+  * When printing to a pipe in mbfind or mbget, encode with the locale's
+    default encoding instead of corrupting everything into ascii.
+
+  * Added a --no-network option to lastfmsubmitd for testing purposes, and
+    fixed the --no-daemon option.
+
+  * Work around a bug in urllib's error handling that was causing crashes.
+
+0.23 (2006-02-26)
+=================
+
+  * Make mbfind not print a template unless --template is specified;
+    otherwise, it will fail, so that ``mbget || mbsubmit`` works as you
+    would expect.
+
+  * Clean up error messages and add some for import errors in the
+    MusicBrainz stuff.
+
+  * Ignore songs with missing data properly; this is the daemon's job now,
+    so you don't have to worry about throwing crap at it from your client.
+    (Your client should not know anything about the network protocol.)
+
+0.22 (2006-02-23)
+=================
+
+  * Fix possible truncating of song titles due to stringification. This is
+    another brown paper bag fix, isn't it. Today is not my day.
+
+0.21 (2006-02-23)
+=================
+
+  * Brown paper bag: fix man page install locations.
+
+0.20 (2006-02-23)
+=================
+
+  * Wrote man pages.
+
+  * Convert everything to unicode before serializing. Unfortunately, this
+    includes track numbers, but those only exist to make the output easier
+    to read. If we need them for something we'll do real number parsing.
+
+0.19 (2006-02-23)
+=================
+
+  * If mbfind or mbget are printing to a pipe, replace non-ascii values
+    rather than raising an error.
+
+  * Quote all string values when serializing, so as to be more compatible
+    with real YAML implementations.
+
+  * If we crash for any reason, write it to the log. Make debug logging a
+    bit more useful in general and regular logging perhaps a bit less
+    annoying.
+
+0.18 (2006-02-06)
+=================
+
+  * Gratuitously renamed all the "other" programs. For consistency with
+    lastmp, the thing that takes a log and sends it to the daemon is now
+    named lastcd. The thing that used to be lastcd, which only fetches
+    data from MusicBrainz and is not Last.fm-specific, is now named mbget.
+    For consistency with that, mbfindalbum is now simply named mbfind. And
+    for symmetry with those two, I have added mbsubmit, which assists in
+    sending disc IDs to MusicBrainz.
+
+  * Added a --freedb option to mbget, which fakes a CDDB-format listing
+    suitable for use with abcde or other CD-ripping programs which use
+    FreeDB.
+
+  * If lastmp starts when a song is after 4:00 but not at 50%, assume it
+    was already submitted at 4:00 and don't submit it again.
+
+  * Rather than replacing invalid data in lastfmsubmit, try UTF-8 and then
+    the locale encoding (this can still be overridden with --encoding). If
+    neither work, abort rather than sending something corrupted.
+
+0.17 (2006-01-30)
+=================
+
+  * Got rid of the old install. The new way of doing things is: One
+    user/group lastfm:lastfm, everything in /var/{log,run,cache}/lastfm
+    (which must be created by root), we own and always fix permissions of
+    files in those directories. Put better instructions for this in
+    INSTALL, install-example.sh, and init-example.sh. If you have an
+    existing setup, please change it! It will no longer be compatable with
+    the Debian package.
+
+  * The daemons now fork into the background by default. Added a
+    --no-daemon option to prevent this.
+
+  * Replaced the asyaml format with a simple marshaller module that uses a
+    format much closer to a simple YAML map. It should now be trivial to
+    use libsyck (once it is working properly, and once pysyck is updated
+    and packaged) as a drop-in replacement.
+
+  * Reading from the fifo should be a bit saner about catching multiple
+    writers, and will always wait until there are none before continuing.
+
+  * Don't let the exponential backoff keep growing if it becomes longer
+    than 6 hours.
+
+  * Added an --encoding option to lastfmsubmit. If not specified, the
+    locale's default will still be used. If invalid data is given, it will
+    be replaced rather than causing an error.
+
+  * Provide some nicer error messages if the log file cannot be opened
+    for writing.
+
+0.16 (2006-01-19)
+=================
+
+  * Use a proper alarm-based timeout on HTTP connections to the server, so
+    that it doesn't matter what implementation of urllib we have.
+
+  * Add --debug to lastcdreplay.
+
+0.15 (2006-01-08)
+=================
+
+  * Take setup.py back out of install.sh. This doesn't work if you need to
+    set any options such as --prefix, so it's not very useful.
+
+  * Change musicbrainz.queries to just musicbrainz as the python bindings
+    decided to move things around for no good reason. Version 2.1.2 or
+    later is now required if you want to use any of the MB stuff.
+
+0.14 (2006-01-08)
+=================
+
+  * Log untagged files as errors.
+
+  * Work around some mpdclient2 breakage that was causing lastmp to crash
+    on any song missing one or more pieces of metadata.
+
+0.13 (2006-01-07)
+=================
+
+  * Brown paper bag fix: mpdclient2 sucks, and we need to convert
+    crossfade time to an int.
+
+0.12 (2006-01-07)
+=================
+
+  * Don't mark new songs as skipped if crossfade is on.
+
+  * In install.sh, set up directory permissions and run setup.py.
+
+0.11 (2006-01-06)
+=================
+
+  * Reset throttle only when we successfully handshake or submit, so that
+    we actually back off exponentially.
+
+  * Set the default timeout for socket in an attempt to make urllib behave
+    nicer. I believe this does not work under 2.4, but it's something.
+
+  * If there are multiple writers waiting (for example, upon startup or
+    after a long network timeout), read from all of them and wait until
+    there is nothing left before submitting.
+
+0.10 (2006-01-04)
+=================
+
+  * Added setup.py and install.sh so that installation should be
+    relatively painless. setup.py does the actual installing; install.sh
+    merely sets up users and permissions.
+
+  * Improve the handling of an empty or nonexistent cache.
+
+0.9 (2006-01-03)
+================
+
+  * Some small fixes in how we handle rejected submissions and other
+    FAILED responses.
+
+  * Make log messages more user-friendly and less redundant if debugging
+    is off.
+
+0.8 (2006-01-02)
+================
+
+  * Brown paper bag fix: submit the oldest cached subs first, not the
+    newest. Yikes!
+
+0.7 (2006-01-02)
+================
+
+  * Redesign the main loop so that we can increase the network backoff
+    exponentially without forcing lastfmsubmit to block until we succeed.
+    Instead, just sleep for 15 seconds or so at a time and check if we're
+    ready to try the network again. This will keep the fifo from clogging
+    up, so we can read it only once per loop without worrying about
+    falling behind.
+
+  * Don't log debugging information by default. If you want to turn it on,
+    use --debug.
+
+0.6 (2006-01-01)
+================
+
+  * Lock the fifo, with /var/run/lastfm/fifo.lock. Any program that needs
+    to write to the fifo must use this.
+
+  * Catch SIGTERM and clean up/save the cache properly.
+
+0.5 (2005-12-31)
+================
+
+  * Improve handling of untagged songs in lastmp.
+
+  * Catch handshake errors properly and back off until we can connect.
+
+0.4 (2005-12-14)
+================
+
+  * You can now specify standard output as "-" in lastfmsubmit and
+    lastcdreplay.
+
+  * Error handling should be improved.
+
+0.3 (2005-12-11)
+================
+
+  * Fixed an import error in lastcdreplay that prevented it from running.
+
+  * You can now specify --device in lastcd.
+
+0.2 (2005-12-08)
+================
+
+  * Make lastmp call lastfmsubmitd with a correct path, rather than
+    looking for it in the current directory. This will make submissions
+    work again.
+
+  * Output V/A CDs correctly in lastcd.
+
+0.1 (2005-12-08)
+================
+
+  * Initial release.
