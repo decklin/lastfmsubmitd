@@ -90,17 +90,23 @@ class Daemon(Client):
         self.conf.pidfile_path = self.conf.cp.get('paths', 'pidfile',
             '%s/%s.pid' % (PIDFILE_BASE, self.name))
 
+    def fork(self):
+        try:
+            pid = os.fork()
+            if pid:
+                sys.exit(0)
+        except OSError, e:
+            print >>sys.stderr, "%s: can't fork: %s" % (self.name, e)
+            sys.exit(1)
+
     def daemonize(self, fork=True):
         if fork:
-            try:
-                pid = os.fork()
-                if pid: sys.exit(0)
-            except OSError, e:
-                print >>sys.stderr, "%s: can't fork: %s" % (self.name, e)
-                sys.exit(1)
+            self.fork()
+            if os.geteuid() == 0:
+                os.setsid()
+                self.fork()
 
         os.chdir('/')
-        os.setsid()
         os.umask(0)
 
         devnull = os.open('/dev/null', os.O_RDWR)

@@ -1,3 +1,5 @@
+  * Fix the order of fork/setsid. (thanks Nick Welch)
+
 1.0.1 (2008-09-24)
 ==================
 
