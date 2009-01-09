@@ -106,6 +106,14 @@ class Daemon(Client):
                 os.setsid()
                 self.fork()
 
+        try:
+            pidfile = open(self.conf.pidfile_path, 'w')
+            print >>pidfile, os.getpid()
+            pidfile.close()
+        except IOError, e:
+            print >>sys.stderr, "can't open pidfile: %s" % e
+            self.conf.pidfile_path = None
+
         os.chdir('/')
         os.umask(0)
 
@@ -114,14 +122,6 @@ class Daemon(Client):
         os.dup2(devnull, sys.stdout.fileno())
         os.dup2(devnull, sys.stderr.fileno())
         os.close(devnull)
-
-        try:
-            pidfile = open(self.conf.pidfile_path, 'w')
-            print >>pidfile, os.getpid()
-            pidfile.close()
-        except IOError, e:
-            print >>sys.stderr, "can't open pidfile: %s" % e
-            self.conf.pidfile_path = None
 
     def cleanup(self):
         if self.conf.pidfile_path:
