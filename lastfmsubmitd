@@ -261,7 +261,7 @@ class LastFmSession:
 
 class LsdConfig(lastfm.config.Config):
     def __init__(self):
-        lastfm.config.Config.__init__(self, search=DAEMON_NAME)
+        lastfm.config.Config.__init__(self, name=DAEMON_NAME)
         self.user = self.cp.get('account', 'user', None)
         self.password = self.cp.get('account', 'password', None)
         if not (self.user and self.password):

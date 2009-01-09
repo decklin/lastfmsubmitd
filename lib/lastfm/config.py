@@ -19,12 +19,12 @@ class Config:
     through the lastfmsubmitd "protocol": where to put the serialized
     submissions and where to log. Since most everything can make use of it, a
     debug flag is also provided. A standard for configuration file locations
-    is defined (specify ``search`` to look for /etc/foo.conf or ~/.foo.conf,
+    is defined (specify ``name`` to look for /etc/foo.conf or ~/.foo/conf,
     with the latter overriding), but arbitrary locations may be specified
     using ``path``. If no configuration files are provided or readable, the
     default values of SPOOL_PATH and LOG_PATH are used."""
 
-    def __init__(self, path=None, search=None):
+    def __init__(self, path=None, name=None):
         self.cp = SaneConfParser()
         if path:
             self.cp.read([path])

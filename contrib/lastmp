@@ -174,7 +174,7 @@ class MPDMonitor:
 
 class LmpConfig(lastfm.config.Config):
     def __init__(self):
-        lastfm.config.Config.__init__(self, search=DAEMON_NAME)
+        lastfm.config.Config.__init__(self, name=DAEMON_NAME)
         self.host = self.cp.get('mpd', 'host', None)
         self.port = int(self.cp.get('mpd', 'port', 6600))
         self.password = self.cp.get('mpd', 'password', None)
