@@ -104,6 +104,9 @@ class Daemon(Client):
                 os.setsid()
                 self.fork()
 
+        if not os.path.exists(self.conf.spool_path):
+            os.mkdir(self.conf.spool_path)
+
         try:
             pidfile = open(self.conf.pidfile_path, 'w')
             print >>pidfile, os.getpid()
