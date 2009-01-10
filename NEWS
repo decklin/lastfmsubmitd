@@ -8,6 +8,8 @@
     defined standard for the spool. Thanks also to Nick Welch for pointing
     this out.
 
+  * Fix the --no-daemon option so that log information is printed to stderr.
+
 1.0.1 (2008-09-24)
 ==================
 
