@@ -1,5 +1,12 @@
   * Fix the order of fork/setsid and pidfile creation. (thanks Nick Welch)
 
+  * Make running from a user account's $HOME really work. The default
+    directory for this is now ``~/.lastfmsubmitd``, which contains at least
+    ``conf`` and ``spool``. (I would ordinarily be loath to change this in a
+    "stable" release, but it didn't really work at all before because there
+    was not a defined standard for the spool. Thanks also to Nick Welch for
+    pointing this out.)
+
 1.0.1 (2008-09-24)
 ==================
 

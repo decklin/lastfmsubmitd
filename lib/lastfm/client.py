@@ -6,8 +6,9 @@ import tempfile
 import lastfm.config
 import lastfm.marshaller
 
-SLEEP_TIME = 5
-PIDFILE_BASE = '/var/run/lastfm'
+SLEEP = 5
+PID = lastfm.config.DefaultPath(lambda n: '/var/run/lastfm/%s.pid' % n,
+                                lambda n: '~/.%s/pid' % n)
 
 class Client:
     """Something that uses the lastfmsubmitd spool. Has a configuration
@@ -83,9 +84,9 @@ class Daemon(Client):
     def __init__(self, name, conf=None, log=True):
         Client.__init__(self, name, conf, log)
         self.conf.sleep_time = float(self.conf.cp.get('daemon', 'sleep_time',
-            SLEEP_TIME))
+            SLEEP))
         self.conf.pidfile_path = self.conf.cp.get('paths', 'pidfile',
-            '%s/%s.pid' % (PIDFILE_BASE, self.name))
+            self.conf.get_path(PID))
 
     def fork(self):
         try:

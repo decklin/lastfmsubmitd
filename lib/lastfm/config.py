@@ -1,11 +1,28 @@
 import os
 import ConfigParser
 
-SPOOL_PATH = '/var/spool/lastfm'
-LOG_PATH = '/var/log/lastfm/lastfm.log'
+class DefaultPath:
+    """The default paths we want depend on whether this is a "system"
+    instance (/etc, /var), or running under a normal user account ($HOME).
+    So that we can reuse this code for other daemons, the paths are
+    specified as lambda expressions that take the current program's name.
+    They may or may not use this parameter (i.e., lastfmsubmitd itself and a
+    client using this interface will have separate log files, but obviously
+    must share the same spool directory). The "user" version of a path
+    should contain ~, which this class will expand. Creates a callable that
+    takes whether or not we want the "system" version, and the name."""
 
-SYS_CONF = '/etc/%s.conf'
-USER_CONF = os.path.expanduser('~/.%s.conf')
+    def __init__(self, sys, user):
+        self.funcs = {True: sys, False: lambda n: os.path.expanduser(user(n))}
+    def __call__(self, use_sys_path, name):
+        return self.funcs[use_sys_path](name)
+
+CONF = DefaultPath(lambda n: '/etc/%s.conf' % n,
+                   lambda n: '~/.%s/conf' % n)
+LOG = DefaultPath(lambda n: '/var/log/lastfm/%s.log' % n,
+                  lambda n: '~/.%s/log' % n)
+SPOOL = DefaultPath(lambda n: '/var/spool/lastfm',
+                    lambda n: '~/.lastfmsubmitd/spool')
 
 class SaneConfParser(ConfigParser.RawConfigParser):
     def get(self, section, option, default):
@@ -16,21 +33,25 @@ class SaneConfParser(ConfigParser.RawConfigParser):
 
 class Config:
     """The minimum configuration needed by any program that communicates
-    through the lastfmsubmitd "protocol": where to put the serialized
-    submissions and where to log. Since most everything can make use of it, a
-    debug flag is also provided. A standard for configuration file locations
-    is defined (specify ``name`` to look for /etc/foo.conf or ~/.foo/conf,
-    with the latter overriding), but arbitrary locations may be specified
-    using ``path``. If no configuration files are provided or readable, the
-    default values of SPOOL_PATH and LOG_PATH are used."""
+    through the lastfmsubmitd protocol: where to put the serialized
+    submissions and where to log. If the provided path or ~/.NAME/config is
+    found, the "user" defaults are used. Otherwise, /etc/NAME.conf is read,
+    and the "system" defaults are used."""
 
-    def __init__(self, path=None, name=None):
+    # The default args here are a hack (so that even invalid paths are
+    # always strings). It would arguably be cleaner for them to be None.
+
+    def __init__(self, path='', name='unknown'):
         self.cp = SaneConfParser()
-        if path:
-            self.cp.read([path])
-        elif search:
-            self.cp.read([SYS_CONF % search, USER_CONF % search])
+        self.name = name
+        self.use_sys_path = False
+        if not self.cp.read([self.get_path(CONF), path]):
+            self.use_sys_path = True
+            self.cp.read([self.get_path(CONF)])
 
-        self.spool_path = self.cp.get('paths', 'spool', SPOOL_PATH)
-        self.log_path = self.cp.get('paths', 'log', LOG_PATH)
+        self.log_path = self.cp.get('paths', 'log', self.get_path(LOG))
+        self.spool_path = self.cp.get('paths', 'spool', self.get_path(SPOOL))
         self.debug = self.cp.get('general', 'debug', False)
+
+    def get_path(self, f):
+        return f(self.use_sys_path, self.name)
