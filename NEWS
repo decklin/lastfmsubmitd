@@ -1,3 +1,6 @@
+1.0.2 (2009-01-20)
+==================
+
   * Fix the order of fork/setsid and pidfile creation. (thanks Nick Welch)
 
   * Make running from a user account's $HOME really work. The default
