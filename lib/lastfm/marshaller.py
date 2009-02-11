@@ -1,5 +1,15 @@
 import time
+import re
 import lastfm
+
+# Temporary YAML hack
+TIME_RE = re.compile("""
+    (\d{4})-(\d{1,2})-(\d{1,2}) # (ymd)
+    (?:[Tt]|[ \t]+)
+    (\d{1,2}?):(\d{2}):(\d{2}) # (hms)
+    (?:\.\d*)? # (frac)
+    [ \t]*
+    (Z|[-+]\d{1,2}(?::\d{1,2})?)? # (tz)""", re.X)
 
 def guess_enc(s, enc):
     try: return s.decode(enc)
@@ -10,10 +20,31 @@ def guess_enc(s, enc):
     except UnicodeDecodeError:
         return s.decode('ascii', 'replace')
 
-def parse_length(length):
-    # Just think, if we had Python 2.4, this could all be one line.
-    parts = [int(p) for p in length.split(':')]; parts.reverse()
-    return sum([p * u for p, u in zip(parts, (1, 60, 3600, 86400))])
+def parse_length(s):
+    UNITS = (1, 60, 3600, 86400)
+    if s.startswith('-'):
+        sign = -1
+        s = s[1:]
+    else:
+        sign = 1
+    parts = [sign * int(p) for p in s.split(':')]
+    return sum([p * u for p, u in zip(reversed(parts), UNITS)])
+
+def parse_tz(tz):
+    if tz is None or tz == 'Z':
+        return 0
+    else:
+        return parse_length(tz) * 60
+
+def parse_time(spec):
+    match = TIME_RE.match(spec)
+    if match:
+        y, m, d, h, m, s, tz = match.groups()
+        t = [int(c) for c in (y, m, d, h, m, s, 0, 0, 0)]
+        utc = time.mktime(t) - time.timezone
+        return time.gmtime(utc - parse_tz(tz))
+    else:
+        raise ValueError('Not a time spec')
 
 def parse_string(s):
     s = s.decode('utf-8')
@@ -47,13 +78,16 @@ def load(doc):
     for line in doc.split('\n'):
         if line:
             k, v = line.split(': ', 1)
+            # this is to work around a design failure in 1.0 and earlier. the
+            # syntax is not actually valid YAML at all. just strip it.
             if v.startswith('!timestamp '):
-                v = time.strptime(v[11:], lastfm.TIME_FMT)
-            else:
+                v = v[11:]
+            for parse in (parse_length, parse_time, parse_string):
                 try:
-                    v = parse_length(v)
+                    v = parse(v)
+                    break
                 except ValueError:
-                    v = parse_string(v)
+                    pass
             song[k] = v
     return song
 

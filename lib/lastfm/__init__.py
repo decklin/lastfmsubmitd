@@ -1,6 +1,6 @@
 __all__ = ['config', 'client', 'marshaller']
 
-# All times look like this.
+# This is the network protocol's time format, which is also valid as YAML.
 TIME_FMT = '%Y-%m-%d %H:%M:%S'
 
 # A song under this length will not be submitted.

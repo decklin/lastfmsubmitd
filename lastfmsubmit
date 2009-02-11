@@ -65,7 +65,7 @@ if __name__ == '__main__':
                 elif opt in ('--length', '-l'):
                     sub['length'] = lastfm.marshaller.parse_length(arg)
                 elif opt in ('--time', '-i'):
-                    sub['time'] = time.strptime(arg, lastfm.TIME_FMT)
+                    sub['time'] = lastfm.marshaller.parse_time(arg)
                 elif opt in ('--album', '-b'):
                     sub['album'] = lastfm.marshaller.guess_enc(arg, encoding)
                 elif opt in ('--mbid', '-m'):
