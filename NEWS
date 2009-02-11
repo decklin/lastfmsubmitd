@@ -1,3 +1,13 @@
+1.0.3 (2009-02-10)
+==================
+
+  * Default to using the 'lastfmsubmitd' config in the Client API. You can
+    still pass a Config object to override this, but in most cases you just
+    want to use the system-wide or user-account daemon instead of something
+    client-specific.
+
+  * Write correct PID to pidfile in daemon mode.
+
 1.0.2 (2009-01-20)
 ==================
 

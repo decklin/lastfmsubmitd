@@ -19,7 +19,7 @@ USAGE = 'usage: %s [--debug] [--no-daemon] [--no-network] [--help]' % \
     DAEMON_NAME
 
 CLIENT_ID = 'lsd'
-CLIENT_VERSION = '1.0.2'
+CLIENT_VERSION = '1.0.3'
 
 PROTOCOL_VERSION = '1.1'
 HANDSHAKE_URL_BASE = 'http://post.audioscrobbler.com/'
