@@ -38,7 +38,7 @@ following:
         'title': 'Your Silent Face',
         'album': 'Power, Corruption & Lies',
         'mbid': '3a54b3b2-6037-4fc3-a7a0-ead924e55ea2',
-        'length: 359}
+        'length': 359}
 
       cli = lastfm.client.Client('demo')
       cli.open_log()
