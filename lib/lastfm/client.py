@@ -98,17 +98,6 @@ class Daemon(Client):
             sys.exit(1)
 
     def daemonize(self, fork=True):
-        try:
-            pidfile = open(self.conf.pidfile_path, 'w')
-            print >>pidfile, os.getpid()
-            pidfile.close()
-        except IOError, e:
-            print >>sys.stderr, "can't open pidfile: %s" % e
-            self.conf.pidfile_path = None
-
-        if not os.path.exists(self.conf.spool_path):
-            os.mkdir(self.conf.spool_path)
-
         if fork:
             self.fork()
             if os.geteuid() == 0:
@@ -123,6 +112,17 @@ class Daemon(Client):
             os.dup2(devnull, sys.stdout.fileno())
             os.dup2(devnull, sys.stderr.fileno())
             os.close(devnull)
+
+        if not os.path.exists(self.conf.spool_path):
+            os.mkdir(self.conf.spool_path)
+
+        try:
+            pidfile = open(self.conf.pidfile_path, 'w')
+            print >>pidfile, os.getpid()
+            pidfile.close()
+        except IOError, e:
+            print >>sys.stderr, "can't open pidfile: %s" % e
+            self.conf.pidfile_path = None
 
     def cleanup(self):
         if self.conf.pidfile_path:
