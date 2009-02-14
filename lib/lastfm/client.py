@@ -23,7 +23,7 @@ class Client:
         config, but if ``conf`` is supplied, talk to that one."""
 
         self.name = name
-        self.conf = conf or lastfm.config.Config('lastfmsubmitd')
+        self.conf = conf or lastfm.config.Config()
 
     def open_log(self, debug=False, stderr=False):
         """Returns a logging object that will write to the client's log. If

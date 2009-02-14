@@ -38,10 +38,7 @@ class Config:
     found, the "user" defaults are used. Otherwise, /etc/NAME.conf is read,
     and the "system" defaults are used."""
 
-    # The default args here are a hack (so that even invalid paths are
-    # always strings). It would arguably be cleaner for them to be None.
-
-    def __init__(self, path='', name='unknown'):
+    def __init__(self, path='', name='lastfmsubmitd'):
         self.cp = SaneConfParser()
         self.name = name
         self.use_sys_path = False
