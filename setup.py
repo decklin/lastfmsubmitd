@@ -4,7 +4,7 @@ from distutils.core import setup
 
 setup(
     name='lastfmsubmitd',
-    version='1.0.3',
+    version='1.0.4',
     description='Last.fm song submission daemon',
     author='Decklin Foster',
     author_email='decklin@red-bean.com',
