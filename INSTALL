@@ -21,7 +21,10 @@ Installation
         user: decklin
         password: ********
 
-    It can also optionally contain either of these sections:
+    It can also optionally contain any of these sections:
+
+        [server]
+        url = http://post.audioscrobbler.com/
 
         [daemon]
         sleep_time: 5

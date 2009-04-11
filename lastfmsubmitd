@@ -21,8 +21,8 @@ USAGE = 'usage: %s [--debug] [--no-daemon] [--no-network] [--help]' % \
 CLIENT_ID = 'lsd'
 CLIENT_VERSION = '1.0.4'
 
+SERVER_URL = 'http://post.audioscrobbler.com/'
 PROTOCOL_VERSION = '1.1'
-HANDSHAKE_URL_BASE = 'http://post.audioscrobbler.com/'
 SUB_CHUNK_SIZE = 10
 DEF_INTERVAL = 1
 
@@ -139,7 +139,7 @@ class LastFmSession:
             'v': CLIENT_VERSION,
             'u': self.cli.conf.user,
             }
-        return '?'.join([HANDSHAKE_URL_BASE, urllib.urlencode(args)])
+        return '?'.join([self.cli.conf.url, urllib.urlencode(args)])
 
     def handshake(self):
         self.cli.log.debug('Handshake URL: %s' % self.handshake_url)
@@ -262,6 +262,7 @@ class LastFmSession:
 class LsdConfig(lastfm.config.Config):
     def __init__(self):
         lastfm.config.Config.__init__(self, name=DAEMON_NAME)
+        self.url = self.cp.get('server', 'url', SERVER_URL)
         self.user = self.cp.get('account', 'user', None)
         self.password = self.cp.get('account', 'password', None)
         if not (self.user and self.password):
