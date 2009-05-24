@@ -6,8 +6,12 @@ import time
 import getopt
 import socket
 import urllib
-import md5
 import signal
+
+try:
+    from hashlib import md5
+except ImportError:
+    from md5 import new as md5
 
 import lastfm
 import lastfm.client
@@ -196,8 +200,8 @@ class LastFmSession:
                 self.interval = interval
 
     def digest(self, challenge):
-        pass_hash = md5.new(self.cli.conf.password)
-        sess_hash = md5.new(pass_hash.hexdigest() + challenge)
+        pass_hash = md5(self.cli.conf.password)
+        sess_hash = md5(pass_hash.hexdigest() + challenge)
         return sess_hash.hexdigest()
 
     def submit(self, spool):
