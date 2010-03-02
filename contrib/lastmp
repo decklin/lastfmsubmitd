@@ -45,7 +45,7 @@ class Song:
         # YA RLY!
         return not self == other
 
-    def __str__(self):
+    def __unicode__(self):
         try:
             return lastfm.repr(self.dict())
         except ValueError:
