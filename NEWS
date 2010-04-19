@@ -1,3 +1,8 @@
+1.0.6 (2010-04-18)
+==================
+
+  * Recover from BADSESSION errors (thanks to Patrick Stetter).
+
 1.0.5 (2009-04-11)
 ==================
 
