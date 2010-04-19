@@ -250,6 +250,9 @@ class LastFmSession:
             elif status_line == 'BADAUTH':
                 self.connected = False
                 raise SessionError('incorrect password')
+            elif status_line == 'BADSESSION':
+                self.cli.log.info('session failed, reconnecting')
+                self.handshake()
             elif status_line.startswith('FAILED'):
                 try:
                     failed, reason = status_line.split(' ', 1)
